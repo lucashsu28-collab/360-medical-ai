@@ -251,7 +251,9 @@ export default async function TreatmentsPage({
                 </p>
               </div>
               <a
-                href="#line"
+                href="https://lin.ee/6sTCRzm"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="shrink-0 rounded-[10px] bg-[var(--blue)] px-7 py-3 text-[14px] font-bold text-white no-underline transition-opacity hover:opacity-90"
               >
                 📲 加 LINE 免費諮詢

@@ -210,7 +210,9 @@ export default async function PartnerClinicPage({
                 預約諮詢 · 專人為您安排
               </p>
               <a
-                href="#"
+                href="https://lin.ee/6sTCRzm"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-block rounded-[8px] bg-[var(--blue)] px-10 py-4 text-[16px] font-bold text-white shadow-[0_4px_12px_rgba(0,70,184,.25)] transition-colors hover:bg-[var(--blue2)]"
               >
                 立即預約

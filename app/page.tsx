@@ -3,7 +3,7 @@ import SearchBox from "@/components/SearchBox";
 import ClinicCard from "@/components/ClinicCard";
 import { clinics } from "@/data/clinics";
 
-const LINE_CTA_URL = "#line";
+const LINE_CTA_URL = "https://lin.ee/6sTCRzm";
 
 const TREATMENT_TILES = [
   {

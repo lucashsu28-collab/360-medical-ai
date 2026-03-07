@@ -11,8 +11,8 @@ const NAV_ITEMS = [
   { href: "/promotions", label: "精選優惠" },
 ] as const;
 
-/** 加 LINE 連結（展示用，可替換為實際 LINE URL） */
-const LINE_CTA_URL = "#line";
+/** 加 LINE 連結 */
+const LINE_CTA_URL = "https://lin.ee/6sTCRzm";
 
 export default function SiteNav() {
   const pathname = usePathname();

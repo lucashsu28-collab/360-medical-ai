@@ -7,7 +7,7 @@
 export interface FogReportProps {
   /** 被霧化遮罩的報告內容（仍會渲染，但被 blur 覆蓋） */
   children: React.ReactNode;
-  /** LINE 連結，預設 #line */
+  /** LINE 連結 */
   lineUrl?: string;
   /** 可選副標或說明，顯示在 CTA 下方 */
   subtitle?: string;
@@ -17,7 +17,7 @@ export interface FogReportProps {
 
 export default function FogReport({
   children,
-  lineUrl = "#line",
+  lineUrl = "https://lin.ee/6sTCRzm",
   subtitle,
   className = "",
 }: FogReportProps) {

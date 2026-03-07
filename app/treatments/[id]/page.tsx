@@ -138,7 +138,9 @@ export default async function TreatmentDetailPage({
             想了解「{treatment.name}」的診所報價或適合自己的方案？
           </p>
           <a
-            href="#line"
+            href="https://lin.ee/6sTCRzm"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-block rounded-[8px] bg-[var(--blue)] px-8 py-3 text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,70,184,.2)] transition-colors hover:bg-[var(--blue2)]"
           >
             加 LINE 免費諮詢
