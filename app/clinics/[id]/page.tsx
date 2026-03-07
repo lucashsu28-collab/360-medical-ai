@@ -1,0 +1,216 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { clinics } from "@/data/clinics";
+import type { Clinic } from "@/data/clinics";
+import ScoreCard from "@/components/ScoreCard";
+import FogReport from "@/components/FogReport";
+
+function getClinicPhone(_clinic: Clinic): string {
+  return "02-1234-5678";
+}
+
+/** 假資料：霧化區塊內的糾紛與負評彙整 */
+function FakeFogContent({ clinicName }: { clinicName: string }) {
+  return (
+    <div className="space-y-6 p-6 text-[var(--ink)]">
+      <section>
+        <h3 className="mb-3 text-[14px] font-bold text-[var(--ink)]">
+          司法／申訴紀錄摘要
+        </h3>
+        <ul className="space-y-2 text-[13px] leading-relaxed text-[var(--ink2)]">
+          <li>・民國 111 年 民事訴訟 案號 111 年度 醫字第 XX 號，與術後效果認知差異相關，調解成立。</li>
+          <li>・民國 110 年 衛生局申訴 1 件，經查為溝通疏失，已改善並結案。</li>
+        </ul>
+      </section>
+      <section>
+        <h3 className="mb-3 text-[14px] font-bold text-[var(--ink)]">
+          負評關鍵字彙整（僅供參考）
+        </h3>
+        <p className="text-[13px] leading-relaxed text-[var(--muted)]">
+          以下由系統彙整自公開評論，加 LINE 可查看完整報告與時間軸。與「{clinicName}」相關的常見負面關鍵字：等候時間、預約難、價格未事先說明、術後衛教不足。
+        </p>
+      </section>
+      <section>
+        <h3 className="mb-3 text-[14px] font-bold text-[var(--ink)]">
+          完整報告內容
+        </h3>
+        <p className="text-[13px] leading-relaxed text-[var(--muted)]">
+          含判決書案號、申訴案進度、媒體報導摘要、社群討論情緒分析等，解鎖後可下載 PDF。
+        </p>
+      </section>
+    </div>
+  );
+}
+
+/** 假資料：單則消費者評論 */
+function ReviewItem({
+  author,
+  date,
+  rating,
+  text,
+}: {
+  author: string;
+  date: string;
+  rating: number;
+  text: string;
+}) {
+  return (
+    <article className="border-b border-[var(--line)] py-4 last:border-b-0">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-[13px] font-bold text-[var(--ink)]">{author}</span>
+        <span className="text-[12px] text-[var(--muted)]">{date}</span>
+        <span
+          className="text-[13px] font-medium"
+          style={{ fontFamily: "var(--font-dm-mono)", color: "var(--blue)" }}
+        >
+          {rating.toFixed(1)}
+        </span>
+      </div>
+      <p className="text-[13px] leading-relaxed text-[var(--ink2)]">{text}</p>
+    </article>
+  );
+}
+
+/** 假資料：消費者評論列表 */
+const FAKE_REVIEWS = [
+  { author: "王**", date: "2024-02-15", rating: 4.5, text: "醫師解說清楚，術後恢復順利，整體滿意。唯一是預約要提早。" },
+  { author: "林**", date: "2024-01-28", rating: 5, text: "環境乾淨，護理師很親切，雷射效果符合預期，會再回診。" },
+  { author: "陳**", date: "2024-01-10", rating: 4, text: "價格透明，沒有強迫推銷。術後有一點紅腫，幾天就退了。" },
+  { author: "張**", date: "2023-12-22", rating: 4.5, text: "第一次做醫美有點緊張，醫師和團隊都很專業，體驗不錯。" },
+  { author: "李**", date: "2023-12-05", rating: 4, text: "交通方便，診所空間舒適。療程效果中規中矩，可接受。" },
+];
+
+export default async function ClinicDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const clinic = clinics.find((c) => c.id === id);
+  if (!clinic) notFound();
+
+  const phone = getClinicPhone(clinic);
+
+  return (
+    <div className="min-h-screen bg-[var(--paper)]">
+      <div className="mx-auto max-w-[1060px] px-4 py-8 md:px-8">
+        {/* 麵包屑 */}
+        <nav className="mb-6 text-[12px] text-[var(--muted)]" aria-label="麵包屑">
+          <Link href="/" className="hover:text-[var(--blue)]">首頁</Link>
+          <span className="mx-1.5">/</span>
+          <Link href="/clinics" className="hover:text-[var(--blue)]">查診所</Link>
+          <span className="mx-1.5">/</span>
+          <span className="text-[var(--ink)]">{clinic.name}</span>
+        </nav>
+
+        <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
+          {/* 主內容 */}
+          <main className="min-w-0 flex-1 space-y-8">
+            {/* 基本資訊 */}
+            <div className="rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,.04)]">
+              <div className="mb-4 flex items-start gap-4">
+                <div
+                  className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[14px] border border-[var(--line)] bg-[var(--off)] text-2xl"
+                  aria-hidden
+                >
+                  {clinic.imagePlaceholder}
+                </div>
+                <div>
+                  <h1
+                    className="text-xl font-black text-[var(--ink)] md:text-2xl"
+                    style={{ fontFamily: "var(--font-serif)" }}
+                  >
+                    {clinic.name}
+                  </h1>
+                  <p className="mt-1 text-[13px] text-[var(--muted)]">
+                    {clinic.type} · {clinic.district}
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-2 text-[13px] text-[var(--ink2)]">
+                <li>地址：{clinic.address}</li>
+                <li>電話：{phone}</li>
+              </ul>
+            </div>
+
+            {/* 五維度評分 */}
+            <section>
+              <h2 className="mb-4 text-[16px] font-bold text-[var(--ink)]">
+                360 綜合評分
+              </h2>
+              <ScoreCard scores={clinic.scores} showTotal={true} />
+            </section>
+
+            {/* 霧化完整報告 */}
+            <section>
+              <h2 className="mb-4 text-[16px] font-bold text-[var(--ink)]">
+                完整報告（司法／申訴／負評彙整）
+              </h2>
+              <FogReport
+                subtitle="解鎖後可查看判決書案號、申訴進度與完整負評分析"
+                lineUrl="#line"
+              >
+                <FakeFogContent clinicName={clinic.name} />
+              </FogReport>
+            </section>
+
+            {/* 消費者評論 */}
+            <section className="rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,.04)]">
+              <h2 className="mb-4 text-[16px] font-bold text-[var(--ink)]">
+                消費者評論
+              </h2>
+              <p className="mb-4 text-[13px] text-[var(--muted)]">
+                共 {clinic.reviewCount} 則評論 · 以下為精選摘要
+              </p>
+              <div className="divide-y-0">
+                {FAKE_REVIEWS.map((r, i) => (
+                  <ReviewItem
+                    key={i}
+                    author={r.author}
+                    date={r.date}
+                    rating={r.rating}
+                    text={r.text}
+                  />
+                ))}
+              </div>
+            </section>
+          </main>
+
+          {/* 右側欄 */}
+          <aside className="w-full shrink-0 lg:w-[300px]">
+            <div className="sticky top-[78px] space-y-6 rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,.04)]">
+              {clinic.isPartner && (
+                <div className="rounded-[8px] bg-[var(--blue-xl)] px-3 py-2 text-center text-[13px] font-bold text-[var(--blue)]">
+                  ✦ 合作診所
+                </div>
+              )}
+              <div>
+                <h3 className="mb-3 text-[14px] font-bold text-[var(--ink)]">
+                  療程項目
+                </h3>
+                <ul className="flex flex-wrap gap-2">
+                  {clinic.tags.map((tag) => (
+                    <li key={tag}>
+                      <Link
+                        href={`/treatments?category=laser&q=${encodeURIComponent(tag)}`}
+                        className="rounded-[99px] border border-[var(--line)] bg-white px-3 py-1.5 text-[12px] text-[var(--ink2)] transition-colors hover:border-[var(--blue)] hover:text-[var(--blue)]"
+                      >
+                        {tag}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <a
+                href="#"
+                className="block w-full rounded-[8px] bg-[var(--blue)] py-3 text-center text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,70,184,.2)] transition-colors hover:bg-[var(--blue2)]"
+              >
+                預約諮詢
+              </a>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}

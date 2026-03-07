@@ -34,3 +34,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+### 本專案部署流程
+
+1. **改完程式碼**
+2. 在終端機進入專案目錄，執行 **`deploy.bat`**
+3. 等 **1–2 分鐘**
+4. 網站會自動更新（Vercel 偵測到 push 後會自動建置並部署）
