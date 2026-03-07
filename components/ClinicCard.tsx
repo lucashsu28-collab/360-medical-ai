@@ -25,6 +25,8 @@ export interface ClinicCardProps {
   reviewCount: number;
   /** "row" = 列表頁橫式（縮圖+五維度點+查看評鑑）；"grid" = 首頁格狀（上圖下文字） */
   variant?: "row" | "grid";
+  /** 詳頁路徑前綴，預設 /clinics；合作診所列表可傳 /partners */
+  detailBasePath?: string;
   /** 縮圖：圖片 URL 或 emoji 佔位（如 🏥），不傳則用預設 emoji */
   imageUrl?: string | null;
   imagePlaceholder?: string;
@@ -67,10 +69,11 @@ export default function ClinicCard({
   scores,
   reviewCount,
   variant = "row",
+  detailBasePath = "/clinics",
   imageUrl,
   imagePlaceholder = "🏥",
 }: ClinicCardProps) {
-  const href = `/clinics/${id}`;
+  const href = `${detailBasePath}/${id}`;
   const thumbIndex = Math.abs(id.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % THUMB_GRADIENTS.length;
   const gridIndex = thumbIndex % GRID_GRADIENTS.length;
   const thumbBg = THUMB_GRADIENTS[thumbIndex];

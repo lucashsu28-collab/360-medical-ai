@@ -24,6 +24,8 @@
   --cyan-lt: #e0f5ff;
   --off: #f5f4f0;
   --paper: #faf9f7;
+  --line-green: #06c755;
+  --line-green-hover: #05b34a;
 }
 
 @theme inline {

@@ -83,9 +83,9 @@ export default function SiteNav() {
           href={LINE_CTA_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-[7px] bg-[var(--blue)] px-4 py-2 text-[13px] font-bold text-white no-underline shadow-[0_2px_8px_rgba(0,70,184,.2)] transition-colors duration-200 hover:bg-[var(--blue2)] md:px-5 md:py-2"
+          className="rounded-[7px] bg-[var(--line-green)] px-4 py-2 text-[13px] font-bold text-white no-underline shadow-[0_2px_8px_rgba(6,199,85,.25)] transition-colors duration-200 hover:bg-[var(--line-green-hover)] md:px-5 md:py-2"
         >
-          免費查詢 →
+          免費諮詢
         </a>
       </div>
     </nav>
