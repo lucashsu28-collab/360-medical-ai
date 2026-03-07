@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* 360醫療AI大調查 — 設計 token */
+:root {
+  --background: #ffffff;
+  --foreground: #0d1b2a;
+  --ink: #0d1b2a;
+  --ink2: #253d57;
+  --muted: #6b7f92;
+  --light: #aabccc;
+  --line: #e2e8ef;
+  --line2: #d0dae4;
+  --blue: #0046b8;
+  --blue2: #003d99;
+  --blue-lt: #e8f0fb;
+  --blue-xl: #f0f5ff;
+  --green: #00875a;
+  --green-lt: #e0f5ec;
+  --red: #c0392b;
+  --red-lt: #fdecea;
+  --amber: #a86800;
+  --amber-lt: #fff3e0;
+  --cyan: #0099cc;
+  --cyan-lt: #e0f5ff;
+  --off: #f5f4f0;
+  --paper: #faf9f7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink2);
+  --color-muted: var(--muted);
+  --color-blue: var(--blue);
+  --color-blue2: var(--blue2);
+  --color-blue-lt: var(--blue-lt);
+  --color-line: var(--line);
+  --color-line2: var(--line2);
+  --font-sans: var(--font-noto-sans-tc);
+  --font-serif: var(--font-noto-serif-tc);
+  --font-mono: var(--font-dm-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-noto-sans-tc), sans-serif;
+}

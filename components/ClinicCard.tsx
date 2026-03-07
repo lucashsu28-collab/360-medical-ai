@@ -1,0 +1,214 @@
+"use client";
+
+import Link from "next/link";
+
+/** 五維度評分（與 data/clinics 結構一致） */
+export interface ClinicScores {
+  judicial: number;
+  google: number;
+  legal: number;
+  media: number;
+  social: number;
+  total: number;
+}
+
+export interface ClinicCardProps {
+  /** 診所 id，用於 /clinics/[id] */
+  id: string;
+  name: string;
+  type: string;
+  address?: string;
+  district?: string;
+  tags: string[];
+  isPartner: boolean;
+  scores: ClinicScores;
+  reviewCount: number;
+  /** "row" = 列表頁橫式（縮圖+五維度點+查看評鑑）；"grid" = 首頁格狀（上圖下文字） */
+  variant?: "row" | "grid";
+  /** 縮圖：圖片 URL 或 emoji 佔位（如 🏥），不傳則用預設 emoji */
+  imageUrl?: string | null;
+  imagePlaceholder?: string;
+}
+
+const DIM_CONFIG = [
+  { key: "judicial" as const, label: "司法", color: "var(--red)" },
+  { key: "google" as const, label: "Google", color: "var(--blue)" },
+  { key: "legal" as const, label: "合法", color: "var(--green)" },
+  { key: "media" as const, label: "媒體", color: "var(--amber)" },
+  { key: "social" as const, label: "社群", color: "var(--cyan)" },
+] as const;
+
+const THUMB_GRADIENTS = [
+  "linear-gradient(135deg,#dbeafe,#bfdbfe)",
+  "linear-gradient(135deg,#f3e8ff,#ddd6fe)",
+  "linear-gradient(135deg,#dcfce7,#bbf7d0)",
+  "linear-gradient(135deg,#fef3c7,#fde68a)",
+  "linear-gradient(135deg,#fce7f3,#fbcfe8)",
+];
+
+const GRID_GRADIENTS = [
+  "linear-gradient(135deg,#dbeafe,#e0f2fe)",
+  "linear-gradient(135deg,#f3e8ff,#ede9fe)",
+  "linear-gradient(135deg,#dcfce7,#d1fae5)",
+];
+
+function formatReviewCount(n: number): string {
+  return `${n.toLocaleString("zh-TW")} 則評論`;
+}
+
+export default function ClinicCard({
+  id,
+  name,
+  type,
+  address,
+  district,
+  tags,
+  isPartner,
+  scores,
+  reviewCount,
+  variant = "row",
+  imageUrl,
+  imagePlaceholder = "🏥",
+}: ClinicCardProps) {
+  const href = `/clinics/${id}`;
+  const thumbIndex = Math.abs(id.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % THUMB_GRADIENTS.length;
+  const gridIndex = thumbIndex % GRID_GRADIENTS.length;
+  const thumbBg = THUMB_GRADIENTS[thumbIndex];
+  const gridBg = GRID_GRADIENTS[gridIndex];
+
+  if (variant === "grid") {
+    return (
+      <Link
+        href={href}
+        className="group flex cursor-pointer flex-col overflow-hidden rounded-[14px] border-[1.5px] border-[var(--line)] bg-white transition-all duration-[0.22s] hover:border-[var(--blue)] hover:shadow-[0_14px_36px_rgba(0,0,0,.09)] hover:-translate-y-0.5"
+      >
+        <div
+          className="relative flex h-[120px] items-center justify-center text-[44px]"
+          style={{ background: gridBg }}
+        >
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span aria-hidden>{imagePlaceholder}</span>
+          )}
+          {isPartner && (
+            <span className="absolute left-2.5 top-2.5 rounded px-2 py-1 text-[9px] font-bold text-white bg-[var(--blue)]">
+              ✦ 合作
+            </span>
+          )}
+          {district && (
+            <span className="absolute right-2.5 top-2.5 rounded bg-white/90 px-2 py-1 text-[10px] font-bold text-[var(--ink2)] backdrop-blur-[4px]">
+              {district}
+            </span>
+          )}
+        </div>
+        <div className="border-t-0 px-4 py-3.5">
+          <div className="mb-1 text-[15px] font-bold text-[var(--ink)]">{name}</div>
+          <div className="mb-2.5 flex flex-wrap gap-1">
+            {tags.slice(0, 5).map((t) => (
+              <span
+                key={t}
+                className="rounded-full bg-[var(--off)] px-2 py-0.5 text-[10px] text-[var(--muted)]"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center justify-between border-t border-[var(--line)] pt-2.5">
+            <div>
+              <div
+                className="text-[22px] font-medium text-[var(--blue)]"
+                style={{ fontFamily: "var(--font-dm-mono)" }}
+              >
+                {scores.total.toFixed(1)}
+              </div>
+              <div className="text-[11px] text-[var(--muted)]">
+                {formatReviewCount(reviewCount)}
+              </div>
+            </div>
+            <span className="text-[18px] text-[var(--light)] transition-colors duration-[0.18s] group-hover:text-[var(--blue)]" aria-hidden>›</span>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // variant === "row"
+  return (
+    <Link
+      href={href}
+      className="flex cursor-pointer items-stretch overflow-hidden rounded-[14px] border-[1.5px] border-[var(--line)] bg-white transition-all duration-[0.22s] hover:border-[var(--blue)] hover:shadow-[0_12px_40px_rgba(0,0,0,.1)] hover:translate-x-0.5"
+    >
+      <div
+        className="relative flex w-[150px] flex-shrink-0 items-center justify-center text-[48px]"
+        style={{ background: thumbBg }}
+      >
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <span aria-hidden>{imagePlaceholder}</span>
+        )}
+        {isPartner && (
+          <span className="absolute left-2 top-2.5 rounded px-1.5 py-0.5 text-[9px] font-bold text-white bg-[var(--blue)]">
+            ✦ 合作
+          </span>
+        )}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col justify-center px-5 py-4">
+        <div className="text-[16px] font-bold text-[var(--ink)] mb-0.5">{name}</div>
+        <span className="mb-1.5 inline-block w-fit rounded-full bg-[var(--blue-lt)] px-2 py-0.5 text-[10px] font-bold text-[var(--blue)]">
+          {type}
+        </span>
+        {address && (
+          <div className="mb-2 text-[12px] text-[var(--muted)]">📍 {address}</div>
+        )}
+        <div className="mb-2.5 flex flex-wrap gap-1.5">
+          {tags.slice(0, 6).map((t) => (
+            <span
+              key={t}
+              className="rounded-full bg-[var(--off)] px-2 py-0.5 text-[10px] text-[var(--muted)]"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2.5">
+          {DIM_CONFIG.map(({ key, label, color }) => (
+            <div
+              key={key}
+              className="flex items-center gap-1 text-[11px] text-[var(--muted)]"
+            >
+              <span
+                className="h-[7px] w-[7px] flex-shrink-0 rounded-full"
+                style={{ backgroundColor: color }}
+              />
+              {label} {scores[key].toFixed(1)}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex w-[120px] flex-shrink-0 flex-col items-center justify-center gap-0.5 border-l border-[var(--line)] p-4">
+        <div
+          className="text-[28px] font-medium leading-none text-[var(--blue)]"
+          style={{ fontFamily: "var(--font-dm-mono)" }}
+        >
+          {scores.total.toFixed(1)}
+        </div>
+        <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--muted)]">
+          綜合評分
+        </div>
+        <div className="mt-0.5 text-[10px] text-[var(--muted)]">
+          {formatReviewCount(reviewCount)}
+        </div>
+        <span
+          className="mt-2 w-full rounded-md bg-[var(--blue-lt)] py-1.5 text-center text-[11px] font-bold text-[var(--blue)] transition-colors duration-[0.18s] hover:bg-[var(--blue)] hover:text-white"
+          aria-hidden
+        >
+          查看評鑑
+        </span>
+      </div>
+    </Link>
+  );
+}
