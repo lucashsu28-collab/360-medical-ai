@@ -69,24 +69,37 @@ export default function DoctorsPage() {
     const autoUnlock = params.get("auto_unlock");
     if (autoUnlock && liffUserId && !autoUnlockDone.current) {
       autoUnlockDone.current = true;
-      // 與按鈕一致：跳轉 LIFF 由 LIFF 頁送報告
-      const liffId = process.env.NEXT_PUBLIC_LIFF_ID || "2009360724-7DzjBKHU";
-      window.location.href = `https://liff.line.me/${liffId}?page=doctors&auto_unlock=${encodeURIComponent(autoUnlock)}`;
+      unlockDoctorReport(autoUnlock);
     }
   }, [liffUserId]);
 
-  const unlockDoctorReport = (doc_seq: string) => {
-    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || "2009360724-7DzjBKHU";
-    const lineUrl = `https://liff.line.me/${liffId}?page=doctors&auto_unlock=${encodeURIComponent(doc_seq)}`;
-    if (!liffUserId) {
-      const confirmed = window.confirm("請從 LINE 開啟此頁面才能解鎖報告\n\n點確定前往 LINE 開啟");
-      if (confirmed) {
-        window.location.href = lineUrl;
+  const unlockDoctorReport = async (doc_seq: string) => {
+    // 如果已有 liffUserId（在 LINE 內），直接呼叫 API 送報告
+    if (liffUserId) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/send-doctor-report`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: liffUserId, doc_seq }),
+        });
+        if (res.ok) {
+          alert("報告已傳送到您的 LINE！");
+        } else {
+          alert("傳送失敗，請稍後再試");
+        }
+      } catch (e) {
+        alert("傳送失敗，請稍後再試");
       }
       return;
     }
-    // 電腦／手機一致：一律跳轉 LIFF 由 LIFF 頁呼叫後端送報告（與診所報告流程相同）
-    window.location.href = lineUrl;
+
+    // 沒有 liffUserId（瀏覽器開啟），引導去 LINE
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || "2009360724-7DzjBKHU";
+    const lineUrl = `https://liff.line.me/${liffId}?page=doctors&auto_unlock=${encodeURIComponent(doc_seq)}`;
+    const confirmed = window.confirm("請從 LINE 開啟此頁面才能解鎖報告\n\n點確定前往 LINE 開啟");
+    if (confirmed) {
+      window.location.href = lineUrl;
+    }
   };
 
   const search = useCallback(async () => {
