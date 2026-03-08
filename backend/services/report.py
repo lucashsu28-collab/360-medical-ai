@@ -23,18 +23,14 @@ def _dimension_row(icon_label: str, value: float) -> dict[str, Any]:
 
 
 def _tag_pill(text: str) -> dict[str, Any]:
-    """療程小圓角標籤。"""
+    """療程小圓角標籤。LINE Flex 僅支援 paddingAll / margin（無 paddingStart/End、marginStart/End）。"""
     return {
         "type": "box",
         "layout": "vertical",
         "contents": [{"type": "text", "text": text, "size": "xs", "color": "#555555", "wrap": True}],
         "backgroundColor": "#f0f0f0",
         "cornerRadius": "20px",
-        "paddingAll": "6px",
-        "paddingStart": "10px",
-        "paddingEnd": "10px",
-        "marginEnd": "6px",
-        "marginBottom": "6px",
+        "paddingAll": "8px",
     }
 
 
@@ -77,11 +73,7 @@ def build_clinic_flex_report(clinic: dict[str, Any]) -> dict[str, Any]:
                 "contents": [{"type": "text", "text": "值得信賴", "size": "xs", "color": "#00B900", "weight": "bold"}],
                 "backgroundColor": "#e8f5e9",
                 "cornerRadius": "8px",
-                "paddingAll": "6px",
-                "paddingStart": "10px",
-                "paddingEnd": "10px",
-                "alignSelf": "center",
-                "marginStart": "8px",
+                "paddingAll": "8px",
             },
         ],
     }

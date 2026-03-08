@@ -92,6 +92,8 @@ async def api_send_report(request: Request):
     state = body.get("state")
     if not user_id or not state:
         raise HTTPException(status_code=400, detail="userId and state required")
+    # Debug: 比對此 userId 與 webhook 的 source.userId 是否一致（LIFF 為 Login channel、Push 為 Messaging API）
+    print(f"[send-report] attempting push userId={user_id!r} state={state}", flush=True)
     try:
         push_report_to_user(user_id, state)
     except ValueError as e:
@@ -99,8 +101,9 @@ async def api_send_report(request: Request):
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 400:
             try:
-                body = e.response.json()
-                logging.warning("send-report LINE 400: userId=%s state=%s line_response=%s", user_id, state, body)
+                line_body = e.response.json()
+                print(f"[send-report] LINE 400 response: userId={user_id!r} line_response={line_body}", flush=True)
+                logging.warning("send-report LINE 400: userId=%s state=%s line_response=%s", user_id, state, line_body)
             except Exception:
                 pass
             raise HTTPException(status_code=400, detail="用戶尚未加好友，請先加入官方帳號")

@@ -32,8 +32,6 @@ export default function LiffPage() {
         }
         const profile = await liff.getProfile();
         const userId = profile.userId;
-        console.log("userId:", profile.userId);
-        alert("userId: " + profile.userId);
 
         const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
         const type = params.get("type") || "";

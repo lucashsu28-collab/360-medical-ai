@@ -280,6 +280,9 @@ def handle_webhook_body(body: bytes) -> None:
             continue
         source = ev.get("source") or {}
         line_user_id = source.get("userId") or ""
+        # Debug: 比對與 LIFF liff.getProfile().userId 是否一致（同人應同值才能 push）
+        if line_user_id:
+            print(f"[webhook] {ev_type} userId={line_user_id!r}", flush=True)
         if ev_type == "follow":
             _handle_follow(reply_token, line_user_id)
         elif ev_type == "message":
