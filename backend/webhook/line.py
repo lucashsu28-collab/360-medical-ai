@@ -14,6 +14,7 @@ import redis
 from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, REDIS_URL
 
 LINE_REPLY_URL = "https://api.line.me/v2/bot/message/reply"
+LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push"
 LIFF_STATE_KEY = "line:liff_state:"
 LIFF_STATE_TTL = 600  # 10 分鐘
 
@@ -106,6 +107,66 @@ def _reply_flex(reply_token: str, flex_contents: dict[str, Any], alt_text: str =
             },
             timeout=10.0,
         )
+
+
+def push_report_to_user(user_id: str, state: str) -> None:
+    """
+    用 LINE Push Message 主動發送完整報告給指定用戶。
+    state 格式：clinic_xxx 或 doctor_xxx。
+    找不到診所/醫師或 LINE API 錯誤時拋出 ValueError / httpx.HTTPStatusError。
+    """
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        raise ValueError("LINE_CHANNEL_ACCESS_TOKEN not configured")
+    messages: list[dict[str, Any]] = []
+    if state.startswith("clinic_"):
+        clinic_id = state.replace("clinic_", "", 1)
+        from services.recommend import get_clinic_by_id
+        from services.report import build_clinic_flex_report
+        clinic = get_clinic_by_id(clinic_id)
+        if not clinic:
+            raise ValueError(f"clinic not found: {clinic_id}")
+        name = clinic.get("name") or "該診所"
+        messages.append({
+            "type": "text",
+            "text": f"你剛才在看【{name}】的報告對嗎？\n我幫你把完整評鑑結果整理出來 👇",
+        })
+        flex = build_clinic_flex_report(clinic)
+        messages.append({
+            "type": "flex",
+            "altText": f"{name} 完整報告",
+            "contents": flex,
+        })
+    elif state.startswith("doctor_"):
+        doctor_id = state.replace("doctor_", "", 1)
+        from services.recommend import get_doctor_by_id
+        from services.report import build_doctor_flex_report
+        doctor = get_doctor_by_id(doctor_id)
+        if not doctor:
+            raise ValueError(f"doctor not found: {doctor_id}")
+        name = doctor.get("name") or "該醫師"
+        messages.append({
+            "type": "text",
+            "text": f"你剛才在看【{name}】的報告對嗎？\n我幫你把完整結果整理出來 👇",
+        })
+        flex = build_doctor_flex_report(doctor)
+        messages.append({
+            "type": "flex",
+            "altText": f"{name} 完整報告",
+            "contents": flex,
+        })
+    else:
+        raise ValueError(f"invalid state: {state}")
+    with httpx.Client() as client:
+        r = client.post(
+            LINE_PUSH_URL,
+            headers={
+                "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+                "Content-Type": "application/json",
+            },
+            json={"to": user_id, "messages": messages},
+            timeout=10.0,
+        )
+        r.raise_for_status()
 
 
 def _handle_follow(reply_token: str, line_user_id: str) -> None:

@@ -4,12 +4,13 @@ FastAPI 入口，LINE Webhook 接收、簽章驗證、事件處理。
 """
 import os
 
+import httpx
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 
 from config import LINE_CHANNEL_SECRET
-from webhook.line import verify_signature, handle_webhook_body, set_liff_state
+from webhook.line import verify_signature, handle_webhook_body, set_liff_state, push_report_to_user
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
@@ -73,4 +74,29 @@ async def api_liff_state(request: Request):
     if not user_id or not state:
         raise HTTPException(status_code=400, detail="userId and state required")
     set_liff_state(user_id, state)
+    return {"ok": True}
+
+
+@app.post("/api/send-report")
+async def api_send_report(request: Request):
+    """
+    已加好友的用戶：用 LINE Push Message 主動發送完整報告。
+    body: {"userId": "Uxxx", "state": "clinic_c01"} 或 "doctor_d01"
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    user_id = body.get("userId") or body.get("user_id")
+    state = body.get("state")
+    if not user_id or not state:
+        raise HTTPException(status_code=400, detail="userId and state required")
+    try:
+        push_report_to_user(user_id, state)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 400:
+            raise HTTPException(status_code=400, detail="用戶尚未加好友，請先加入官方帳號")
+        raise HTTPException(status_code=502, detail="LINE API 錯誤")
     return {"ok": True}

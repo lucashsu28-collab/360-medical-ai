@@ -8,8 +8,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 const LINE_ADD_URL = "https://lin.ee/6sTCRzm";
 
 export default function LiffPage() {
-  const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
-  const [message, setMessage] = useState("正在準備加好友…");
+  const [status, setStatus] = useState<"loading" | "ok" | "add_friend" | "error">("loading");
+  const [message, setMessage] = useState("正在準備…");
 
   useEffect(() => {
     if (!LIFF_ID) {
@@ -45,18 +45,29 @@ export default function LiffPage() {
         }
 
         const state = `${type}_${id}`;
-        const res = await fetch(`${API_BASE.replace(/\/$/, "")}/api/liff-state`, {
+        const base = API_BASE.replace(/\/$/, "");
+
+        // 已加好友：直接 Push 報告，不開加好友頁
+        const sendRes = await fetch(`${base}/api/send-report`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, state }),
         });
-        if (!res.ok) {
-          throw new Error(`後端回傳 ${res.status}`);
+
+        if (sendRes.ok) {
+          setMessage("報告已發送到您的 LINE，請回到對話查看！");
+          setStatus("ok");
+          return;
         }
 
+        // 尚未加好友：存 state，開啟加好友頁（follow 時會自動發報告）
+        await fetch(`${base}/api/liff-state`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, state }),
+        });
         setMessage(`已記錄【${name || id}】，即將開啟加好友…`);
-        setStatus("ok");
-
+        setStatus("add_friend");
         liff.openWindow({ url: LINE_ADD_URL, external: true });
       } catch (e) {
         setStatus("error");
@@ -70,9 +81,9 @@ export default function LiffPage() {
   return (
     <div className="min-h-screen bg-[var(--paper)] flex flex-col items-center justify-center px-4">
       {status === "loading" && (
-        <p className="text-[var(--ink)] text-center">正在準備加好友…</p>
+        <p className="text-[var(--ink)] text-center">正在準備…</p>
       )}
-      {status === "ok" && (
+      {(status === "ok" || status === "add_friend") && (
         <p className="text-[var(--blue)] text-center font-medium">{message}</p>
       )}
       {status === "error" && (
