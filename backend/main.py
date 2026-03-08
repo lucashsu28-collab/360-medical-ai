@@ -8,12 +8,13 @@ import os
 import httpx
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, JSONResponse
 
-from config import LINE_CHANNEL_SECRET
+from config import LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN
 from webhook.line import verify_signature, handle_webhook_body, set_liff_state, push_report_to_user
 from services.recommend import get_all_clinics
 from crawlers.doctor_mohw import search_doctor, get_doctor_detail
+from services.report import build_doctor_flex_report
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
@@ -85,7 +86,7 @@ async def line_webhook(request: Request):
     if not verify_signature(body, signature):
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    handle_webhook_body(body)
+    await handle_webhook_body(body)
     return "OK"
 
 
@@ -138,4 +139,51 @@ async def api_send_report(request: Request):
                 pass
             raise HTTPException(status_code=400, detail="用戶尚未加好友，請先加入官方帳號")
         raise HTTPException(status_code=502, detail="LINE API 錯誤")
+    return {"ok": True}
+
+
+LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push"
+
+
+@app.post("/api/send-doctor-report")
+async def send_doctor_report(request: Request):
+    """依 user_id、doc_seq 取得衛福部醫師詳情，組 Flex 報告並 Push 至該 LINE 用戶。"""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid json"}, status_code=400)
+    user_id = body.get("user_id")
+    doc_seq = body.get("doc_seq")
+    if not user_id or not doc_seq:
+        return JSONResponse({"error": "missing params"}, status_code=400)
+
+    doctor = await get_doctor_detail(doc_seq)
+    if not doctor:
+        return JSONResponse({"error": "doctor not found"}, status_code=404)
+
+    doctor["doc_seq"] = doc_seq
+    flex = build_doctor_flex_report(doctor)
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        return JSONResponse({"error": "LINE not configured"}, status_code=500)
+
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                LINE_PUSH_URL,
+                headers={
+                    "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "to": user_id,
+                    "messages": [{"type": "flex", "altText": "醫師執照查驗報告", "contents": flex}],
+                },
+                timeout=10.0,
+            )
+            r.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        return JSONResponse({"error": "LINE push failed", "detail": str(e)}, status_code=502)
+    except Exception as e:
+        return JSONResponse({"error": "LINE push failed", "detail": str(e)}, status_code=500)
+
     return {"ok": True}

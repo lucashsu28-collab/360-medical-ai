@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -39,6 +39,44 @@ export default function DoctorsPage() {
   const [expandedDocSeq, setExpandedDocSeq] = useState<string | null>(null);
   const [detail, setDetail] = useState<DoctorDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [liffUserId, setLiffUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const initLiff = async () => {
+      try {
+        const liff = (await import("@line/liff")).default;
+        await liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID! });
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          setLiffUserId(profile.userId);
+        }
+      } catch (e) {
+        console.log("LIFF init failed:", e);
+      }
+    };
+    initLiff();
+  }, []);
+
+  const unlockDoctorReport = async (doc_seq: string) => {
+    if (!liffUserId) {
+      alert("請從 LINE 開啟此頁面才能解鎖報告");
+      return;
+    }
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/send-doctor-report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: liffUserId, doc_seq }),
+      });
+      if (res.ok) {
+        alert("報告已傳送到您的 LINE！");
+      } else {
+        alert("傳送失敗，請稍後再試");
+      }
+    } catch (e) {
+      alert("傳送失敗，請稍後再試");
+    }
+  };
 
   const search = useCallback(async () => {
     const name = query.trim();
@@ -181,13 +219,22 @@ export default function DoctorsPage() {
                       {d.area}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleDetail(d.doc_seq)}
-                    className="rounded-[8px] border border-[var(--line)] bg-[var(--off)] px-4 py-2 text-[13px] font-bold text-[var(--ink2)] transition-colors hover:border-[var(--blue)] hover:text-[var(--blue)]"
-                  >
-                    {expandedDocSeq === d.doc_seq ? "收合詳細" : "查看詳細"}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleDetail(d.doc_seq)}
+                      className="rounded-[8px] border border-[var(--line)] bg-[var(--off)] px-4 py-2 text-[13px] font-bold text-[var(--ink2)] transition-colors hover:border-[var(--blue)] hover:text-[var(--blue)]"
+                    >
+                      {expandedDocSeq === d.doc_seq ? "收合詳細" : "查看詳細"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => unlockDoctorReport(d.doc_seq)}
+                      className="rounded-[8px] border border-[var(--green)] px-3 py-1.5 text-[13px] font-bold text-[var(--green)] transition-colors hover:bg-[var(--green)] hover:text-white"
+                    >
+                      📋 解鎖報告
+                    </button>
+                  </div>
                 </div>
                 {expandedDocSeq === d.doc_seq && (
                   <div className="border-t border-[var(--line)] bg-[var(--off)] px-5 py-4">

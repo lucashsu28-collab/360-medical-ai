@@ -49,64 +49,46 @@ def verify_signature(body: bytes, signature: str | None) -> bool:
     return hmac.compare_digest(expected, signature)
 
 
-def _reply_text(reply_token: str, text: str) -> None:
-    """呼叫 LINE Messaging API 回覆一則文字訊息。"""
-    if not LINE_CHANNEL_ACCESS_TOKEN:
+async def _push_text(user_id: str, text: str) -> None:
+    if not LINE_CHANNEL_ACCESS_TOKEN or not user_id:
         return
-    with httpx.Client() as client:
-        client.post(
-            LINE_REPLY_URL,
-            headers={
-                "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "replyToken": reply_token,
-                "messages": [{"type": "text", "text": text}],
-            },
-            timeout=10.0,
-        )
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                LINE_PUSH_URL,
+                headers={
+                    "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+                    "Content-Type": "application/json",
+                },
+                json={"to": user_id, "messages": [{"type": "text", "text": text}]},
+                timeout=10.0,
+            )
+            print(f"[LINE PUSH] status={r.status_code}, body={r.text[:200]}", flush=True)
+    except Exception as e:
+        print(f"[LINE PUSH ERROR] {e}", flush=True)
 
 
-def _reply_messages(reply_token: str, texts: list[str]) -> None:
-    """回覆多則文字訊息（同一 reply 一次送出）。"""
-    if not LINE_CHANNEL_ACCESS_TOKEN or not texts:
+async def _push_messages(user_id: str, messages: list[dict[str, Any]]) -> None:
+    if not LINE_CHANNEL_ACCESS_TOKEN or not user_id or not messages:
         return
-    messages = [{"type": "text", "text": t} for t in texts]
-    with httpx.Client() as client:
-        client.post(
-            LINE_REPLY_URL,
-            headers={
-                "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
-                "Content-Type": "application/json",
-            },
-            json={"replyToken": reply_token, "messages": messages},
-            timeout=10.0,
-        )
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                LINE_PUSH_URL,
+                headers={
+                    "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+                    "Content-Type": "application/json",
+                },
+                json={"to": user_id, "messages": messages},
+                timeout=10.0,
+            )
+            print(f"[LINE PUSH] status={r.status_code}, body={r.text[:200]}", flush=True)
+    except Exception as e:
+        print(f"[LINE PUSH ERROR] {e}", flush=True)
 
 
-def _reply_flex(reply_token: str, flex_contents: dict[str, Any], alt_text: str = "報告") -> None:
-    """回覆一則 Flex Message。"""
-    if not LINE_CHANNEL_ACCESS_TOKEN:
-        return
-    payload = {
-        "type": "flex",
-        "altText": alt_text,
-        "contents": flex_contents,
-    }
-    with httpx.Client() as client:
-        client.post(
-            LINE_REPLY_URL,
-            headers={
-                "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "replyToken": reply_token,
-                "messages": [payload],
-            },
-            timeout=10.0,
-        )
+async def _push_flex(user_id: str, alt: str, flex: dict[str, Any]) -> None:
+    await _push_messages(user_id, [{"type": "flex", "altText": alt, "contents": flex}])
 
 
 def push_report_to_user(user_id: str, state: str) -> None:
@@ -156,27 +138,33 @@ def push_report_to_user(user_id: str, state: str) -> None:
         })
     else:
         raise ValueError(f"invalid state: {state}")
-    with httpx.Client() as client:
-        r = client.post(
-            LINE_PUSH_URL,
-            headers={
-                "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
-                "Content-Type": "application/json",
-            },
-            json={"to": user_id, "messages": messages},
-            timeout=10.0,
-        )
-        r.raise_for_status()
+    try:
+        with httpx.Client() as client:
+            r = client.post(
+                LINE_PUSH_URL,
+                headers={
+                    "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+                    "Content-Type": "application/json",
+                },
+                json={"to": user_id, "messages": messages},
+                timeout=10.0,
+            )
+            r.raise_for_status()
+    except Exception as e:
+        import traceback
+        print(f"[LINE PUSH ERROR] {e}")
+        print(traceback.format_exc())
+        raise
 
 
-def _handle_follow(reply_token: str, line_user_id: str) -> None:
+async def _handle_follow(user_id: str) -> None:
     """使用者加好友：若有 liff.state（clinic_/doctor_）則送該診所/醫師完整報告，否則一般歡迎。"""
     state = None
     try:
         r = _redis_client()
-        state = r.get(LIFF_STATE_KEY + line_user_id)
+        state = r.get(LIFF_STATE_KEY + user_id)
         if state:
-            r.delete(LIFF_STATE_KEY + line_user_id)
+            r.delete(LIFF_STATE_KEY + user_id)
     except Exception:
         pass
 
@@ -188,7 +176,7 @@ def _handle_follow(reply_token: str, line_user_id: str) -> None:
             name = clinic.get("name") or "該診所"
             welcome = f"你剛才在看【{name}】的報告對嗎？\n我幫你把完整評鑑結果整理出來 👇"
             report = format_full_report(clinic)
-            _reply_messages(reply_token, [welcome, report])
+            await _push_messages(user_id, [{"type": "text", "text": welcome}, {"type": "text", "text": report}])
             return
 
     if state and state.startswith("doctor_"):
@@ -199,7 +187,7 @@ def _handle_follow(reply_token: str, line_user_id: str) -> None:
             name = doctor.get("name") or "該醫師"
             welcome = f"你剛才在看【{name}】的報告對嗎？\n我幫你把完整結果整理出來 👇"
             report = format_doctor_report(doctor)
-            _reply_messages(reply_token, [welcome, report])
+            await _push_messages(user_id, [{"type": "text", "text": welcome}, {"type": "text", "text": report}])
             return
 
     welcome = (
@@ -210,18 +198,18 @@ def _handle_follow(reply_token: str, line_user_id: str) -> None:
         "・預約諮詢\n\n"
         "直接輸入想了解的療程或地區，例如：「台北皮秒雷射」「想打玻尿酸」即可。"
     )
-    _reply_text(reply_token, welcome)
+    await _push_text(user_id, welcome)
 
 
-def _handle_message(reply_token: str, line_user_id: str, message: dict[str, Any]) -> None:
+async def _handle_message(user_id: str, message: dict[str, Any]) -> None:
     """處理使用者文字訊息：支援「報告:clinic_xxx」「報告:doctor_xxx」觸發 Flex 報告，其餘走 Gemini。"""
     msg_type = message.get("type")
     if msg_type != "text":
-        _reply_text(reply_token, "目前僅支援文字訊息，請輸入文字與我對話。")
+        await _push_text(user_id, "目前僅支援文字訊息，請輸入文字與我對話。")
         return
     text = (message.get("text") or "").strip()
     if not text:
-        _reply_text(reply_token, "請輸入文字內容～")
+        await _push_text(user_id, "請輸入文字內容～")
         return
 
     # 指令觸發：報告:clinic_001 / 報告:doctor_001
@@ -234,9 +222,9 @@ def _handle_message(reply_token: str, line_user_id: str, message: dict[str, Any]
             clinic = get_clinic_by_id(clinic_id)
             if clinic:
                 flex = build_clinic_flex_report(clinic)
-                _reply_flex(reply_token, flex, alt_text=f"{clinic.get('name', '')} 完整報告")
+                await _push_flex(user_id, f"{clinic.get('name', '')} 完整報告", flex)
                 return
-            _reply_text(reply_token, f"找不到診所 ID：{clinic_id}，請確認後再試。")
+            await _push_text(user_id, f"找不到診所 ID：{clinic_id}，請確認後再試。")
             return
         if report_id.startswith("doctor_"):
             doctor_id = report_id.replace("doctor_", "", 1)
@@ -245,28 +233,31 @@ def _handle_message(reply_token: str, line_user_id: str, message: dict[str, Any]
             doctor = get_doctor_by_id(doctor_id)
             if doctor:
                 flex = build_doctor_flex_report(doctor)
-                _reply_flex(reply_token, flex, alt_text=f"{doctor.get('name', '')} 完整報告")
+                await _push_flex(user_id, f"{doctor.get('name', '')} 完整報告", flex)
                 return
-            _reply_text(reply_token, f"找不到醫師 ID：{doctor_id}，請確認後再試。")
+            await _push_text(user_id, f"找不到醫師 ID：{doctor_id}，請確認後再試。")
             return
-        _reply_text(reply_token, "請輸入「報告:clinic_診所ID」或「報告:doctor_醫師ID」，例如：報告:clinic_c01")
+        await _push_text(user_id, "請輸入「報告:clinic_診所ID」或「報告:doctor_醫師ID」，例如：報告:clinic_c01")
         return
 
+    print(f"[FLOW] calling gemini, user_id={user_id}", flush=True)
     try:
         from ai.gemini import handle_message as gemini_handle_message
-        reply_text = gemini_handle_message(line_user_id, text)
+        reply_text = gemini_handle_message(user_id, text)
     except Exception as e:
         import traceback
         print(f"[ERROR] handle_message failed: {e}")
         print(traceback.format_exc())
         reply_text = "抱歉，剛剛出了一點狀況，請再試一次或稍後再問～"
-    _reply_text(reply_token, reply_text)
+    print("[FLOW] gemini done, about to reply", flush=True)
+    await _push_text(user_id, reply_text)
 
 
-def handle_webhook_body(body: bytes) -> None:
+async def handle_webhook_body(body: bytes) -> None:
     """
     驗證簽章後解析 body 並處理 events。
     簽章驗證由 main 層負責，此處假設已通過驗證，僅處理 events。
+    使用 push message（userId），不再使用 reply token。
     """
     try:
         data = json.loads(body.decode("utf-8"))
@@ -275,15 +266,13 @@ def handle_webhook_body(body: bytes) -> None:
     events = data.get("events") or []
     for ev in events:
         ev_type = ev.get("type")
-        reply_token = ev.get("replyToken")
-        if not reply_token:
-            continue
         source = ev.get("source") or {}
-        line_user_id = source.get("userId") or ""
-        # Debug: 比對與 LIFF liff.getProfile().userId 是否一致（同人應同值才能 push）
-        if line_user_id:
-            print(f"[webhook] {ev_type} userId={line_user_id!r}", flush=True)
+        user_id = source.get("userId") or ""
+        if not user_id:
+            continue
+        print(f"[FLOW] event type={ev_type}, source={source.get('type', '')}", flush=True)
+        print(f"[webhook] {ev_type} userId={user_id!r}", flush=True)
         if ev_type == "follow":
-            _handle_follow(reply_token, line_user_id)
+            await _handle_follow(user_id)
         elif ev_type == "message":
-            _handle_message(reply_token, line_user_id, ev.get("message") or {})
+            await _handle_message(user_id, ev.get("message") or {})

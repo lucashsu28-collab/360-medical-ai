@@ -45,19 +45,20 @@ async def search_doctor(name: str) -> list:
 
 
 async def get_doctor_detail(doc_seq: str) -> dict:
-    from playwright.async_api import async_playwright
+    import httpx
     from bs4 import BeautifulSoup
 
     url = f"{DETAIL_URL}?DOC_SEQ={doc_seq}"
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
-        await page.goto(url)
-        await page.wait_for_load_state("networkidle")
-        html = await page.content()
-        await browser.close()
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "zh-TW,zh;q=0.9",
+        "Referer": "https://ma.mohw.gov.tw/Accessibility/DOCSearch/MASearchDOC",
+    }
+    async with httpx.AsyncClient(timeout=15, verify=False, follow_redirects=True) as client:
+        resp = await client.get(url, headers=headers)
 
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(resp.text, "html.parser")
     data = {}
     for row in soup.select("div.row.fontsize"):
         spans = row.find_all("span", recursive=False)  # 只取直接子 span

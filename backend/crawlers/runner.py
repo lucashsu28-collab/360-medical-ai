@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from crawlers.nhi import download_all_clinics
+from crawlers.calc_legal_score import name_match
 
 # 13 家診所名稱（與 recommend 假資料對應）
 CLINIC_NAMES = [
@@ -42,7 +43,7 @@ async def run_batch() -> None:
     # 3. 對 13 家診所做本地名稱比對
     results = {}
     for name in CLINIC_NAMES:
-        matched = [r for r in all_records if name in r.get("HOSP_NAME", "")]
+        matched = [r for r in all_records if name_match(name, r.get("HOSP_NAME", ""))]
         results[name] = {
             "found": len(matched) > 0,
             "records": matched,
