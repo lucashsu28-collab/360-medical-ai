@@ -38,9 +38,14 @@ const DIM_CONFIG = [
   },
 ] as const;
 
+/** 五維度可為 number 或 null（null 時顯示「資料收集中」） */
+export type ScoreCardScores = {
+  [K in keyof ClinicScores]: ClinicScores[K] | null;
+};
+
 export interface ScoreCardProps {
-  /** 五維度分數（診所詳細頁用） */
-  scores: ClinicScores;
+  /** 五維度分數（診所詳細頁用）；null 顯示「資料收集中」 */
+  scores: ScoreCardScores;
   /** 是否顯示總分於上方，預設 true */
   showTotal?: boolean;
   /** 是否顯示每維度說明文字，預設 true */
@@ -59,6 +64,7 @@ export default function ScoreCard({
     <div className="overflow-hidden rounded-[14px] border-[1.5px] border-[var(--line)] bg-white shadow-[0_2px_8px_rgba(0,0,0,.04)] grid grid-cols-5">
       {DIM_CONFIG.map(({ key, label, desc, icon, color }, i) => {
         const value = scores[key];
+        const hasValue = value != null && typeof value === "number";
         return (
           <div
             key={key}
@@ -70,11 +76,11 @@ export default function ScoreCard({
             <div
               className="mb-1 text-[20px] font-medium"
               style={{
-                fontFamily: "var(--font-dm-mono)",
-                color,
+                fontFamily: hasValue ? "var(--font-dm-mono)" : undefined,
+                color: hasValue ? color : "var(--muted)",
               }}
             >
-              {value.toFixed(1)}
+              {hasValue ? value.toFixed(1) : "資料收集中"}
             </div>
             <div className="mb-1 text-[12px] font-bold text-[var(--ink)]">
               {label}
@@ -94,6 +100,9 @@ export default function ScoreCard({
     </div>
   );
 
+  const total = scores.total;
+  const hasTotal = total != null && typeof total === "number";
+
   return (
     <div>
       {showTotal && (
@@ -102,7 +111,7 @@ export default function ScoreCard({
             className="text-2xl font-medium text-[var(--blue)] md:text-3xl"
             style={{ fontFamily: "var(--font-dm-mono)" }}
           >
-            {scores.total.toFixed(1)}
+            {hasTotal ? total.toFixed(1) : "—"}
           </span>
           <span className="text-sm font-bold text-[var(--ink)]">綜合評分</span>
         </div>

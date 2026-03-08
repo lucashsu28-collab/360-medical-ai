@@ -47,6 +47,16 @@ async def list_clinics():
     return {"clinics": get_all_clinics()}
 
 
+@app.get("/api/clinics/{clinic_id}")
+async def get_clinic(clinic_id: str):
+    """回傳單一診所詳情，找不到回傳 404。"""
+    from services.recommend import get_clinic_by_id
+    clinic = get_clinic_by_id(clinic_id)
+    if not clinic:
+        raise HTTPException(status_code=404, detail="Clinic not found")
+    return clinic
+
+
 @app.post("/webhook/line", response_class=PlainTextResponse)
 async def line_webhook(request: Request):
     """

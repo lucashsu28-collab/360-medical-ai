@@ -1,15 +1,32 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { clinics } from "@/data/clinics";
-import type { Clinic } from "@/data/clinics";
 import ScoreCard from "@/components/ScoreCard";
 import FogReport from "@/components/FogReport";
+import type { ScoreCardScores } from "@/components/ScoreCard";
 
-function getClinicPhone(_clinic: Clinic): string {
-  return "02-1234-5678";
+/** 後端 API 回傳的單一診所格式 */
+interface ApiClinic {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  specialty?: string;
+  score?: number | null;
+  google_rating?: number | null;
+  google_review_count?: number | null;
+  website?: string | null;
+  cont_start?: string | null;
+  isPartner?: boolean;
+  treatments?: string[];
+  [key: string]: unknown;
 }
 
-/** 假資料：霧化區塊內的糾紛與負評彙整 */
+function formatContStart(s: string | null | undefined): string {
+  if (!s || s.length !== 8) return "—";
+  return `${s.slice(0, 4)}/${s.slice(4, 6)}/${s.slice(6, 8)}`;
+}
+
+/** 霧化區塊內的糾紛與負評彙整（保留原本 FogReport 內容） */
 function FakeFogContent({ clinicName }: { clinicName: string }) {
   return (
     <div className="space-y-6 p-6 text-[var(--ink)]">
@@ -42,7 +59,6 @@ function FakeFogContent({ clinicName }: { clinicName: string }) {
   );
 }
 
-/** 假資料：單則消費者評論 */
 function ReviewItem({
   author,
   date,
@@ -71,7 +87,6 @@ function ReviewItem({
   );
 }
 
-/** 假資料：消費者評論列表 */
 const FAKE_REVIEWS = [
   { author: "王**", date: "2024-02-15", rating: 4.5, text: "醫師解說清楚，術後恢復順利，整體滿意。唯一是預約要提早。" },
   { author: "林**", date: "2024-01-28", rating: 5, text: "環境乾淨，護理師很親切，雷射效果符合預期，會再回診。" },
@@ -86,15 +101,36 @@ export default async function ClinicDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const clinic = clinics.find((c) => c.id === id);
-  if (!clinic) notFound();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+  const res = await fetch(`${apiUrl}/api/clinics/${id}`, {
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) notFound();
+  const clinic = (await res.json()) as ApiClinic;
+  if (!clinic?.id) notFound();
 
-  const phone = getClinicPhone(clinic);
+  const phone = clinic.phone || "—";
+  const reviewCount = clinic.google_review_count ?? 0;
+
+  /** 真實資料目前只有 google_rating，其餘四維度顯示「資料收集中」 */
+  const scores: ScoreCardScores = {
+    judicial: null,
+    google: clinic.google_rating ?? null,
+    legal: null,
+    media: null,
+    social: null,
+    total: clinic.score ?? null,
+  };
+
+  const tags = clinic.treatments?.length
+    ? clinic.treatments
+    : clinic.specialty
+      ? [clinic.specialty]
+      : [];
 
   return (
     <div className="min-h-screen bg-[var(--paper)]">
       <div className="mx-auto max-w-[1060px] px-4 py-8 md:px-8">
-        {/* 麵包屑 */}
         <nav className="mb-6 text-[12px] text-[var(--muted)]" aria-label="麵包屑">
           <Link href="/" className="hover:text-[var(--blue)]">首頁</Link>
           <span className="mx-1.5">/</span>
@@ -104,7 +140,6 @@ export default async function ClinicDetailPage({
         </nav>
 
         <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
-          {/* 主內容 */}
           <main className="min-w-0 flex-1 space-y-8">
             {/* 基本資訊 */}
             <div className="rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,.04)]">
@@ -113,7 +148,7 @@ export default async function ClinicDetailPage({
                   className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[14px] border border-[var(--line)] bg-[var(--off)] text-2xl"
                   aria-hidden
                 >
-                  {clinic.imagePlaceholder}
+                  🏥
                 </div>
                 <div>
                   <h1
@@ -122,23 +157,45 @@ export default async function ClinicDetailPage({
                   >
                     {clinic.name}
                   </h1>
-                  <p className="mt-1 text-[13px] text-[var(--muted)]">
-                    {clinic.type} · {clinic.district}
-                  </p>
+                  {clinic.specialty && (
+                    <p className="mt-1 text-[13px] text-[var(--muted)]">
+                      {clinic.specialty}
+                    </p>
+                  )}
                 </div>
               </div>
               <ul className="space-y-2 text-[13px] text-[var(--ink2)]">
-                <li>地址：{clinic.address}</li>
+                <li>地址：{clinic.address || "—"}</li>
                 <li>電話：{phone}</li>
+                {clinic.cont_start && (
+                  <li>健保特約開始：{formatContStart(clinic.cont_start)}</li>
+                )}
               </ul>
+              {clinic.website && (
+                <p className="mt-3">
+                  <a
+                    href={clinic.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[13px] font-medium text-[var(--blue)] hover:underline"
+                  >
+                    官方網站 →
+                  </a>
+                </p>
+              )}
             </div>
 
-            {/* 五維度評分 */}
+            {/* 360 綜合評分 + 五維度（僅 Google 有值，其餘「資料收集中」） */}
             <section>
               <h2 className="mb-4 text-[16px] font-bold text-[var(--ink)]">
                 360 綜合評分
               </h2>
-              <ScoreCard scores={clinic.scores} showTotal={true} />
+              <div className="mb-3 text-[13px] text-[var(--muted)]">
+                {clinic.google_rating != null && (
+                  <>Google 評分 {clinic.google_rating.toFixed(1)} · {reviewCount.toLocaleString("zh-TW")} 則評論</>
+                )}
+              </div>
+              <ScoreCard scores={scores} showTotal={true} />
             </section>
 
             {/* 霧化完整報告 */}
@@ -160,7 +217,7 @@ export default async function ClinicDetailPage({
                 消費者評論
               </h2>
               <p className="mb-4 text-[13px] text-[var(--muted)]">
-                共 {clinic.reviewCount} 則評論 · 以下為精選摘要
+                共 {reviewCount} 則評論 · 以下為精選摘要
               </p>
               <div className="divide-y-0">
                 {FAKE_REVIEWS.map((r, i) => (
@@ -184,23 +241,25 @@ export default async function ClinicDetailPage({
                   ✦ 合作診所
                 </div>
               )}
-              <div>
-                <h3 className="mb-3 text-[14px] font-bold text-[var(--ink)]">
-                  療程項目
-                </h3>
-                <ul className="flex flex-wrap gap-2">
-                  {clinic.tags.map((tag) => (
-                    <li key={tag}>
-                      <Link
-                        href={`/treatments?category=laser&q=${encodeURIComponent(tag)}`}
-                        className="rounded-[99px] border border-[var(--line)] bg-white px-3 py-1.5 text-[12px] text-[var(--ink2)] transition-colors hover:border-[var(--blue)] hover:text-[var(--blue)]"
-                      >
-                        {tag}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {tags.length > 0 && (
+                <div>
+                  <h3 className="mb-3 text-[14px] font-bold text-[var(--ink)]">
+                    療程項目
+                  </h3>
+                  <ul className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <li key={tag}>
+                        <Link
+                          href={`/treatments?category=laser&q=${encodeURIComponent(tag)}`}
+                          className="rounded-[99px] border border-[var(--line)] bg-white px-3 py-1.5 text-[12px] text-[var(--ink2)] transition-colors hover:border-[var(--blue)] hover:text-[var(--blue)]"
+                        >
+                          {tag}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <a
                 href="https://lin.ee/6sTCRzm"
                 target="_blank"
