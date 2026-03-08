@@ -2,6 +2,7 @@
 360 醫療 AI 大調查 — LINE AI 智能顧問後端
 FastAPI 入口，LINE Webhook 接收、簽章驗證、事件處理。
 """
+import logging
 import os
 
 import httpx
@@ -97,6 +98,11 @@ async def api_send_report(request: Request):
         raise HTTPException(status_code=400, detail=str(e))
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 400:
+            try:
+                body = e.response.json()
+                logging.warning("send-report LINE 400: userId=%s state=%s line_response=%s", user_id, state, body)
+            except Exception:
+                pass
             raise HTTPException(status_code=400, detail="用戶尚未加好友，請先加入官方帳號")
         raise HTTPException(status_code=502, detail="LINE API 錯誤")
     return {"ok": True}

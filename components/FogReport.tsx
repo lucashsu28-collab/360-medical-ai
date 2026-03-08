@@ -36,18 +36,19 @@ export default function FogReport({
   const handleAddLine = () => {
     if (!lineEntry) return;
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
-    alert("LIFF ID: " + process.env.NEXT_PUBLIC_LIFF_ID);
-    if (liffId && lineEntry) {
-      const params = new URLSearchParams({
-        type: lineEntry.type,
-        id: lineEntry.id,
-        name: lineEntry.name,
-      });
-      window.open(`https://liff.line.me/${liffId}?${params}`, "_blank");
-    } else {
+    const params = new URLSearchParams({
+      type: lineEntry.type,
+      id: lineEntry.id,
+      name: lineEntry.name,
+    });
+    const url = liffId
+      ? `https://liff.line.me/${liffId}?${params}`
+      : LINE_ADD_URL;
+    if (!liffId) {
       localStorage.setItem("lineEntry", JSON.stringify(lineEntry));
-      window.open(LINE_ADD_URL, "_blank");
     }
+    alert("opening: " + url);
+    window.open(url, "_blank");
   };
 
   return (
@@ -67,13 +68,18 @@ export default function FogReport({
 
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 px-4 py-8">
         {lineEntry ? (
-          <button
-            type="button"
-            onClick={handleAddLine}
-            className="rounded-[8px] bg-[var(--blue)] px-6 py-3 text-center text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,70,184,.2)] transition-colors duration-200 hover:bg-[var(--blue2)]"
-          >
-            加 LINE 解鎖完整報告
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={handleAddLine}
+              className="rounded-[8px] bg-[var(--blue)] px-6 py-3 text-center text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,70,184,.2)] transition-colors duration-200 hover:bg-[var(--blue2)]"
+            >
+              加 LINE 解鎖完整報告
+            </button>
+            <p className="text-[11px] text-[var(--muted)] break-all max-w-[280px]">
+              {JSON.stringify(lineEntry)}
+            </p>
+          </>
         ) : (
           <a
             href={lineUrl}
