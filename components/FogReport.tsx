@@ -25,7 +25,6 @@ export interface FogReportProps {
 }
 
 const LINE_ADD_URL = "https://lin.ee/6sTCRzm";
-const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "";
 
 export default function FogReport({
   children,
@@ -35,21 +34,19 @@ export default function FogReport({
   className = "",
 }: FogReportProps) {
   const handleAddLine = () => {
-    if (lineEntry) {
-      if (LIFF_ID) {
-        const q = new URLSearchParams({
-          type: lineEntry.type,
-          id: lineEntry.id,
-          name: lineEntry.name,
-        });
-        window.open(`https://liff.line.me/${LIFF_ID}?${q.toString()}`, "_blank");
-      } else {
-        localStorage.setItem(
-          "lineEntry",
-          JSON.stringify({ type: lineEntry.type, id: lineEntry.id, name: lineEntry.name })
-        );
-        window.open(LINE_ADD_URL, "_blank");
-      }
+    if (!lineEntry) return;
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
+    console.log("LIFF ID:", process.env.NEXT_PUBLIC_LIFF_ID);
+    if (liffId && lineEntry) {
+      const params = new URLSearchParams({
+        type: lineEntry.type,
+        id: lineEntry.id,
+        name: lineEntry.name,
+      });
+      window.open(`https://liff.line.me/${liffId}?${params}`, "_blank");
+    } else {
+      localStorage.setItem("lineEntry", JSON.stringify(lineEntry));
+      window.open(LINE_ADD_URL, "_blank");
     }
   };
 
