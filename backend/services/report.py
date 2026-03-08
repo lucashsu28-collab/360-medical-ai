@@ -233,6 +233,56 @@ def build_clinic_flex_report(clinic: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _doctor_dimension_row(icon_label: str, value: float, collecting: bool = False) -> dict[str, Any]:
+    """醫師四維度單行：標籤+分數+進度條；collecting 時在分數旁加灰色「資料收集中」。"""
+    color = _score_color(value, is_legal=(icon_label.startswith("執照")))
+    max_val = 10.0
+    pct = int((value / max_val) * 100) if max_val else 0
+    score_contents: list[dict[str, Any]] = [
+        {"type": "text", "text": f"{value:.1f}", "size": "sm", "weight": "bold", "align": "end", "color": color},
+    ]
+    if collecting:
+        score_contents.append({"type": "text", "text": "資料收集中", "size": "xxs", "color": "#aaaaaa", "align": "end"})
+    return {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+            {
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {"type": "text", "text": icon_label, "size": "sm", "color": "#333333", "flex": 3},
+                    {"type": "box", "layout": "vertical", "contents": score_contents, "flex": 1},
+                ],
+            },
+            {
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [{"type": "filler"}],
+                        "width": f"{pct}%",
+                        "backgroundColor": color,
+                        "height": "4px",
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [{"type": "filler"}],
+                        "width": f"{100 - pct}%",
+                        "backgroundColor": "#eeeeee",
+                        "height": "4px",
+                    },
+                ],
+                "margin": "xs",
+            },
+        ],
+        "margin": "sm",
+    }
+
+
 def _review_keyword_tag(text: str) -> dict[str, Any]:
     """患者評價關鍵字標籤：同療程樣式但 color #2e7d32、backgroundColor #e8f5e9。"""
     return {
@@ -246,8 +296,11 @@ def _review_keyword_tag(text: str) -> dict[str, Any]:
     }
 
 
+MOHW_DOC_SEARCH_URL = "https://ma.mohw.gov.tw/Accessibility/DOCSearch/DocResults"
+
+
 def build_doctor_flex_report(doctor: dict[str, Any]) -> dict[str, Any]:
-    """衛福部醫師執照查驗報告（欄位：人員姓名、性別、執業縣市、主要執業科別等）。"""
+    """醫師報告：四維度評分+進度條、基本資料，參考診所報告樣式。"""
     name = doctor.get("人員姓名") or doctor.get("name") or "醫師"
     gender = doctor.get("性別", "")
     area = doctor.get("執業縣市", "")
@@ -255,52 +308,122 @@ def build_doctor_flex_report(doctor: dict[str, Any]) -> dict[str, Any]:
     reg_type = doctor.get("主要執登類別", "")
     cert = doctor.get("證書類別", "")
     expert = doctor.get("專科資格", "無")
-    doc_seq = doctor.get("doc_seq", "")
+
+    # 四維度：有衛福部資料則執照 10，其餘暫 0
+    legal_score = 10.0 if (doctor.get("人員姓名") or doctor.get("name")) else 0.0
+    judicial = 0.0
+    media = 0.0
+    social = 0.0
+    total = legal_score  # 暫時只用執照，之後可改為四維平均
+
+    # Header 深藍 #1a237e
+    header_contents: list[dict[str, Any]] = [
+        {"type": "text", "text": "👨‍⚕️ 醫師執照查驗報告", "size": "xs", "color": "#90caf9"},
+        {"type": "text", "text": name, "size": "xl", "weight": "bold", "color": "#ffffff", "wrap": True},
+        {"type": "text", "text": f"{area}・{specialty}", "size": "xs", "color": "#aaaaaa"},
+    ]
+
+    # Body 1: 總分 + 綠色 badge
+    score_section = {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+            {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": f"{total:.1f}", "size": "3xl", "weight": "bold", "color": "#00B900"},
+                    {"type": "text", "text": "綜合評分", "size": "xs", "color": "#888888"},
+                ],
+            },
+            {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [{"type": "text", "text": "✅ 執照查驗通過", "size": "xs", "color": "#00B900", "weight": "bold"}],
+                "backgroundColor": "#e8f5e9",
+                "cornerRadius": "20px",
+                "paddingAll": "8px",
+            },
+        ],
+    }
+
+    # Body 2: 四維度 + 進度條（0.0 旁加「資料收集中」）
+    dimension_rows = [
+        _doctor_dimension_row("執照合法性 ✅", legal_score, collecting=False),
+        _doctor_dimension_row("司法糾紛 ⚖️", judicial, collecting=True),
+        _doctor_dimension_row("新聞媒體 📰", media, collecting=True),
+        _doctor_dimension_row("社群口碑 💬", social, collecting=True),
+    ]
+
+    # Body 3: 基本資料
+    basic_rows: list[dict[str, Any]] = [
+        {"type": "separator", "margin": "md"},
+        {"type": "box", "layout": "horizontal", "contents": [
+            {"type": "text", "text": "性別", "size": "sm", "color": "#888888", "flex": 2},
+            {"type": "text", "text": gender, "size": "sm", "flex": 3},
+        ], "margin": "xs"},
+        {"type": "box", "layout": "horizontal", "contents": [
+            {"type": "text", "text": "執業縣市", "size": "sm", "color": "#888888", "flex": 2},
+            {"type": "text", "text": area, "size": "sm", "flex": 3},
+        ], "margin": "sm"},
+        {"type": "box", "layout": "horizontal", "contents": [
+            {"type": "text", "text": "主要科別", "size": "sm", "color": "#888888", "flex": 2},
+            {"type": "text", "text": specialty, "size": "sm", "flex": 3},
+        ], "margin": "sm"},
+        {"type": "box", "layout": "horizontal", "contents": [
+            {"type": "text", "text": "執登類別", "size": "sm", "color": "#888888", "flex": 2},
+            {"type": "text", "text": reg_type, "size": "sm", "flex": 3},
+        ], "margin": "sm"},
+        {"type": "box", "layout": "horizontal", "contents": [
+            {"type": "text", "text": "證書類別", "size": "sm", "color": "#888888", "flex": 2},
+            {"type": "text", "text": cert, "size": "sm", "flex": 3},
+        ], "margin": "sm"},
+        {"type": "box", "layout": "horizontal", "contents": [
+            {"type": "text", "text": "專科資格", "size": "sm", "color": "#888888", "flex": 2},
+            {"type": "text", "text": expert, "size": "sm", "color": "#00B900" if expert != "無" else "#888888", "flex": 3},
+        ], "margin": "sm"},
+        {"type": "separator", "margin": "lg"},
+        {"type": "text", "text": "✅ 衛福部醫事人員查驗通過", "size": "xs", "color": "#00B900", "margin": "md"},
+    ]
+
+    body_contents: list[dict[str, Any]] = [
+        score_section,
+        {"type": "separator"},
+        *dimension_rows,
+        *basic_rows,
+    ]
+
+    footer_contents: list[dict[str, Any]] = [
+        {
+            "type": "button",
+            "style": "primary",
+            "color": "#1a237e",
+            "action": {"type": "uri", "label": "🔍 查看衛福部資料", "uri": MOHW_DOC_SEARCH_URL},
+        },
+    ]
 
     return {
         "type": "bubble",
         "header": {
             "type": "box",
             "layout": "vertical",
-            "contents": [
-                {"type": "text", "text": "👨‍⚕️ 醫師執照查驗報告", "size": "xs", "color": "#00B900"},
-                {"type": "text", "text": name, "size": "xl", "weight": "bold", "color": "#ffffff", "wrap": True},
-                {"type": "text", "text": f"{area}・{specialty}", "size": "xs", "color": "#aaaaaa"},
-            ],
+            "spacing": "xs",
+            "contents": header_contents,
             "backgroundColor": "#1a237e",
             "paddingAll": "16px",
         },
         "body": {
             "type": "box",
             "layout": "vertical",
-            "contents": [
-                {"type": "box", "layout": "horizontal", "contents": [
-                    {"type": "text", "text": "性別", "size": "sm", "color": "#888888", "flex": 2},
-                    {"type": "text", "text": gender, "size": "sm", "flex": 3},
-                ]},
-                {"type": "box", "layout": "horizontal", "contents": [
-                    {"type": "text", "text": "執業縣市", "size": "sm", "color": "#888888", "flex": 2},
-                    {"type": "text", "text": area, "size": "sm", "flex": 3},
-                ], "margin": "sm"},
-                {"type": "box", "layout": "horizontal", "contents": [
-                    {"type": "text", "text": "主要科別", "size": "sm", "color": "#888888", "flex": 2},
-                    {"type": "text", "text": specialty, "size": "sm", "flex": 3},
-                ], "margin": "sm"},
-                {"type": "box", "layout": "horizontal", "contents": [
-                    {"type": "text", "text": "執登類別", "size": "sm", "color": "#888888", "flex": 2},
-                    {"type": "text", "text": reg_type, "size": "sm", "flex": 3},
-                ], "margin": "sm"},
-                {"type": "box", "layout": "horizontal", "contents": [
-                    {"type": "text", "text": "證書類別", "size": "sm", "color": "#888888", "flex": 2},
-                    {"type": "text", "text": cert, "size": "sm", "flex": 3},
-                ], "margin": "sm"},
-                {"type": "box", "layout": "horizontal", "contents": [
-                    {"type": "text", "text": "專科資格", "size": "sm", "color": "#888888", "flex": 2},
-                    {"type": "text", "text": expert, "size": "sm", "color": "#00B900" if expert != "無" else "#888888", "flex": 3},
-                ], "margin": "sm"},
-                {"type": "separator", "margin": "lg"},
-                {"type": "text", "text": "✅ 衛福部醫事人員查驗通過", "size": "xs", "color": "#00B900", "margin": "md"},
-            ],
+            "spacing": "sm",
+            "contents": body_contents,
             "paddingAll": "16px",
+        },
+        "footer": {
+            "type": "box",
+            "layout": "horizontal",
+            "spacing": "sm",
+            "contents": footer_contents,
+            "paddingAll": "12px",
         },
     }

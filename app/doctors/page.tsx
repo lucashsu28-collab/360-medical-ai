@@ -42,6 +42,12 @@ export default function DoctorsPage() {
   const [liffUserId, setLiffUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    const liffId = params.get("liff_user_id");
+    if (liffId) {
+      setLiffUserId(liffId);
+      return;
+    }
     const initLiff = async () => {
       try {
         const liff = (await import("@line/liff")).default;
@@ -59,7 +65,12 @@ export default function DoctorsPage() {
 
   const unlockDoctorReport = async (doc_seq: string) => {
     if (!liffUserId) {
-      alert("請從 LINE 開啟此頁面才能解鎖報告");
+      const liffId = process.env.NEXT_PUBLIC_LIFF_ID || "2009360724-7DzjBKHU";
+      const lineUrl = `https://liff.line.me/${liffId}?page=doctors`;
+      const confirmed = window.confirm("請從 LINE 開啟此頁面才能解鎖報告\n\n點確定前往 LINE 開啟");
+      if (confirmed) {
+        window.location.href = lineUrl;
+      }
       return;
     }
     try {
@@ -70,6 +81,12 @@ export default function DoctorsPage() {
       });
       if (res.ok) {
         alert("報告已傳送到您的 LINE！");
+        try {
+          const liff = (await import("@line/liff")).default;
+          if (liff.isInClient()) liff.closeWindow();
+        } catch {
+          // 非 LIFF 內開啟時不關閉
+        }
       } else {
         alert("傳送失敗，請稍後再試");
       }

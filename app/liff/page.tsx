@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import liff from "@line/liff";
 
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "";
@@ -8,6 +9,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 const LINE_ADD_URL = "https://lin.ee/6sTCRzm";
 
 export default function LiffPage() {
+  const router = useRouter();
   const [status, setStatus] = useState<"loading" | "ok" | "add_friend" | "error">("loading");
   const [message, setMessage] = useState("正在準備…");
 
@@ -34,6 +36,13 @@ export default function LiffPage() {
         const userId = profile.userId;
 
         const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+        const page = params.get("page");
+
+        if (page === "doctors") {
+          router.push(`/doctors?liff_user_id=${userId}`);
+          return;
+        }
+
         const type = params.get("type") || "";
         const id = params.get("id") || "";
         const name = params.get("name") || "";
