@@ -36,7 +36,7 @@ export default function FogReport({
   const handleAddLine = () => {
     if (!lineEntry) return;
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
-    console.log("LIFF ID:", process.env.NEXT_PUBLIC_LIFF_ID);
+    alert("LIFF ID: " + process.env.NEXT_PUBLIC_LIFF_ID);
     if (liffId && lineEntry) {
       const params = new URLSearchParams({
         type: lineEntry.type,
