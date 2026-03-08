@@ -13,6 +13,7 @@ from fastapi.responses import PlainTextResponse
 from config import LINE_CHANNEL_SECRET
 from webhook.line import verify_signature, handle_webhook_body, set_liff_state, push_report_to_user
 from services.recommend import get_all_clinics
+from crawlers.doctor_mohw import search_doctor, get_doctor_detail
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
@@ -45,6 +46,18 @@ async def health():
 async def list_clinics():
     """回傳真實診所列表（來自 backend/data/clinics_real.json，前 50 家）。"""
     return {"clinics": get_all_clinics()}
+
+
+@app.get("/api/doctors")
+async def api_search_doctors(name: str):
+    results = await search_doctor(name)
+    return {"doctors": results, "total": len(results)}
+
+
+@app.get("/api/doctors/detail")
+async def api_get_doctor_detail(doc_seq: str):
+    detail = await get_doctor_detail(doc_seq)
+    return {"doctor": detail}
 
 
 @app.get("/api/clinics/{clinic_id}")

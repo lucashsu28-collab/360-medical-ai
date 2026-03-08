@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ScoreCard from "@/components/ScoreCard";
 import FogReport from "@/components/FogReport";
+import DoctorSearch from "@/components/DoctorSearch";
 import type { ScoreCardScores } from "@/components/ScoreCard";
 
 /** 後端 API 回傳的單一診所格式 */
@@ -260,6 +261,12 @@ export default async function ClinicDetailPage({
                   </ul>
                 </div>
               )}
+              <div>
+                <h3 className="mb-3 text-[14px] font-bold text-[var(--ink)]">
+                  本院醫師
+                </h3>
+                <DoctorSearch embedded />
+              </div>
               <a
                 href="https://lin.ee/6sTCRzm"
                 target="_blank"

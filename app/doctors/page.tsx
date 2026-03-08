@@ -1,121 +1,102 @@
-import { Suspense } from "react";
-import SearchBox from "@/components/SearchBox";
-import FilterBar from "@/components/FilterBar";
-import DoctorCard from "@/components/DoctorCard";
-import { doctors } from "@/data/doctors";
-import type { Doctor } from "@/data/doctors";
+"use client";
 
-const CITY_MAP: Record<string, string> = {
-  taipei: "台北市",
-  newtaipei: "新北市",
-  taoyuan: "桃園市",
-  taichung: "台中市",
-  tainan: "台南市",
-  kaohsiung: "高雄市",
-};
+import Link from "next/link";
+import { useState, useCallback } from "react";
 
-/** 專長 param value -> doctor.specialty 比對用 */
-const SPEC_MAP: Record<string, string> = {
-  laser: "雷射",
-  injection: "微整形",
-  surgery: "整形外科",
-  skin: "皮膚科",
-};
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-/** 專科資格 param value -> title 關鍵字 */
-const CERT_MAP: Record<string, string> = {
-  plastic: "整形外科專科",
-  dermatology: "皮膚科專科",
-  general: "一般外科",
-};
-
-function getParamList(
-  searchParams: { [key: string]: string | string[] | undefined },
-  key: string
-): string[] {
-  const v = searchParams[key];
-  if (v == null) return [];
-  return Array.isArray(v) ? v : [v];
+interface Doctor {
+  name: string;
+  area: string;
+  doc_seq: string;
 }
 
-function filterDoctors(
-  list: Doctor[],
-  searchParams: { [key: string]: string | string[] | undefined }
-): Doctor[] {
-  const districts = getParamList(searchParams, "district");
-  const specs = getParamList(searchParams, "spec");
-  const cert = searchParams.cert;
-  const showDispute = searchParams.showDispute === "1";
-
-  return list.filter((d) => {
-    if (districts.length > 0) {
-      const cities = districts.map((x) => CITY_MAP[x]).filter(Boolean);
-      if (cities.length > 0 && !cities.includes(d.district)) return false;
-    }
-    if (specs.length > 0) {
-      const specialties = specs.map((s) => SPEC_MAP[s]).filter(Boolean);
-      if (specialties.length > 0 && !specialties.includes(d.specialty))
-        return false;
-    }
-    if (cert != null && String(cert)) {
-      const keyword = CERT_MAP[String(cert)];
-      if (keyword && !d.title.includes(keyword)) return false;
-    }
-    if (showDispute && d.disputeCount === 0) return false;
-    return true;
-  });
+interface DoctorDetail {
+  人員姓名: string;
+  性別: string;
+  執業縣市: string;
+  主要執業科別: string;
+  主要執登類別: string;
+  證書類別: string;
+  專科資格: string;
 }
 
-const FILTER_GROUPS = [
-  {
-    type: "multi" as const,
-    param: "district",
-    label: "地區",
-    options: [
-      { value: "taipei", label: "台北市" },
-      { value: "newtaipei", label: "新北市" },
-      { value: "taoyuan", label: "桃園市" },
-      { value: "taichung", label: "台中市" },
-      { value: "tainan", label: "台南市" },
-      { value: "kaohsiung", label: "高雄市" },
-    ],
-  },
-  {
-    type: "multi" as const,
-    param: "spec",
-    label: "專長",
-    options: [
-      { value: "laser", label: "雷射" },
-      { value: "injection", label: "微整形" },
-      { value: "surgery", label: "整形外科" },
-      { value: "skin", label: "皮膚科" },
-    ],
-  },
-  {
-    type: "single" as const,
-    param: "cert",
-    label: "專科資格",
-    options: [
-      { value: "plastic", label: "整形外科專科" },
-      { value: "dermatology", label: "皮膚科專科" },
-      { value: "general", label: "一般外科" },
-    ],
-  },
-  {
-    type: "toggle" as const,
-    param: "showDispute",
-    label: "⚠️ 顯示有糾紛紀錄醫師",
-  },
+const DETAIL_KEYS: (keyof DoctorDetail)[] = [
+  "人員姓名",
+  "性別",
+  "執業縣市",
+  "主要執業科別",
+  "主要執登類別",
+  "證書類別",
+  "專科資格",
 ];
 
-export default async function DoctorsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const params = await searchParams;
-  const filtered = filterDoctors(doctors, params);
-  const q = typeof params.q === "string" ? params.q : "";
+export default function DoctorsPage() {
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [expandedDocSeq, setExpandedDocSeq] = useState<string | null>(null);
+  const [detail, setDetail] = useState<DoctorDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const search = useCallback(async () => {
+    const name = query.trim();
+    if (!name) {
+      setDoctors([]);
+      setExpandedDocSeq(null);
+      setDetail(null);
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    setExpandedDocSeq(null);
+    setDetail(null);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/doctors?name=${encodeURIComponent(name)}`
+      );
+      if (!res.ok) throw new Error("搜尋失敗");
+      const data = await res.json();
+      setDoctors(data.doctors ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "搜尋失敗");
+      setDoctors([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [query]);
+
+  const toggleDetail = useCallback(async (docSeq: string) => {
+    if (expandedDocSeq === docSeq) {
+      setExpandedDocSeq(null);
+      setDetail(null);
+      return;
+    }
+    setExpandedDocSeq(docSeq);
+    setDetail(null);
+    setDetailLoading(true);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/doctors/detail?doc_seq=${encodeURIComponent(docSeq)}`
+      );
+      if (!res.ok) throw new Error("取得詳細資料失敗");
+      const data = await res.json();
+      setDetail(data.doctor ?? {});
+    } catch {
+      setDetail({
+        人員姓名: "—",
+        性別: "—",
+        執業縣市: "—",
+        主要執業科別: "—",
+        主要執登類別: "—",
+        證書類別: "—",
+        專科資格: "—",
+      });
+    } finally {
+      setDetailLoading(false);
+    }
+  }, [expandedDocSeq]);
 
   return (
     <div className="min-h-screen bg-[var(--paper)]">
@@ -123,71 +104,115 @@ export default async function DoctorsPage({
       <div className="border-b border-[var(--line)] bg-white px-4 pb-8 pt-10 text-center md:px-6 md:pt-10 md:pb-8">
         <div className="relative z-10 mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,70,184,.1)] bg-[var(--blue-lt)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--blue)]">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--blue)]" />
-          全台 {doctors.length}+ 位醫師
+          衛福部醫事人員查詢
         </div>
         <h2
           className="relative z-10 mb-2 text-2xl font-[900] tracking-tight text-[var(--ink)] md:text-3xl lg:text-4xl"
           style={{ fontFamily: "var(--font-noto-serif-tc)" }}
         >
-          查<span className="text-[var(--blue)]">醫師</span>
+          醫師<span className="text-[var(--blue)]">查詢</span>
         </h2>
         <p className="relative z-10 mb-6 text-sm text-[var(--muted)]">
-          查執照・查糾紛・看現職診所評鑑分數
+          輸入醫師姓名，查詢執業縣市、科別、證書類別
         </p>
-        <SearchBox
-          variant="compact"
-          icon="👨‍⚕️"
-          placeholder="輸入醫師姓名…"
-          searchPath="/doctors"
-          defaultValue={q}
-          buttonText="搜尋"
-        />
+        <div className="relative z-10 mx-auto flex max-w-[560px] flex-wrap items-stretch gap-2 rounded-[12px] border border-[var(--line)] bg-white shadow-[0_6px_24px_rgba(0,0,0,.09)] focus-within:border-[var(--blue)] focus-within:shadow-[0_6px_24px_rgba(0,70,184,.14)]">
+          <span className="flex items-center pl-[18px] pr-2 text-[18px]" aria-hidden>👤</span>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && search()}
+            placeholder="輸入醫師姓名…"
+            className="min-w-0 flex-1 py-[14px] text-[15px] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none"
+            aria-label="醫師姓名"
+          />
+          <button
+            type="button"
+            onClick={search}
+            disabled={loading}
+            className="m-[7px] rounded-[8px] bg-[var(--blue)] px-[22px] py-2.5 text-[14px] font-bold text-white transition-colors hover:bg-[var(--blue2)] disabled:opacity-60"
+          >
+            {loading ? "搜尋中…" : "搜尋"}
+          </button>
+        </div>
       </div>
 
-      <Suspense fallback={<div className="h-14 border-b border-[var(--line)] bg-white" />}>
-        <FilterBar groups={FILTER_GROUPS} stickyTop={106} />
-      </Suspense>
-
+      {/* Results */}
       <div className="mx-auto max-w-[1060px] px-4 py-6 md:px-8 md:py-8">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[13px] text-[var(--muted)]">
-            共找到 <strong className="font-bold text-[var(--ink)]">{filtered.length}</strong> 位醫師
+        <nav className="mb-6 text-[12px] text-[var(--muted)]" aria-label="麵包屑">
+          <Link href="/" className="hover:text-[var(--blue)]">首頁</Link>
+          <span className="mx-1.5">/</span>
+          <span className="text-[var(--ink)]">醫師查詢</span>
+        </nav>
+
+        {error && (
+          <p className="mb-4 text-[13px] text-[var(--red)]">{error}</p>
+        )}
+
+        {doctors.length > 0 && (
+          <p className="mb-4 text-[13px] text-[var(--muted)]">
+            共找到 <strong className="font-bold text-[var(--ink)]">{doctors.length}</strong> 筆
           </p>
-          <div className="flex items-center gap-2 text-[13px] text-[var(--muted)]">
-            <span>排序：</span>
-            <select
-              className="rounded-lg border-[1.5px] border-[var(--line2)] bg-white px-2.5 py-1.5 text-[12px] text-[var(--ink)] outline-none"
-              aria-label="排序"
-            >
-              <option>所屬診所評分最高</option>
-              <option>執業年資最長</option>
-              <option>糾紛最少</option>
-            </select>
-          </div>
-        </div>
+        )}
+
         <div className="flex flex-col gap-2.5">
-          {filtered.length === 0 ? (
-            <div className="rounded-[14px] border border-[var(--line)] bg-white py-16 text-center text-[var(--muted)]">
-              目前沒有符合條件的醫師，試試放寬篩選條件。
+          {loading && (
+            <div className="rounded-[14px] border border-[var(--line)] bg-white py-12 text-center text-[var(--muted)]">
+              搜尋中…
             </div>
-          ) : (
-            filtered.map((doctor) => (
-              <DoctorCard key={doctor.id} {...doctor} />
-            ))
           )}
+          {!loading && query.trim() && doctors.length === 0 && !error && (
+            <div className="rounded-[14px] border border-[var(--line)] bg-white py-16 text-center text-[var(--muted)]">
+              查無符合的醫師，請試試其他關鍵字。
+            </div>
+          )}
+          {!loading &&
+            doctors.map((d) => (
+              <div
+                key={d.doc_seq}
+                className="overflow-hidden rounded-[14px] border-[1.5px] border-[var(--line)] bg-white transition-all duration-[0.22s] hover:border-[var(--blue)] hover:shadow-[0_12px_40px_rgba(0,0,0,.1)]"
+              >
+                <div className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4">
+                  <div>
+                    <div className="text-[16px] font-bold text-[var(--ink)]">
+                      {d.name}
+                    </div>
+                    <div className="text-[12px] text-[var(--muted)]">
+                      {d.area}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleDetail(d.doc_seq)}
+                    className="rounded-[8px] border border-[var(--line)] bg-[var(--off)] px-4 py-2 text-[13px] font-bold text-[var(--ink2)] transition-colors hover:border-[var(--blue)] hover:text-[var(--blue)]"
+                  >
+                    {expandedDocSeq === d.doc_seq ? "收合詳細" : "查看詳細"}
+                  </button>
+                </div>
+                {expandedDocSeq === d.doc_seq && (
+                  <div className="border-t border-[var(--line)] bg-[var(--off)] px-5 py-4">
+                    {detailLoading ? (
+                      <p className="text-[13px] text-[var(--muted)]">
+                        載入中…
+                      </p>
+                    ) : detail ? (
+                      <dl className="grid gap-x-4 gap-y-2 text-[13px] sm:grid-cols-[auto_1fr]">
+                        {DETAIL_KEYS.map((key) => (
+                          <div key={key} className="contents">
+                            <dt className="text-[var(--muted)]">{key}</dt>
+                            <dd className="text-[var(--ink2)]">
+                              {detail[key] ?? "—"}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            ))}
         </div>
       </div>
-
-      <footer className="mt-auto border-t border-[var(--line)] bg-[var(--off)] px-6 py-5">
-        <div className="mx-auto flex max-w-[1060px] flex-wrap items-center justify-between gap-3">
-          <p className="text-[11px] text-[var(--muted)]">
-            © 360醫療AI大調查 · 評鑑分數由系統自動計算，不接受購買或修改
-          </p>
-          <span className="rounded-full bg-[var(--green-lt)] px-3 py-1 text-[10px] font-bold text-[var(--green)]">
-            ✅ 系統運作中
-          </span>
-        </div>
-      </footer>
     </div>
   );
 }

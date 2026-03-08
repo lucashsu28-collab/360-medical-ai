@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/clinics", label: "查診所" },
-  { href: "/doctors", label: "查醫師" },
+  { href: "/doctors", label: "醫師查詢" },
   { href: "/treatments", label: "查療程" },
   { href: "/partners", label: "合作診所" },
   { href: "/promotions", label: "精選優惠" },
