@@ -3,6 +3,7 @@
 import type { LineEntry } from "./FogReport";
 
 const LINE_ADD_URL = "https://lin.ee/6sTCRzm";
+const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "";
 
 export default function AddLineButton({
   lineEntry,
@@ -12,15 +13,20 @@ export default function AddLineButton({
   label?: string;
 }) {
   const handleClick = () => {
-    localStorage.setItem(
-      "lineEntry",
-      JSON.stringify({
+    if (LIFF_ID) {
+      const q = new URLSearchParams({
         type: lineEntry.type,
         id: lineEntry.id,
         name: lineEntry.name,
-      })
-    );
-    window.open(LINE_ADD_URL, "_blank");
+      });
+      window.open(`https://liff.line.me/${LIFF_ID}?${q.toString()}`, "_blank");
+    } else {
+      localStorage.setItem(
+        "lineEntry",
+        JSON.stringify({ type: lineEntry.type, id: lineEntry.id, name: lineEntry.name })
+      );
+      window.open(LINE_ADD_URL, "_blank");
+    }
   };
   return (
     <button

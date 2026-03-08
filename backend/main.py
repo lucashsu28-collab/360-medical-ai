@@ -2,7 +2,10 @@
 360 醫療 AI 大調查 — LINE AI 智能顧問後端
 FastAPI 入口，LINE Webhook 接收、簽章驗證、事件處理。
 """
+import os
+
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 
 from config import LINE_CHANNEL_SECRET
@@ -12,6 +15,16 @@ app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
     description="LINE Webhook 與 AI 顧問後端",
     version="0.1.0",
+)
+
+# 允許 LIFF 前端（Vercel）跨域呼叫 POST /api/liff-state
+_allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://360-medical-ai.vercel.app").strip().split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in _allowed_origins if o.strip()],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 

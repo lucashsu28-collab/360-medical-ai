@@ -3,7 +3,7 @@
 /**
  * 霧化報告：用於單一診所/醫師詳細頁的完整報告區塊。
  * 內容以 blur 遮罩，CTA 引導加 LINE 解鎖。
- * 若提供 lineEntry，按鈕會先寫入 localStorage 再開 LINE（帶參數加好友替代方案）。
+ * 若提供 lineEntry，按鈕會開啟 LIFF 頁（帶參數加好友，加好友後自動發報告）。
  */
 export interface LineEntry {
   type: "clinic" | "doctor";
@@ -16,7 +16,7 @@ export interface FogReportProps {
   children: React.ReactNode;
   /** LINE 連結（未提供 lineEntry 時使用） */
   lineUrl?: string;
-  /** 帶參數加 LINE：點擊時寫入 localStorage 後開啟 LINE，加好友後可傳「報告:id」取得報告 */
+  /** 帶參數加 LINE：點擊時開啟 LIFF，寫入 state 後加好友可自動收到報告 */
   lineEntry?: LineEntry;
   /** 可選副標或說明，顯示在 CTA 下方 */
   subtitle?: string;
@@ -25,6 +25,7 @@ export interface FogReportProps {
 }
 
 const LINE_ADD_URL = "https://lin.ee/6sTCRzm";
+const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "";
 
 export default function FogReport({
   children,
@@ -35,15 +36,20 @@ export default function FogReport({
 }: FogReportProps) {
   const handleAddLine = () => {
     if (lineEntry) {
-      localStorage.setItem(
-        "lineEntry",
-        JSON.stringify({
+      if (LIFF_ID) {
+        const q = new URLSearchParams({
           type: lineEntry.type,
           id: lineEntry.id,
           name: lineEntry.name,
-        })
-      );
-      window.open(LINE_ADD_URL, "_blank");
+        });
+        window.open(`https://liff.line.me/${LIFF_ID}?${q.toString()}`, "_blank");
+      } else {
+        localStorage.setItem(
+          "lineEntry",
+          JSON.stringify({ type: lineEntry.type, id: lineEntry.id, name: lineEntry.name })
+        );
+        window.open(LINE_ADD_URL, "_blank");
+      }
     }
   };
 
