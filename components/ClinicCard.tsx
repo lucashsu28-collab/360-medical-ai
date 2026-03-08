@@ -16,18 +16,28 @@ export interface ClinicCardProps {
   /** 診所 id，用於 /clinics/[id] */
   id: string;
   name: string;
-  type: string;
+  /** 舊版：type；API：用 specialty 取代 */
+  type?: string;
   address?: string;
   district?: string;
-  tags: string[];
-  isPartner: boolean;
-  scores: ClinicScores;
-  reviewCount: number;
-  /** "row" = 列表頁橫式（縮圖+五維度點+查看評鑑）；"grid" = 首頁格狀（上圖下文字） */
+  /** 舊版標籤；API 無則不顯示 */
+  tags?: string[];
+  isPartner?: boolean;
+  /** 舊版五維度；API 用 score + google_rating 取代 */
+  scores?: ClinicScores;
+  /** 舊版評論數；API 傳 review_count */
+  reviewCount?: number;
+  /** API：360 綜合評分（10 分制） */
+  score?: number;
+  /** API：科別 */
+  specialty?: string | null;
+  /** API：Google 評分 */
+  google_rating?: number;
+  /** API：Google 評論數 */
+  review_count?: number;
+  /** "row" = 列表頁橫式；"grid" = 首頁格狀 */
   variant?: "row" | "grid";
-  /** 詳頁路徑前綴，預設 /clinics；合作診所列表可傳 /partners */
   detailBasePath?: string;
-  /** 縮圖：圖片 URL 或 emoji 佔位（如 🏥），不傳則用預設 emoji */
   imageUrl?: string | null;
   imagePlaceholder?: string;
 }
@@ -64,10 +74,14 @@ export default function ClinicCard({
   type,
   address,
   district,
-  tags,
-  isPartner,
+  tags = [],
+  isPartner = false,
   scores,
   reviewCount,
+  score,
+  specialty,
+  google_rating,
+  review_count,
   variant = "row",
   detailBasePath = "/clinics",
   imageUrl,
@@ -78,6 +92,11 @@ export default function ClinicCard({
   const gridIndex = thumbIndex % GRID_GRADIENTS.length;
   const thumbBg = THUMB_GRADIENTS[thumbIndex];
   const gridBg = GRID_GRADIENTS[gridIndex];
+  /** 使用 API 格式（有 score / google_rating）時為 true */
+  const useApiLayout = score != null && google_rating != null;
+  const totalScore = useApiLayout ? score : scores?.total ?? 0;
+  const displayReviewCount = useApiLayout ? (review_count ?? 0) : (reviewCount ?? 0);
+  const addressShort = address ? (address.length > 20 ? `${address.slice(0, 20)}…` : address) : "";
 
   if (variant === "grid") {
     return (
@@ -124,10 +143,10 @@ export default function ClinicCard({
                 className="text-[22px] font-medium text-[var(--blue)]"
                 style={{ fontFamily: "var(--font-dm-mono)" }}
               >
-                {scores.total.toFixed(1)}
+                {totalScore.toFixed(1)}
               </div>
               <div className="text-[11px] text-[var(--muted)]">
-                {formatReviewCount(reviewCount)}
+                {formatReviewCount(displayReviewCount)}
               </div>
             </div>
             <span className="text-[18px] text-[var(--light)] transition-colors duration-[0.18s] group-hover:text-[var(--blue)]" aria-hidden>›</span>
@@ -161,49 +180,69 @@ export default function ClinicCard({
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center px-5 py-4">
         <div className="text-[16px] font-bold text-[var(--ink)] mb-0.5">{name}</div>
-        <span className="mb-1.5 inline-block w-fit rounded-full bg-[var(--blue-lt)] px-2 py-0.5 text-[10px] font-bold text-[var(--blue)]">
-          {type}
-        </span>
-        {address && (
-          <div className="mb-2 text-[12px] text-[var(--muted)]">📍 {address}</div>
-        )}
-        <div className="mb-2.5 flex flex-wrap gap-1.5">
-          {tags.slice(0, 6).map((t) => (
-            <span
-              key={t}
-              className="rounded-full bg-[var(--off)] px-2 py-0.5 text-[10px] text-[var(--muted)]"
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          {DIM_CONFIG.map(({ key, label, color }) => (
-            <div
-              key={key}
-              className="flex items-center gap-1 text-[11px] text-[var(--muted)]"
-            >
-              <span
-                className="h-[7px] w-[7px] flex-shrink-0 rounded-full"
-                style={{ backgroundColor: color }}
-              />
-              {label} {scores[key].toFixed(1)}
+        {useApiLayout ? (
+          <>
+            {specialty && (
+              <span className="mb-1.5 inline-block w-fit rounded-full bg-[var(--blue-lt)] px-2 py-0.5 text-[10px] font-bold text-[var(--blue)]">
+                {specialty}
+              </span>
+            )}
+            {addressShort && (
+              <div className="mb-2 text-[12px] text-[var(--muted)]">📍 {addressShort}</div>
+            )}
+            <div className="text-[12px] text-[var(--muted)]">
+              Google {google_rating!.toFixed(1)} · {formatReviewCount(displayReviewCount)}
             </div>
-          ))}
-        </div>
+          </>
+        ) : (
+          <>
+            <span className="mb-1.5 inline-block w-fit rounded-full bg-[var(--blue-lt)] px-2 py-0.5 text-[10px] font-bold text-[var(--blue)]">
+              {type}
+            </span>
+            {address && (
+              <div className="mb-2 text-[12px] text-[var(--muted)]">📍 {address}</div>
+            )}
+            <div className="mb-2.5 flex flex-wrap gap-1.5">
+              {tags.slice(0, 6).map((t) => (
+                <span
+                  key={t}
+                  className="rounded-full bg-[var(--off)] px-2 py-0.5 text-[10px] text-[var(--muted)]"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+            {scores && (
+              <div className="flex flex-wrap gap-2.5">
+                {DIM_CONFIG.map(({ key, label, color }) => (
+                  <div
+                    key={key}
+                    className="flex items-center gap-1 text-[11px] text-[var(--muted)]"
+                  >
+                    <span
+                      className="h-[7px] w-[7px] flex-shrink-0 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                    {label} {scores[key].toFixed(1)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
       <div className="flex w-[120px] flex-shrink-0 flex-col items-center justify-center gap-0.5 border-l border-[var(--line)] p-4">
         <div
           className="text-[28px] font-medium leading-none text-[var(--blue)]"
           style={{ fontFamily: "var(--font-dm-mono)" }}
         >
-          {scores.total.toFixed(1)}
+          {totalScore.toFixed(1)}
         </div>
         <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--muted)]">
           綜合評分
         </div>
         <div className="mt-0.5 text-[10px] text-[var(--muted)]">
-          {formatReviewCount(reviewCount)}
+          {formatReviewCount(displayReviewCount)}
         </div>
         <span
           className="mt-2 w-full rounded-md bg-[var(--blue-lt)] py-1.5 text-center text-[11px] font-bold text-[var(--blue)] transition-colors duration-[0.18s] hover:bg-[var(--blue)] hover:text-white"

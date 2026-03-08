@@ -3,7 +3,7 @@ import asyncio
 import json
 from pathlib import Path
 
-from backend.crawlers.nhi import download_all_clinics
+from crawlers.nhi import download_all_clinics
 
 # 13 家診所名稱（與 recommend 假資料對應）
 CLINIC_NAMES = [

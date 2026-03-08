@@ -12,7 +12,7 @@ from fastapi.responses import PlainTextResponse
 
 from config import LINE_CHANNEL_SECRET
 from webhook.line import verify_signature, handle_webhook_body, set_liff_state, push_report_to_user
-from backend.services.recommend import get_all_clinics
+from services.recommend import get_all_clinics
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",

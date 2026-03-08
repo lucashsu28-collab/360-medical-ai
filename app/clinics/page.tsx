@@ -2,8 +2,20 @@ import { Suspense } from "react";
 import SearchBox from "@/components/SearchBox";
 import FilterBar from "@/components/FilterBar";
 import ClinicCard from "@/components/ClinicCard";
-import { clinics } from "@/data/clinics";
-import type { Clinic } from "@/data/clinics";
+
+/** 後端 API 回傳的診所格式 */
+export interface ApiClinic {
+  id: string;
+  name: string;
+  address: string;
+  phone?: string;
+  specialty?: string;
+  score?: number | null;
+  google_rating?: number | null;
+  google_review_count?: number | null;
+  isPartner?: boolean;
+  [key: string]: unknown;
+}
 
 const CITY_MAP: Record<string, string> = {
   taipei: "台北市",
@@ -31,30 +43,32 @@ function getParamList(
 }
 
 function filterClinics(
-  list: Clinic[],
+  list: ApiClinic[],
   searchParams: { [key: string]: string | string[] | undefined }
-): Clinic[] {
+): ApiClinic[] {
   const districts = getParamList(searchParams, "district");
   const types = getParamList(searchParams, "type");
   const scoreMin = searchParams.scoreMin;
   const partnerOnly = getParamList(searchParams, "partnerOnly").includes("1");
 
+  const q = typeof searchParams.q === "string" ? searchParams.q.trim() : "";
   return list.filter((c) => {
+    if (q && !(c.name || "").includes(q)) return false;
     if (districts.length > 0) {
       const cities = districts.map((d) => CITY_MAP[d]).filter(Boolean);
-      if (cities.length > 0 && !cities.some((city) => c.address.startsWith(city)))
+      if (cities.length > 0 && !cities.some((city) => (c.address || "").startsWith(city)))
         return false;
     }
     if (types.length > 0) {
       const keywords = types.flatMap((t) => TYPE_KEYWORDS[t] ?? []);
-      const match = keywords.some((kw) =>
-        c.tags.some((tag) => tag.includes(kw))
-      );
+      const specialtyStr = c.specialty || "";
+      const match = keywords.some((kw) => specialtyStr.includes(kw));
       if (!match) return false;
     }
     if (scoreMin != null) {
       const min = parseFloat(String(scoreMin));
-      if (!Number.isNaN(min) && c.scores.total < min) return false;
+      const s = c.score ?? 0;
+      if (!Number.isNaN(min) && s < min) return false;
     }
     if (partnerOnly && !c.isPartner) return false;
     return true;
@@ -109,8 +123,13 @@ export default async function ClinicsPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+  const res = await fetch(`${apiUrl}/api/clinics`, { next: { revalidate: 3600 } });
+  const { clinics } = (await res.json()) as { clinics: ApiClinic[] };
+  const list = Array.isArray(clinics) ? clinics : [];
+
   const params = await searchParams;
-  const filtered = filterClinics(clinics, params);
+  const filtered = filterClinics(list, params);
   const q = typeof params.q === "string" ? params.q : "";
 
   return (
@@ -119,7 +138,7 @@ export default async function ClinicsPage({
       <div className="border-b border-[var(--line)] bg-white px-4 pb-8 pt-10 text-center md:px-6 md:pt-10 md:pb-8">
         <div className="relative z-10 mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,70,184,.1)] bg-[var(--blue-lt)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--blue)]">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--blue)]" />
-          全台 {clinics.length} 家診所
+          全台 {list.length} 家診所
         </div>
         <h2
           className="relative z-10 mb-2 text-2xl font-[900] tracking-tight text-[var(--ink)] md:text-3xl lg:text-4xl"
@@ -170,7 +189,17 @@ export default async function ClinicsPage({
             </div>
           ) : (
             filtered.map((clinic) => (
-              <ClinicCard key={clinic.id} {...clinic} variant="row" />
+              <ClinicCard
+                key={clinic.id}
+                id={clinic.id}
+                name={clinic.name}
+                address={clinic.address}
+                score={clinic.score ?? undefined}
+                specialty={clinic.specialty}
+                google_rating={clinic.google_rating ?? undefined}
+                review_count={clinic.google_review_count ?? undefined}
+                variant="row"
+              />
             ))
           )}
         </div>

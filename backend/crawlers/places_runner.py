@@ -1,7 +1,7 @@
 import asyncio
 import json
 import os
-from backend.crawlers.google_places import get_clinic_places_info
+from crawlers.google_places import get_clinic_places_info
 
 async def run():
     # 讀取前50家
