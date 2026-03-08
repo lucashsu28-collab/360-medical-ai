@@ -197,6 +197,26 @@ export default async function DoctorDetailPage({
           </ul>
         </section>
 
+        {/* 霧化報告：完整醫師評鑑報告需加 LINE 解鎖 */}
+        <section>
+          <h2 className="mb-4 text-[16px] font-bold text-[var(--ink)]">
+            完整報告（司法／申訴／負評彙整）
+          </h2>
+          <FogReport
+            lineEntry={{ type: "doctor", id: doctor.id, name: doctor.name }}
+            subtitle="解鎖後可查看判決書案號、申訴案進度與完整內容"
+          >
+            <div className="p-4 space-y-2">
+              <p className="text-sm font-bold">完整醫師評鑑報告</p>
+              <p className="text-xs text-gray-500">司法判決書全文</p>
+              <p className="text-xs text-gray-500">申訴案件追蹤紀錄</p>
+              <p className="text-xs text-gray-500">患者負評完整分析</p>
+              <p className="text-xs text-gray-500">醫師執照狀態驗證</p>
+              <p className="text-xs text-gray-500">同診所醫師比較</p>
+            </div>
+          </FogReport>
+        </section>
+
         {/* 霧化區塊：詳細糾紛紀錄需加 LINE 解鎖 */}
         {hasDispute && (
           <section>
