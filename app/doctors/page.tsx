@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -40,6 +40,7 @@ export default function DoctorsPage() {
   const [detail, setDetail] = useState<DoctorDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [liffUserId, setLiffUserId] = useState<string | null>(null);
+  const autoUnlockDone = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
@@ -63,36 +64,29 @@ export default function DoctorsPage() {
     initLiff();
   }, []);
 
-  const unlockDoctorReport = async (doc_seq: string) => {
-    if (!liffUserId) {
+  useEffect(() => {
+    const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    const autoUnlock = params.get("auto_unlock");
+    if (autoUnlock && liffUserId && !autoUnlockDone.current) {
+      autoUnlockDone.current = true;
+      // 與按鈕一致：跳轉 LIFF 由 LIFF 頁送報告
       const liffId = process.env.NEXT_PUBLIC_LIFF_ID || "2009360724-7DzjBKHU";
-      const lineUrl = `https://liff.line.me/${liffId}?page=doctors`;
+      window.location.href = `https://liff.line.me/${liffId}?page=doctors&auto_unlock=${encodeURIComponent(autoUnlock)}`;
+    }
+  }, [liffUserId]);
+
+  const unlockDoctorReport = (doc_seq: string) => {
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || "2009360724-7DzjBKHU";
+    const lineUrl = `https://liff.line.me/${liffId}?page=doctors&auto_unlock=${encodeURIComponent(doc_seq)}`;
+    if (!liffUserId) {
       const confirmed = window.confirm("請從 LINE 開啟此頁面才能解鎖報告\n\n點確定前往 LINE 開啟");
       if (confirmed) {
         window.location.href = lineUrl;
       }
       return;
     }
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/send-doctor-report`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: liffUserId, doc_seq }),
-      });
-      if (res.ok) {
-        alert("報告已傳送到您的 LINE！");
-        try {
-          const liff = (await import("@line/liff")).default;
-          if (liff.isInClient()) liff.closeWindow();
-        } catch {
-          // 非 LIFF 內開啟時不關閉
-        }
-      } else {
-        alert("傳送失敗，請稍後再試");
-      }
-    } catch (e) {
-      alert("傳送失敗，請稍後再試");
-    }
+    // 電腦／手機一致：一律跳轉 LIFF 由 LIFF 頁呼叫後端送報告（與診所報告流程相同）
+    window.location.href = lineUrl;
   };
 
   const search = useCallback(async () => {

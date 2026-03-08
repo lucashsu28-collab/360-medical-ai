@@ -39,7 +39,28 @@ export default function LiffPage() {
         const page = params.get("page");
 
         if (page === "doctors") {
-          router.push(`/doctors?liff_user_id=${userId}`);
+          const autoUnlock = params.get("auto_unlock") || "";
+          const base = API_BASE.replace(/\/$/, "");
+          if (autoUnlock) {
+            // 與診所報告一樣：在 LIFF 頁直接呼叫後端 Push 報告，手機版較穩定
+            const sendRes = await fetch(`${base}/api/send-doctor-report`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: userId, doc_seq: autoUnlock }),
+            });
+            if (sendRes.ok) {
+              setMessage("報告已發送到您的 LINE，請回到對話查看！");
+              setStatus("ok");
+              try {
+                if (liff.isInClient()) liff.closeWindow();
+              } catch {
+                // 非 LINE 內開啟時不關閉
+              }
+              return;
+            }
+          }
+          const q = autoUnlock ? `&auto_unlock=${encodeURIComponent(autoUnlock)}` : "";
+          router.push(`/doctors?liff_user_id=${userId}${q}`);
           return;
         }
 
