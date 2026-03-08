@@ -1,5 +1,6 @@
 """
 LINE Webhook：驗證簽章、處理 follow / message 事件。
+帶參數加 LINE：follow 時讀取 Redis 的 liff.state，若有 clinic_/doctor_ 則送完整報告。
 """
 import base64
 import hmac
@@ -8,10 +9,26 @@ import json
 from typing import Any
 
 import httpx
+import redis
 
-from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET
+from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, REDIS_URL
 
 LINE_REPLY_URL = "https://api.line.me/v2/bot/message/reply"
+LIFF_STATE_KEY = "line:liff_state:"
+LIFF_STATE_TTL = 600  # 10 分鐘
+
+
+def _redis_client() -> redis.Redis:
+    return redis.from_url(REDIS_URL, decode_responses=True)
+
+
+def set_liff_state(user_id: str, state: str) -> None:
+    """寫入 line:liff_state:{user_id} = state，TTL 10 分鐘。供 LIFF 或前端呼叫。"""
+    try:
+        r = _redis_client()
+        r.set(LIFF_STATE_KEY + user_id, state, ex=LIFF_STATE_TTL)
+    except Exception:
+        pass
 
 
 def verify_signature(body: bytes, signature: str | None) -> bool:
@@ -32,7 +49,7 @@ def verify_signature(body: bytes, signature: str | None) -> bool:
 
 
 def _reply_text(reply_token: str, text: str) -> None:
-    """呼叫 LINE Messaging API 回覆一則文字訊息（同步，供事件迴圈內使用）。"""
+    """呼叫 LINE Messaging API 回覆一則文字訊息。"""
     if not LINE_CHANNEL_ACCESS_TOKEN:
         return
     with httpx.Client() as client:
@@ -50,8 +67,80 @@ def _reply_text(reply_token: str, text: str) -> None:
         )
 
 
-def _handle_follow(reply_token: str) -> None:
-    """使用者加好友：回傳歡迎訊息。"""
+def _reply_messages(reply_token: str, texts: list[str]) -> None:
+    """回覆多則文字訊息（同一 reply 一次送出）。"""
+    if not LINE_CHANNEL_ACCESS_TOKEN or not texts:
+        return
+    messages = [{"type": "text", "text": t} for t in texts]
+    with httpx.Client() as client:
+        client.post(
+            LINE_REPLY_URL,
+            headers={
+                "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+                "Content-Type": "application/json",
+            },
+            json={"replyToken": reply_token, "messages": messages},
+            timeout=10.0,
+        )
+
+
+def _reply_flex(reply_token: str, flex_contents: dict[str, Any], alt_text: str = "報告") -> None:
+    """回覆一則 Flex Message。"""
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        return
+    payload = {
+        "type": "flex",
+        "altText": alt_text,
+        "contents": flex_contents,
+    }
+    with httpx.Client() as client:
+        client.post(
+            LINE_REPLY_URL,
+            headers={
+                "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "replyToken": reply_token,
+                "messages": [payload],
+            },
+            timeout=10.0,
+        )
+
+
+def _handle_follow(reply_token: str, line_user_id: str) -> None:
+    """使用者加好友：若有 liff.state（clinic_/doctor_）則送該診所/醫師完整報告，否則一般歡迎。"""
+    state = None
+    try:
+        r = _redis_client()
+        state = r.get(LIFF_STATE_KEY + line_user_id)
+        if state:
+            r.delete(LIFF_STATE_KEY + line_user_id)
+    except Exception:
+        pass
+
+    if state and state.startswith("clinic_"):
+        clinic_id = state.replace("clinic_", "", 1)
+        from services.recommend import get_clinic_by_id, format_full_report
+        clinic = get_clinic_by_id(clinic_id)
+        if clinic:
+            name = clinic.get("name") or "該診所"
+            welcome = f"你剛才在看【{name}】的報告對嗎？\n我幫你把完整評鑑結果整理出來 👇"
+            report = format_full_report(clinic)
+            _reply_messages(reply_token, [welcome, report])
+            return
+
+    if state and state.startswith("doctor_"):
+        doctor_id = state.replace("doctor_", "", 1)
+        from services.recommend import get_doctor_by_id, format_doctor_report
+        doctor = get_doctor_by_id(doctor_id)
+        if doctor:
+            name = doctor.get("name") or "該醫師"
+            welcome = f"你剛才在看【{name}】的報告對嗎？\n我幫你把完整結果整理出來 👇"
+            report = format_doctor_report(doctor)
+            _reply_messages(reply_token, [welcome, report])
+            return
+
     welcome = (
         "您好～歡迎加入 360 醫療 AI 大調查！\n\n"
         "我可以幫您：\n"
@@ -64,7 +153,7 @@ def _handle_follow(reply_token: str) -> None:
 
 
 def _handle_message(reply_token: str, line_user_id: str, message: dict[str, Any]) -> None:
-    """處理使用者文字訊息：呼叫 Gemini handle_message，回傳 AI 回覆。"""
+    """處理使用者文字訊息：支援「報告:clinic_xxx」「報告:doctor_xxx」觸發 Flex 報告，其餘走 Gemini。"""
     msg_type = message.get("type")
     if msg_type != "text":
         _reply_text(reply_token, "目前僅支援文字訊息，請輸入文字與我對話。")
@@ -73,6 +162,35 @@ def _handle_message(reply_token: str, line_user_id: str, message: dict[str, Any]
     if not text:
         _reply_text(reply_token, "請輸入文字內容～")
         return
+
+    # 指令觸發：報告:clinic_001 / 報告:doctor_001
+    if text.startswith("報告:"):
+        report_id = text[3:].strip()
+        if report_id.startswith("clinic_"):
+            clinic_id = report_id.replace("clinic_", "", 1)
+            from services.recommend import get_clinic_by_id
+            from services.report import build_clinic_flex_report
+            clinic = get_clinic_by_id(clinic_id)
+            if clinic:
+                flex = build_clinic_flex_report(clinic)
+                _reply_flex(reply_token, flex, alt_text=f"{clinic.get('name', '')} 完整報告")
+                return
+            _reply_text(reply_token, f"找不到診所 ID：{clinic_id}，請確認後再試。")
+            return
+        if report_id.startswith("doctor_"):
+            doctor_id = report_id.replace("doctor_", "", 1)
+            from services.recommend import get_doctor_by_id
+            from services.report import build_doctor_flex_report
+            doctor = get_doctor_by_id(doctor_id)
+            if doctor:
+                flex = build_doctor_flex_report(doctor)
+                _reply_flex(reply_token, flex, alt_text=f"{doctor.get('name', '')} 完整報告")
+                return
+            _reply_text(reply_token, f"找不到醫師 ID：{doctor_id}，請確認後再試。")
+            return
+        _reply_text(reply_token, "請輸入「報告:clinic_診所ID」或「報告:doctor_醫師ID」，例如：報告:clinic_c01")
+        return
+
     try:
         from ai.gemini import handle_message as gemini_handle_message
         reply_text = gemini_handle_message(line_user_id, text)
@@ -102,6 +220,6 @@ def handle_webhook_body(body: bytes) -> None:
         source = ev.get("source") or {}
         line_user_id = source.get("userId") or ""
         if ev_type == "follow":
-            _handle_follow(reply_token)
+            _handle_follow(reply_token, line_user_id)
         elif ev_type == "message":
             _handle_message(reply_token, line_user_id, ev.get("message") or {})

@@ -148,7 +148,7 @@ export default async function ClinicDetailPage({
               </h2>
               <FogReport
                 subtitle="解鎖後可查看判決書案號、申訴進度與完整負評分析"
-                lineUrl="https://lin.ee/6sTCRzm"
+                lineEntry={{ type: "clinic", id: clinic.id, name: clinic.name }}
               >
                 <FakeFogContent clinicName={clinic.name} />
               </FogReport>

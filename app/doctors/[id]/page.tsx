@@ -4,6 +4,7 @@ import { doctors } from "@/data/doctors";
 import type { Doctor } from "@/data/doctors";
 import { clinics } from "@/data/clinics";
 import FogReport from "@/components/FogReport";
+import AddLineButton from "@/components/AddLineButton";
 
 /** 現職診所小卡片（連結到診所頁） */
 function ClinicCardSmall({
@@ -204,7 +205,7 @@ export default async function DoctorDetailPage({
             </h2>
             <FogReport
               subtitle="解鎖後可查看判決書案號、申訴案進度與完整內容"
-              lineUrl="https://lin.ee/6sTCRzm"
+              lineEntry={{ type: "doctor", id: doctor.id, name: doctor.name }}
             >
               <FakeDisputeContent doctorName={doctor.name} />
             </FogReport>
@@ -215,9 +216,7 @@ export default async function DoctorDetailPage({
         {!hasDispute && (
           <section className="rounded-[14px] border border-[var(--line)] bg-white p-6 text-center text-[13px] text-[var(--muted)]">
             本醫師目前無司法／申訴紀錄。若需查詢其他醫師或診所完整報告，可{" "}
-            <a href="https://lin.ee/6sTCRzm" target="_blank" rel="noopener noreferrer" className="font-bold text-[var(--blue)] hover:underline">
-              加 LINE 免費諮詢
-            </a>
+            <AddLineButton lineEntry={{ type: "doctor", id: doctor.id, name: doctor.name }} label="加 LINE 免費諮詢" />
             。
           </section>
         )}

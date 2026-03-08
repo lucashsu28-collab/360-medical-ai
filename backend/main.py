@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import PlainTextResponse
 
 from config import LINE_CHANNEL_SECRET
-from webhook.line import verify_signature, handle_webhook_body
+from webhook.line import verify_signature, handle_webhook_body, set_liff_state
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
@@ -42,3 +42,22 @@ async def line_webhook(request: Request):
 
     handle_webhook_body(body)
     return "OK"
+
+
+@app.post("/api/liff-state")
+async def api_liff_state(request: Request):
+    """
+    供 LIFF 或網頁在用戶加好友前寫入 state。
+    body: {"userId": "Uxxx", "state": "clinic_c01"} 或 "doctor_d01"
+    寫入 Redis line:liff_state:{userId}，TTL 600 秒。
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    user_id = body.get("userId") or body.get("user_id")
+    state = body.get("state")
+    if not user_id or not state:
+        raise HTTPException(status_code=400, detail="userId and state required")
+    set_liff_state(user_id, state)
+    return {"ok": True}

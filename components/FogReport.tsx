@@ -1,26 +1,52 @@
 "use client";
 
 /**
- * 霧化報告：用於單一診所詳細頁的完整報告區塊，非搜尋結果頁。
+ * 霧化報告：用於單一診所/醫師詳細頁的完整報告區塊。
  * 內容以 blur 遮罩，CTA 引導加 LINE 解鎖。
+ * 若提供 lineEntry，按鈕會先寫入 localStorage 再開 LINE（帶參數加好友替代方案）。
  */
+export interface LineEntry {
+  type: "clinic" | "doctor";
+  id: string;
+  name: string;
+}
+
 export interface FogReportProps {
   /** 被霧化遮罩的報告內容（仍會渲染，但被 blur 覆蓋） */
   children: React.ReactNode;
-  /** LINE 連結 */
+  /** LINE 連結（未提供 lineEntry 時使用） */
   lineUrl?: string;
+  /** 帶參數加 LINE：點擊時寫入 localStorage 後開啟 LINE，加好友後可傳「報告:id」取得報告 */
+  lineEntry?: LineEntry;
   /** 可選副標或說明，顯示在 CTA 下方 */
   subtitle?: string;
   /** 外層額外 class */
   className?: string;
 }
 
+const LINE_ADD_URL = "https://lin.ee/6sTCRzm";
+
 export default function FogReport({
   children,
-  lineUrl = "https://lin.ee/6sTCRzm",
+  lineUrl = LINE_ADD_URL,
+  lineEntry,
   subtitle,
   className = "",
 }: FogReportProps) {
+  const handleAddLine = () => {
+    if (lineEntry) {
+      localStorage.setItem(
+        "lineEntry",
+        JSON.stringify({
+          type: lineEntry.type,
+          id: lineEntry.id,
+          name: lineEntry.name,
+        })
+      );
+      window.open(LINE_ADD_URL, "_blank");
+    }
+  };
+
   return (
     <div
       className={
@@ -37,14 +63,24 @@ export default function FogReport({
       />
 
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 px-4 py-8">
-        <a
-          href={lineUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-[8px] bg-[var(--blue)] px-6 py-3 text-center text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,70,184,.2)] transition-colors duration-200 hover:bg-[var(--blue2)]"
-        >
-          加 LINE 解鎖完整報告
-        </a>
+        {lineEntry ? (
+          <button
+            type="button"
+            onClick={handleAddLine}
+            className="rounded-[8px] bg-[var(--blue)] px-6 py-3 text-center text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,70,184,.2)] transition-colors duration-200 hover:bg-[var(--blue2)]"
+          >
+            加 LINE 解鎖完整報告
+          </button>
+        ) : (
+          <a
+            href={lineUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-[8px] bg-[var(--blue)] px-6 py-3 text-center text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,70,184,.2)] transition-colors duration-200 hover:bg-[var(--blue2)]"
+          >
+            加 LINE 解鎖完整報告
+          </a>
+        )}
         {subtitle ? (
           <p className="max-w-[280px] text-center text-[12px] text-[var(--muted)] leading-snug">
             {subtitle}

@@ -139,7 +139,7 @@ def handle_message(line_user_id: str, user_message: str) -> str:
             parts=[types.Part(text=user_message)],
         ))
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system_with_clinics,
