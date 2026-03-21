@@ -113,13 +113,14 @@ export default async function ClinicDetailPage({
   const phone = clinic.phone || "—";
   const reviewCount = clinic.google_review_count ?? 0;
 
-  /** 真實資料目前只有 google_rating，其餘四維度顯示「資料收集中」 */
+  const breakdown = clinic.score_breakdown as Record<string, number> | undefined;
+
   const scores: ScoreCardScores = {
-    judicial: null,
+    judicial: breakdown?.judicial ?? null,
     google: clinic.google_rating ?? null,
-    legal: null,
-    media: null,
-    social: null,
+    legal: (clinic.legal_score as number) ?? breakdown?.legal ?? null,
+    media: breakdown?.media ?? null,
+    social: breakdown?.social ?? null,
     total: clinic.score ?? null,
   };
 
