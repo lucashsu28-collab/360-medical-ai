@@ -9,6 +9,10 @@ import os
 APP_BASE_URL = os.getenv("APP_BASE_URL", "").rstrip("/") or "#"
 LINE_ADD_URL = "https://lin.ee/6sTCRzm"
 
+JUDICIAL_SEARCH_URL = "https://judgment.judicial.gov.tw/FJUD/default.aspx"
+NHI_SEARCH_URL = "https://info.nhi.gov.tw/INAE1000/INAE1000S01"
+MOHW_DOC_SEARCH_URL = "https://ma.mohw.gov.tw/Accessibility/DOCSearch/DocResults"
+
 
 def _score_color(value: float, is_legal: bool = False) -> str:
     """五維度分數顏色：>=9 綠、>=7 橘、否則紅；合法登記滿分用藍 #2196F3。"""
@@ -21,46 +25,67 @@ def _score_color(value: float, is_legal: bool = False) -> str:
     return "#f44336"
 
 
-def _dimension_row(icon_label: str, value: float, max_val: float = 10, is_legal: bool = False) -> dict[str, Any]:
-    """五維度單行：標籤+分數，下方進度條。"""
+def _dimension_row(icon_label: str, value: float, max_val: float = 10, is_legal: bool = False, source_url: str = "") -> dict[str, Any]:
+    """維度單行：標籤+分數+進度條，有 source_url 時附「查看來源」連結。"""
     color = _score_color(value, is_legal)
     pct = int((value / max_val) * 100) if max_val else 0
+
+    row_contents: list[dict[str, Any]] = [
+        {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+                {"type": "text", "text": icon_label, "size": "sm", "color": "#333333", "flex": 3},
+                {"type": "text", "text": f"{value:.1f}", "size": "sm", "weight": "bold", "align": "end", "color": color, "flex": 1},
+            ],
+        },
+        {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [{"type": "filler"}],
+                    "width": f"{pct}%",
+                    "backgroundColor": color,
+                    "height": "4px",
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [{"type": "filler"}],
+                    "width": f"{100 - pct}%",
+                    "backgroundColor": "#eeeeee",
+                    "height": "4px",
+                },
+            ],
+            "margin": "xs",
+        },
+    ]
+
+    if source_url:
+        row_contents.append({
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {"type": "uri", "label": "查看來源 →", "uri": source_url},
+                    "style": "link",
+                    "height": "sm",
+                    "color": "#aaaaaa",
+                    "flex": 0,
+                }
+            ],
+            "justifyContent": "flex-end",
+            "margin": "xs",
+        })
+
     return {
         "type": "box",
         "layout": "vertical",
-        "contents": [
-            {
-                "type": "box",
-                "layout": "horizontal",
-                "contents": [
-                    {"type": "text", "text": icon_label, "size": "sm", "color": "#333333", "flex": 3},
-                    {"type": "text", "text": f"{value:.1f}", "size": "sm", "weight": "bold", "align": "end", "color": color, "flex": 1},
-                ],
-            },
-            {
-                "type": "box",
-                "layout": "horizontal",
-                "contents": [
-                    {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [{"type": "filler"}],
-                        "width": f"{pct}%",
-                        "backgroundColor": color,
-                        "height": "4px",
-                    },
-                    {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [{"type": "filler"}],
-                        "width": f"{100 - pct}%",
-                        "backgroundColor": "#eeeeee",
-                        "height": "4px",
-                    },
-                ],
-                "margin": "xs",
-            },
-        ],
+        "contents": row_contents,
         "margin": "sm",
     }
 
@@ -138,9 +163,9 @@ def build_clinic_flex_report(clinic: dict[str, Any]) -> dict[str, Any]:
         "margin": "xs",
     }
     dimension_rows = [
-        _dimension_row("司法糾紛 ⚖️", judicial, max_val=10),
+        _dimension_row("司法糾紛 ⚖️", judicial, max_val=10, source_url=JUDICIAL_SEARCH_URL),
         _dimension_row("Google評分 ⭐", google, max_val=10),
-        _dimension_row("合法登記 ✅", legal, max_val=10, is_legal=True),
+        _dimension_row("合法登記 ✅", legal, max_val=10, is_legal=True, source_url=NHI_SEARCH_URL),
         legal_note,
         _dimension_row("新聞媒體 📰", media, max_val=10),
         _dimension_row("社群討論 💬", social, max_val=10),
@@ -294,9 +319,6 @@ def _review_keyword_tag(text: str) -> dict[str, Any]:
         "paddingAll": "6px",
         "margin": "sm",
     }
-
-
-MOHW_DOC_SEARCH_URL = "https://ma.mohw.gov.tw/Accessibility/DOCSearch/DocResults"
 
 
 def build_doctor_flex_report(doctor: dict[str, Any]) -> dict[str, Any]:
