@@ -2,6 +2,7 @@
 LINE Flex Message：診所／醫師報告卡片。
 供 webhook 在用戶傳「報告:clinic_xxx」或「報告:doctor_xxx」時回傳。
 """
+import urllib.parse
 from typing import Any
 
 # 前端站點 base URL（用於「查看官網」「查看診所」），未設定則用 # 占位
@@ -162,10 +163,20 @@ def build_clinic_flex_report(clinic: dict[str, Any]) -> dict[str, Any]:
         "wrap": True,
         "margin": "xs",
     }
+    name_encoded = urllib.parse.quote(name)
+    judicial_url = f"https://judgment.judicial.gov.tw/FJUD/qryresult.aspx?kw={name_encoded}&judtype=JUDBOOK&action=q"
+    nhi_url = f"https://info.nhi.gov.tw/INAE1000/INAE1000S01?QryField=Name&QryValue={name_encoded}"
+    place_id = clinic.get("google_place_id") or ""
+    google_url = (
+        f"https://www.google.com/maps/place/?q=place_id:{place_id}"
+        if place_id
+        else f"https://www.google.com/search?q={name_encoded}+評論"
+    )
+
     dimension_rows = [
-        _dimension_row("司法糾紛 ⚖️", judicial, max_val=10, source_url=JUDICIAL_SEARCH_URL),
-        _dimension_row("Google評分 ⭐", google, max_val=10),
-        _dimension_row("合法登記 ✅", legal, max_val=10, is_legal=True, source_url=NHI_SEARCH_URL),
+        _dimension_row("司法糾紛 ⚖️", judicial, max_val=10, source_url=judicial_url),
+        _dimension_row("Google評分 ⭐", google, max_val=10, source_url=google_url),
+        _dimension_row("合法登記 ✅", legal, max_val=10, is_legal=True, source_url=nhi_url),
         legal_note,
         _dimension_row("新聞媒體 📰", media, max_val=10),
         _dimension_row("社群討論 💬", social, max_val=10),
