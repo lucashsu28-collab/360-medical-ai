@@ -12,6 +12,8 @@ const NAV_ITEMS = [
   { href: "/faq", label: "常見問題" },
   { href: "/partners", label: "合作診所" },
   { href: "/promotions", label: "精選優惠" },
+  { href: "/about", label: "關於我們" },
+  { href: "/scoring", label: "評分標準" },
 ] as const;
 
 /** 加 LINE 連結 */
