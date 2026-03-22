@@ -93,7 +93,7 @@ const modules = [
 const phase1Modules = [
   { num:"P1-1", name:"衛福部行政處分爬蟲（診所第4維度）", status:"todo",
     items:["爬取 ma.mohw.gov.tw 行政裁處資料庫","比對904家診所建立裁處記錄","整合至clinics_real.json第4維度","診所詳細頁顯示行政處分記錄+來源連結"] },
-  { num:"P1-2", name:"診所↔醫師對應", status:"todo",
+  { num:"P1-2", name:"診所↔醫師對應（暫緩 → 改列P3-4，改由診所自填）", status:"ext",
     items:["從健保署資料建立診所-醫師關聯表","醫師頁面顯示所屬診所","診所頁面顯示執業醫師列表"] },
   { num:"P1-3", name:"正式網域購買+綁定", status:"todo",
     items:["購買正式網域","Vercel自訂網域綁定","Google Search Console提交Sitemap"] },
@@ -121,6 +121,8 @@ const phase3Modules = [
     items:["牙醫/眼科/生殖中心評鑑體系設計","各產業獨立評分規則","資料爬蟲擴充（各產業健保署資料）"] },
   { num:"P3-3", name:"付費解鎖/訂閱制", status:"todo",
     items:["消費者付費解鎖完整報告","診所訂閱曝光方案設計","金流串接（綠界/藍新）"] },
+  { num:"P3-4", name:"診所後台－醫師資料自填系統", status:"todo",
+    items:["診所帳號登入後台","自行新增/編輯醫師資料（姓名、學歷、專長、證照、照片）","醫師資料顯示於前台診所詳細頁"] },
 ];
 
 const TODAY = new Date().toISOString().slice(0,10);
@@ -230,7 +232,7 @@ const doc = new Document({
               shading:{ fill:WHITE, type:ShadingType.CLEAR }, margins:{ top:80, bottom:80, left:120, right:120 },
               children: m.items.map(item => new Paragraph({ spacing:{ after:60 }, children:[new TextRun({ text:"• "+item, size:16, font:"Arial" })] }))
             }),
-            statusCell("","todo",1200),
+            m.status==="ext" ? statusCell("暫緩→P3","ext",1200) : m.status==="aims" ? statusCell("AIMS串接","aims",1200) : statusCell("",m.status,1200),
           ]})),
         ]
       }),
@@ -287,7 +289,7 @@ const doc = new Document({
 
 // ── PROGRESS.md 產出 ──────────────────────────────────────────────────────────
 function genProgressMd() {
-  const statusIcon = { done:"✅完成", doing:"⚠️部分完成", todo:"❌未開始", aims:"🟣AIMS串接", ext:"⚠️部分完成" };
+  const statusIcon = { done:"✅完成", doing:"⚠️部分完成", todo:"❌未開始", aims:"🟣AIMS串接", ext:"⏸️暫緩→P3" };
   const p1status = { done:"✅完成", doing:"⚠️部分完成", todo:"❌未開始", aims:"🟣AIMS串接" };
 
   const lines = [
