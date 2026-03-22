@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -270,7 +270,7 @@ async def send_test(request: Request):
 # ──────────────────────────────────────────────
 
 @router.post("/trigger-crawl")
-async def trigger_crawl(request: Request):
+async def trigger_crawl(request: Request, background_tasks: BackgroundTasks):
     """
     手動觸發爬蟲（背景執行）。
     body: { crawler: "places" | "judicial" | "mohw" }
@@ -292,7 +292,7 @@ async def trigger_crawl(request: Request):
     _save_json(_CRAWLER_STATUS_PATH, status_data)
 
     # 背景非同步執行
-    asyncio.create_task(_run_crawler(crawler))
+    background_tasks.add_task(_run_crawler, crawler)
 
     return {"ok": True, "message": f"{crawler} crawler scheduled"}
 
