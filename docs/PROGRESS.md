@@ -21,15 +21,15 @@
 
 | # | 模組名稱 | 路由 | 第一階段 | 第二階段 | 第三階段 |
 |---|---|---|---|---|---|
-| #1 | LINE OA AI醫美顧問系統 | `/admin/line-ai` | ✅完成 | ❌未開始 | ❌未開始 |
-| #2 | 資料爬取系統管理 | `/admin/scheduler` | ✅完成 | ❌未開始 | ❌未開始 |
-| #3 | 醫美平台數據看板 | `/admin` | ✅完成 | ❌未開始 | ❌未開始 |
+| #1 | LINE OA AI醫美顧問系統 | `/admin/line-ai` | ✅完成 | ⚠️部分完成 | ❌未開始 |
+| #2 | 資料爬取系統管理 | `/admin/scheduler` | ✅完成 | ⚠️部分完成 | ❌未開始 |
+| #3 | 醫美平台數據看板 | `/admin` | ✅完成 | ⚠️部分完成 | ❌未開始 |
 | #4 | 客戶列表（AIMS串接） | `/admin/clients` | ❌未開始 | ❌未開始 | 🟣AIMS串接 |
-| #5 | 診所資料管理 | `/admin/clinics` | ✅完成 | ❌未開始 | ❌未開始 |
+| #5 | 診所資料管理 | `/admin/clinics` | ✅完成 | ⚠️部分完成 | ❌未開始 |
 | #6 | 合作診所開通/停用 | `/admin/clinics/partners` | ✅完成 | ❌未開始 | ❌未開始 |
 | #7 | 資料匯出 | `/admin/export` | ✅完成 | ❌未開始 | ❌未開始 |
 | #8 | 網站數據分析與排名 | `/admin/analytics` | ✅完成 | ❌未開始 | ⚠️部分完成 |
-| #9 | 報告解鎖管理 | `/admin/unlocks` | ✅完成 | ❌未開始 | ❌未開始 |
+| #9 | 報告解鎖管理 | `/admin/unlocks` | ✅完成 | ✅完成 | ❌未開始 |
 | #10 | 內容管理 CMS | `/admin/cms` | ✅完成 | ❌未開始 | ❌未開始 |
 | #11 | AI顧問訓練/調教 | `/admin/ai-training` | ✅完成 | ❌未開始 | 🟣AIMS串接 |
 | #12 | 評分規則管理 | `/admin/scoring` | ✅完成 | ❌未開始 | ❌未開始 |
@@ -41,11 +41,11 @@
 
 | # | 項目 | 狀態 |
 |---|---|---|
-| B1 | PostgreSQL 接真實 DB | ✅完成 |
-| B2 | GCP Cloud Scheduler 排程 | ✅完成 |
+| B1 | PostgreSQL 接真實 DB | ⚠️部分完成 |
+| B2 | GCP Cloud Scheduler 排程 | ⚠️部分完成 |
 | B3 | AIMS AI SEO 文章推送 | 🟣AIMS串接 |
 | B4 | AIMS 口碑監測串接 | 🟣AIMS串接 |
-| B5 | Admin後台接真實DB | ✅完成 |
+| B5 | Admin後台接真實DB | ⚠️部分完成 |
 | B6 | Google Places 真實評論抓取 | ❌未開始 |
 
 ---

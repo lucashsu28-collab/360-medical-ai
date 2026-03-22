@@ -62,15 +62,15 @@ function spacer() { return new Paragraph({ spacing: { after: 160 }, children: [n
 // done=完成 doing=進行中 todo=待做 aims=AIMS串接 ext=外部串接
 // ============================================================
 const modules = [
-  { num:"#1",  name:"LINE OA AI醫美顧問系統", route:"/admin/line-ai",          p1:"done",  p2:"todo", p3:"todo",
+  { num:"#1",  name:"LINE OA AI醫美顧問系統", route:"/admin/line-ai",          p1:"done",  p2:"doing", p3:"todo",
     items:["查看AI顧問對話記錄（依用戶/時間篩選）","設定歡迎訊息、圖文選單","管理常見問題知識庫（新增/編輯/刪除）","調整Gemini回答參數（溫度、字數限制）","查看LINE用戶清單（加入時間、對話次數）","手動推播訊息給所有用戶"] },
-  { num:"#2",  name:"資料爬取系統管理",        route:"/admin/scheduler",        p1:"done",  p2:"todo", p3:"todo",
+  { num:"#2",  name:"資料爬取系統管理",        route:"/admin/scheduler",        p1:"done",  p2:"doing", p3:"todo",
     items:["各爬蟲最後執行時間、成功/失敗筆數","手動觸發指定爬蟲（Google評分/司法院/健保署/行政處分）","排程設定查看（下次執行時間）","爬蟲執行log查看","資料完整度儀表板（每個維度幾家有資料）"] },
-  { num:"#3",  name:"醫美平台數據看板",        route:"/admin",                  p1:"done",  p2:"todo", p3:"todo",
+  { num:"#3",  name:"醫美平台數據看板",        route:"/admin",                  p1:"done",  p2:"doing", p3:"todo",
     items:["今日/本週/本月頁面瀏覽數、獨立訪客","LINE加入人數趨勢圖","報告解鎖次數趨勢圖","診所頁面查詢TOP 20排行","各維度資料完整度統計"] },
   { num:"#4",  name:"客戶列表（AIMS串接）",    route:"/admin/clients",          p1:"todo",  p2:"todo", p3:"aims",
     items:["顯示industry=medical_aesthetic的診所客戶","欄位：診所名稱、方案、付費狀態、加入日期","搜尋/篩選功能","快速跳轉到AIMS對應客戶頁面","新客戶從醫美平台匯入AIMS"] },
-  { num:"#5",  name:"診所資料管理",            route:"/admin/clinics",          p1:"done",  p2:"todo", p3:"todo",
+  { num:"#5",  name:"診所資料管理",            route:"/admin/clinics",          p1:"done",  p2:"doing", p3:"todo",
     items:["904家診所列表（搜尋/篩選/排序）","編輯診所資料（名稱、地址、電話、療程標籤）","手動調整評分（附調整原因記錄）","查看各維度分數明細","與AIMS品牌資料雙向同步","標記診所為合作/非合作"] },
   { num:"#6",  name:"合作診所開通/停用",       route:"/admin/clinics/partners", p1:"done",  p2:"todo", p3:"todo",
     items:["合作診所列表（狀態：開通/停用/審核中）","一鍵開通/停用（連動AIMS方案狀態）","設定前台曝光內容（介紹文字、圖片）","管理精選療程（新增/編輯/刪除）","管理優惠方案（效期/內容/限制）","合作診所前台預覽"] },
@@ -78,7 +78,7 @@ const modules = [
     items:["診所清單匯出CSV（可篩選欄位）","醫師清單匯出CSV","單一診所完整報告匯出PDF","批次匯出多家診所報告","匯出紀錄查看"] },
   { num:"#8",  name:"網站數據分析與排名",      route:"/admin/analytics",        p1:"done",  p2:"todo", p3:"ext",
     items:["GA4整合（頁面流量、用戶來源、跳出率）","診所頁面查詢排行榜（市場熱度指標）","熱門療程搜尋關鍵字排行","用戶地區分布地圖","裝置分布（手機/電腦）","LINE轉換漏斗（診所頁→加LINE→解鎖報告）","資料可匯出Excel供業務使用"] },
-  { num:"#9",  name:"報告解鎖管理",           route:"/admin/unlocks",          p1:"done",  p2:"todo", p3:"todo",
+  { num:"#9",  name:"報告解鎖管理",           route:"/admin/unlocks",          p1:"done",  p2:"done", p3:"todo",
     items:["解鎖記錄列表（LINE用戶/診所/時間）","最多人解鎖診所排行","付費/免費解鎖統計","單一用戶解鎖歷史查詢","異常解鎖偵測（同一用戶重複解鎖）"] },
   { num:"#10", name:"內容管理 CMS",           route:"/admin/cms",              p1:"done",  p2:"todo", p3:"todo",
     items:["首頁Banner管理（圖片/連結/效期）","療程分類圖片管理","精選優惠文案編輯","網站公告管理","LINE推播訊息（立即/排程推播）","SEO文案管理（接收AIMS AI SEO推送）"] },
@@ -100,15 +100,15 @@ const phase1Modules = [
 ];
 
 const phase2Modules = [
-  { num:"B1", name:"PostgreSQL 接真實 DB", status:"done",
+  { num:"B1", name:"PostgreSQL 接真實 DB", status:"doing",
     items:["設計 schema（clinics/doctors/unlocks/broadcasts/crawler_status）","Alembic migration 建立","取代所有 JSON 檔案讀取","Admin 後台 13 模組全部接真實 DB"] },
-  { num:"B2", name:"GCP Cloud Scheduler 排程", status:"done",
+  { num:"B2", name:"GCP Cloud Scheduler 排程", status:"doing",
     items:["Google Places 每10天自動觸發","司法院每30天自動觸發","行政處分每30天自動觸發","新聞/社群每7天自動觸發"] },
   { num:"B3", name:"AIMS AI SEO 文章推送", status:"aims",
     items:["AIMS生成文章 → API推送至診所頁","診所詳細頁展示SEO文章區塊"] },
   { num:"B4", name:"AIMS 口碑監測串接", status:"aims",
     items:["新聞/PTT/Dcard由AIMS爬蟲提供","整合至診所第5、6維度","整合至醫師第4、5維度"] },
-  { num:"B5", name:"Admin後台接真實DB", status:"done",
+  { num:"B5", name:"Admin後台接真實DB", status:"doing",
     items:["#4客戶列表串接AIMS","#6合作診所開通/停用接真實DB","#8數據分析串接GA4","其餘模組從mock改為真實資料"] },
   { num:"B6", name:"Google Places 真實評論抓取", status:"todo",
     items:["Places API抓取每家診所前5則評論","評論資料存進PostgreSQL DB","診所詳細頁展示真實評論（取代假資料）"] },
