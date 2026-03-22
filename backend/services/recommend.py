@@ -1,12 +1,13 @@
 """
-推薦診所：從 backend/data/clinics_real.json 讀取真實診所，格式化給 Gemini 使用。
+推薦診所：優先從 PostgreSQL DB 讀取，fallback clinics_real.json。
+啟動時一次性載入全部診所到記憶體，之後所有查詢用 in-memory index（避免 per-request DB 呼叫）。
 """
 import json
 import os
 from typing import Any
 
-# 依序嘗試幾個可能的路徑
-def _find_data_path():
+# ── JSON fallback 路徑 ─────────────────────────────────────────────────────────
+def _find_data_path() -> str:
     candidates = [
         os.path.join(os.path.dirname(__file__), "../data/clinics_real.json"),
         os.path.join(os.path.dirname(__file__), "clinics_real.json"),
@@ -15,22 +16,67 @@ def _find_data_path():
     for p in candidates:
         if os.path.exists(p):
             return p
-    return candidates[0]  # fallback，讓後面的 open 拋出正確錯誤
+    return candidates[0]
 
 _data_path = _find_data_path()
 
 
-def _load_clinics() -> list[dict[str, Any]]:
+def _load_from_json() -> list[dict[str, Any]]:
     try:
         with open(_data_path, encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+        print(f"[recommend] JSON fallback loaded {len(data)} clinics", flush=True)
+        return data
     except Exception as e:
         print(f"[recommend] 無法載入 clinics_real.json: {e}", flush=True)
         return []
 
 
+def _row_to_dict(row: Any) -> dict[str, Any]:
+    """將 psycopg2 RealDictRow 或一般 mapping 轉為 dict。"""
+    d = dict(row)
+    # 相容前端欄位名稱
+    d.setdefault("isPartner", d.pop("is_partner", False))
+    return d
+
+
+def _load_from_db() -> list[dict[str, Any]]:
+    try:
+        from config import DATABASE_URL
+        import psycopg2
+        import psycopg2.extras
+
+        db_url = (
+            DATABASE_URL
+            .replace("postgresql+asyncpg://", "postgresql://")
+            .replace("postgresql+psycopg2://", "postgresql://")
+        )
+        conn = psycopg2.connect(db_url, connect_timeout=5)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM clinics ORDER BY id")
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        if not rows:
+            return []
+        result = [_row_to_dict(r) for r in rows]
+        print(f"[recommend] DB loaded {len(result)} clinics", flush=True)
+        return result
+    except Exception as e:
+        print(f"[recommend] DB load failed, fallback JSON: {e}", flush=True)
+        return []
+
+
+def _load_clinics() -> list[dict[str, Any]]:
+    data = _load_from_db()
+    if data:
+        return data
+    return _load_from_json()
+
+
 CLINICS = _load_clinics()
 _CLINIC_INDEX: dict[str, dict[str, Any]] = {c["id"]: c for c in CLINICS}
+print(f"[recommend] index ready: {len(_CLINIC_INDEX)} clinics", flush=True)
 
 
 def get_clinic_by_id(clinic_id: str) -> dict[str, Any] | None:
