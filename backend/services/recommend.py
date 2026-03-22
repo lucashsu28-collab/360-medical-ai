@@ -34,7 +34,9 @@ _CLINIC_INDEX: dict[str, dict[str, Any]] = {c["id"]: c for c in CLINICS}
 
 
 def get_clinic_by_id(clinic_id: str) -> dict[str, Any] | None:
-    return _CLINIC_INDEX.get(clinic_id)
+    result = _CLINIC_INDEX.get(clinic_id)
+    print(f"[get_clinic_by_id] id={clinic_id!r} found={result is not None} index_size={len(_CLINIC_INDEX)}", flush=True)
+    return result
 
 
 def get_all_clinics() -> list[dict[str, Any]]:
