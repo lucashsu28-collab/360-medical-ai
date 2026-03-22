@@ -107,8 +107,8 @@ export default async function ClinicDetailPage({
 
   const scores: ScoreCardScores = {
     judicial: breakdown?.judicial ?? null,
-    google: clinic.google_rating ?? null,
-    legal: (clinic.legal_score as number) ?? breakdown?.legal ?? null,
+    google: breakdown?.google ?? null,
+    legal: breakdown?.legal ?? (clinic.legal_score as number) ?? null,
     media: breakdown?.media ?? null,
     social: breakdown?.social ?? null,
     total: clinic.score ?? null,

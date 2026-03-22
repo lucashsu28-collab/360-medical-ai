@@ -54,14 +54,14 @@ async def health():
 
 
 def _calc_total_score(c: dict) -> float:
+    """100-point scoring: legal(20) + google(20) + judicial(20) + media(20) + social(20)"""
     sb = c.get("score_breakdown", {}) or {}
-    scores = [
-        c.get("google_rating_score") or sb.get("google", 0) or 0,
-        sb.get("judicial", 0) or c.get("judicial_score", 0) or 0,
-        sb.get("legal", 0) or c.get("legal_score", 0) or 0,
-        sb.get("punishment", 0) or 0,
-    ]
-    return sum(scores)
+    legal    = sb.get("legal",    0) or c.get("legal_score",    0) or 0
+    google   = sb.get("google",   0) or c.get("google_rating_score", 0) or 0
+    judicial = sb.get("judicial", 0) or c.get("judicial_score", 0) or 0
+    media    = sb.get("media",    20) or 20   # default 20 while building
+    social   = sb.get("social",   20) or 20   # default 20 while building
+    return legal + google + judicial + media + social
 
 
 import re as _re
