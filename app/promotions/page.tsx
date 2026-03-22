@@ -43,7 +43,7 @@ export default function PromotionsPage() {
           精選<span className="text-[var(--blue)]">優惠</span>
         </h2>
         <p className="relative z-10 mx-auto max-w-[560px] text-[12px] leading-relaxed text-[var(--muted)]">
-          以下優惠由合作診所提供，非平台評鑑推薦。
+          以下優惠由診所資料館各診所提供，非平台評鑑推薦。
         </p>
       </div>
 

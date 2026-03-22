@@ -114,7 +114,7 @@ const FILTER_GROUPS = [
     type: "multi" as const,
     param: "partnerOnly",
     label: "",
-    options: [{ value: "1", label: "只看合作診所" }],
+    options: [{ value: "1", label: "只看診所資料館" }],
   },
 ];
 

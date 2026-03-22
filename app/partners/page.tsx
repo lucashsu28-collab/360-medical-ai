@@ -10,13 +10,13 @@ export default function PartnersPage() {
       <div className="border-b border-[var(--line)] bg-white px-4 pb-8 pt-10 text-center md:px-6 md:pt-10 md:pb-8">
         <div className="relative z-10 mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,70,184,.1)] bg-[var(--blue-lt)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--blue)]">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--blue)]" />
-          合作診所
+          診所資料館
         </div>
         <h2
           className="relative z-10 mb-2 text-2xl font-[900] tracking-tight text-[var(--ink)] md:text-3xl lg:text-4xl"
           style={{ fontFamily: "var(--font-noto-serif-tc)" }}
         >
-          <span className="text-[var(--blue)]">✦</span> 合作診所
+          <span className="text-[var(--blue)]">✦</span> 診所資料館
         </h2>
         <p className="relative z-10 mx-auto max-w-[560px] text-sm leading-relaxed text-[var(--muted)]">
           以下為與平台合作之診所，評鑑分數獨立計算，不受合作關係影響。
@@ -26,12 +26,12 @@ export default function PartnersPage() {
       {/* 列表 */}
       <div className="mx-auto max-w-[1060px] px-4 py-6 md:px-8 md:py-8">
         <p className="mb-4 text-[13px] text-[var(--muted)]">
-          共 <strong className="font-bold text-[var(--ink)]">{partnerClinics.length}</strong> 家合作診所
+          共收錄 <strong className="font-bold text-[var(--ink)]">{partnerClinics.length}</strong> 家診所
         </p>
         <div className="flex flex-col gap-2.5">
           {partnerClinics.length === 0 ? (
             <div className="rounded-[14px] border border-[var(--line)] bg-white py-16 text-center text-[var(--muted)]">
-              目前沒有合作診所。
+              目前沒有收錄診所。
             </div>
           ) : (
             partnerClinics.map((clinic) => (

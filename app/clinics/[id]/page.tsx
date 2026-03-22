@@ -265,7 +265,7 @@ export default async function ClinicDetailPage({
             <div className="sticky top-[78px] space-y-6 rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,.04)]">
               {clinic.isPartner && (
                 <div className="rounded-[8px] bg-[var(--blue-xl)] px-3 py-2 text-center text-[13px] font-bold text-[var(--blue)]">
-                  ✦ 合作診所
+                  ✦ 診所資料館
                 </div>
               )}
               {tags.length > 0 && (

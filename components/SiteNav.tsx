@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { href: "/cities", label: "各縣市" },
   { href: "/blog", label: "醫美專欄" },
   { href: "/faq", label: "常見問題" },
-  { href: "/partners", label: "合作診所" },
+  { href: "/partners", label: "診所資料館" },
   { href: "/promotions", label: "精選優惠" },
   { href: "/about", label: "關於我們" },
   { href: "/scoring", label: "評分標準" },

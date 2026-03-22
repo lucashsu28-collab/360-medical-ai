@@ -125,7 +125,7 @@ export default function Home() {
       <section className="mx-auto max-w-[1060px] px-6 pb-16">
         <div className="mb-7">
           <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--blue)] mb-1.5">
-            合作診所推薦
+            診所資料館推薦
           </div>
           <h2
             className="text-[22px] font-[900] text-[var(--ink)] md:text-3xl"

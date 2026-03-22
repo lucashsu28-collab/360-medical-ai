@@ -69,7 +69,7 @@ export default async function PartnerClinicPage({
         <nav className="mb-6 text-[12px] text-[var(--muted)]" aria-label="麵包屑">
           <Link href="/" className="hover:text-[var(--blue)]">首頁</Link>
           <span className="mx-1.5">/</span>
-          <Link href="/partners" className="hover:text-[var(--blue)]">合作診所</Link>
+          <Link href="/partners" className="hover:text-[var(--blue)]">診所資料館</Link>
           <span className="mx-1.5">/</span>
           <span className="text-[var(--ink)]">{clinic.name}</span>
         </nav>
@@ -81,7 +81,7 @@ export default async function PartnerClinicPage({
             <div className="rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,.04)]">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="rounded-md bg-[var(--blue)] px-3 py-1.5 text-[12px] font-bold text-white">
-                  ✦ 合作診所
+                  ✦ 診所資料館
                 </span>
                 <h1
                   className="text-2xl font-black text-[var(--ink)] md:text-3xl"
