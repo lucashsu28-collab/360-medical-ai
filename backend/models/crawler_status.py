@@ -10,4 +10,5 @@ class CrawlerStatus(Base):
     last_run: Mapped[datetime | None] = mapped_column(DateTime)
     status: Mapped[str] = mapped_column(String(20), default="unknown")
     error: Mapped[str | None] = mapped_column(Text)
+    error_message: Mapped[str | None] = mapped_column(Text)
     records_updated: Mapped[int | None] = mapped_column(Integer)

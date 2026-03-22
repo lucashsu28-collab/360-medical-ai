@@ -1,62 +1,312 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-const MOCK_ALERTS = [
-  { id: 1, type: "crawler", level: "error", title: "爬蟲執行失敗", desc: "Google Places 爬蟲於 03/20 02:15 執行失敗，錯誤：API quota exceeded", time: "2026-03-20 02:15" },
-  { id: 2, type: "data", level: "warning", title: "資料異常警示", desc: "美佳皮膚科診所評分異常變動（8.2 → 3.1），請確認", time: "2026-03-19 14:30" },
-  { id: 3, type: "system", level: "info", title: "系統正常", desc: "Cloud Run 服務運行正常，所有 API 回應時間 < 500ms", time: "2026-03-22 09:00" },
-];
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-const LEVEL_MAP: Record<string, { bg: string; color: string; label: string }> = {
-  error:   { bg: "#FEF2F2", color: "#DC2626", label: "錯誤" },
-  warning: { bg: "#FAEEDA", color: "#854F0B", label: "警告" },
-  info:    { bg: "#E1F5EE", color: "#0F6E56", label: "正常" },
-};
+type AlertType = "crawler_failed" | "data_anomaly";
+type AlertStatus = "active" | "resolved";
+
+interface Alert {
+  id: string;
+  type: AlertType;
+  title: string;
+  detail: string;
+  created_at: string | null;
+  status: AlertStatus;
+}
+
+type Tab = "crawler" | "anomaly";
+
+function formatDate(s: string | null) {
+  if (!s) return "—";
+  return s.replace("T", " ").slice(0, 16);
+}
 
 export default function AlertsPage() {
-  const [threshold, setThreshold] = useState({ crawler: true, data: true, system: false });
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [tab, setTab] = useState<Tab>("crawler");
+  const [loading, setLoading] = useState(true);
+  const [resolving, setResolving] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    fetch(`${API_URL}/api/admin/alerts`, {
+      headers: { "x-admin-token": localStorage.getItem("admin_token") ?? "" },
+    })
+      .then((r) => r.json())
+      .then((d) => setAlerts(d.alerts ?? []))
+      .catch(() => setAlerts([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function handleResolve(id: string) {
+    setResolving(id);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/alerts/resolve/${id}`, {
+        method: "PATCH",
+        headers: { "x-admin-token": localStorage.getItem("admin_token") ?? "" },
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setAlerts((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, status: "resolved" } : a))
+        );
+      }
+    } catch {
+      // silent
+    } finally {
+      setResolving(null);
+    }
+  }
+
+  const crawlerAlerts = alerts.filter((a) => a.type === "crawler_failed");
+  const anomalyAlerts = alerts.filter((a) => a.type === "data_anomaly");
+
+  const TAB_ITEMS: { key: Tab; label: string; count: number }[] = [
+    { key: "crawler", label: "爬蟲失敗", count: crawlerAlerts.filter((a) => a.status === "active").length },
+    { key: "anomaly", label: "資料異常", count: anomalyAlerts.length },
+  ];
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>告警系統</h1>
-      <p style={{ color: "#64748B", fontSize: 14, marginBottom: 24 }}>爬蟲失敗、資料異常、Cloud Run 異常通知（Email/LINE 推播於 Phase 2 開放）</p>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>
+        告警系統
+      </h1>
+      <p style={{ color: "#64748B", fontSize: 14, marginBottom: 24 }}>
+        Phase 2 範圍：爬蟲失敗 + 資料異常。Email/LINE 推播通知於 Phase 4 開放。
+      </p>
 
-      <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 500px" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: "#0F172A", marginBottom: 16 }}>告警記錄</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {MOCK_ALERTS.map(alert => {
-              const s = LEVEL_MAP[alert.level];
-              return (
-                <div key={alert.id} style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", borderLeft: `4px solid ${s.color}` }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ background: s.bg, color: s.color, padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{s.label}</span>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{alert.title}</span>
-                    </div>
-                    <span style={{ fontSize: 12, color: "#94A3B8" }}>{alert.time}</span>
-                  </div>
-                  <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>{alert.desc}</p>
-                </div>
-              );
-            })}
-          </div>
+      {/* Tab 列 */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {TAB_ITEMS.map(({ key, label, count }) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            style={{
+              padding: "7px 18px",
+              borderRadius: 8,
+              border: "none",
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              background: tab === key ? "#0F172A" : "#F1F5F9",
+              color: tab === key ? "#fff" : "#64748B",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            {label}
+            {count > 0 && (
+              <span
+                style={{
+                  background: tab === key ? "#EF4444" : "#DC2626",
+                  color: "#fff",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  padding: "1px 6px",
+                  lineHeight: "16px",
+                }}
+              >
+                {count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div style={{ color: "#94A3B8", fontSize: 14, padding: "40px 0", textAlign: "center" }}>
+          載入中...
         </div>
+      ) : (
+        <>
+          {/* ── Tab: 爬蟲失敗 ── */}
+          {tab === "crawler" && (
+            <div>
+              {crawlerAlerts.length === 0 ? (
+                <div
+                  style={{
+                    background: "#F0FDF4",
+                    border: "1px solid #BBF7D0",
+                    borderRadius: 10,
+                    padding: "20px 24px",
+                    color: "#15803D",
+                    fontSize: 14,
+                  }}
+                >
+                  ✅ 目前無爬蟲失敗告警
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {crawlerAlerts.map((a) => (
+                    <div
+                      key={a.id}
+                      style={{
+                        background: "#fff",
+                        borderRadius: 12,
+                        padding: "16px 20px",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                        borderLeft: `4px solid ${a.status === "resolved" ? "#94A3B8" : "#DC2626"}`,
+                        opacity: a.status === "resolved" ? 0.65 : 1,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: 12,
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                            <span
+                              style={{
+                                background: a.status === "resolved" ? "#F1F5F9" : "#FEF2F2",
+                                color: a.status === "resolved" ? "#64748B" : "#DC2626",
+                                padding: "2px 8px",
+                                borderRadius: 10,
+                                fontSize: 11,
+                                fontWeight: 600,
+                              }}
+                            >
+                              {a.status === "resolved" ? "已處理" : "未處理"}
+                            </span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>
+                              {a.title}
+                            </span>
+                          </div>
+                          <p style={{ fontSize: 13, color: "#64748B", margin: "0 0 4px 0" }}>
+                            {a.detail}
+                          </p>
+                          <span style={{ fontSize: 12, color: "#94A3B8" }}>
+                            {formatDate(a.created_at)}
+                          </span>
+                        </div>
+                        {a.status === "active" && (
+                          <button
+                            disabled={resolving === a.id}
+                            onClick={() => handleResolve(a.id)}
+                            style={{
+                              padding: "5px 14px",
+                              background: "#F0FDF4",
+                              color: "#16A34A",
+                              border: "none",
+                              borderRadius: 6,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: resolving === a.id ? "not-allowed" : "pointer",
+                              opacity: resolving === a.id ? 0.6 : 1,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {resolving === a.id ? "處理中…" : "標記已處理"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-        <div style={{ flex: "1 1 240px" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: "#0F172A", marginBottom: 16 }}>告警閾值設定</h2>
-          <div style={{ background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-            {([["crawler","爬蟲失敗通知"],["data","資料異常警示"],["system","系統狀態通知"]] as const).map(([key, label]) => (
-              <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #F1F5F9" }}>
-                <span style={{ fontSize: 14, color: "#0F172A" }}>{label}</span>
-                <button onClick={() => setThreshold(t => ({ ...t, [key]: !t[key] }))}
-                  style={{ width: 44, height: 24, borderRadius: 12, border: "none", background: threshold[key] ? "#3B82F6" : "#E2E8F0", cursor: "pointer", position: "relative", transition: "background 0.2s" }}>
-                  <span style={{ position: "absolute", top: 2, left: threshold[key] ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
-                </button>
-              </div>
-            ))}
-            <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 12 }}>Email/LINE 推播通知於 Phase 2 開放</p>
-          </div>
+          {/* ── Tab: 資料異常 ── */}
+          {tab === "anomaly" && (
+            <div>
+              {anomalyAlerts.length === 0 ? (
+                <div
+                  style={{
+                    background: "#F0FDF4",
+                    border: "1px solid #BBF7D0",
+                    borderRadius: 10,
+                    padding: "20px 24px",
+                    color: "#15803D",
+                    fontSize: 14,
+                  }}
+                >
+                  ✅ 目前無資料異常
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {anomalyAlerts.map((a) => (
+                    <div
+                      key={a.id}
+                      style={{
+                        background: "#fff",
+                        borderRadius: 12,
+                        padding: "16px 20px",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                        borderLeft: "4px solid #F59E0B",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                        <span
+                          style={{
+                            background: "#FAEEDA",
+                            color: "#854F0B",
+                            padding: "2px 8px",
+                            borderRadius: 10,
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        >
+                          資料異常
+                        </span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>
+                          {a.title}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 13, color: "#64748B", margin: "0 0 4px 0" }}>
+                        {a.detail}
+                      </p>
+                      <span style={{ fontSize: 12, color: "#94A3B8" }}>
+                        {formatDate(a.created_at)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* 其他告警類型：P4 建置中 */}
+      <div
+        style={{
+          marginTop: 32,
+          background: "#F8FAFC",
+          border: "1px solid #E2E8F0",
+          borderRadius: 12,
+          padding: "16px 20px",
+        }}
+      >
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#64748B", marginBottom: 8 }}>
+          其他告警類型（Phase 4 建置中）
+        </div>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {["Cloud Run 異常監控", "API 回應時間監控", "Email/LINE 推播通知"].map((label) => (
+            <span
+              key={label}
+              style={{
+                background: "#E2E8F0",
+                color: "#94A3B8",
+                fontSize: 12,
+                padding: "4px 12px",
+                borderRadius: 20,
+                fontWeight: 500,
+              }}
+            >
+              {label}｜P4 建置中
+            </span>
+          ))}
         </div>
       </div>
     </div>

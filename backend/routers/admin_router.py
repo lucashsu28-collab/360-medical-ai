@@ -403,6 +403,111 @@ async def trigger_crawl(request: Request, background_tasks: BackgroundTasks):
     return {"ok": True, "message": f"{crawler} crawler scheduled"}
 
 
+@router.get("/alerts")
+async def get_alerts():
+    SessionLocal, Clinic, UnlockRecord, BroadcastRecord, CrawlerStatus = _get_session()
+    alerts = []
+
+    try:
+        if SessionLocal:
+            async with SessionLocal() as session:
+                # 來源1：爬蟲失敗告警
+                crawler_rows = (await session.execute(select(CrawlerStatus))).scalars().all()
+                for r in crawler_rows:
+                    is_failed = r.status == "failed" or bool(r.error_message) or bool(r.error)
+                    if is_failed:
+                        err_msg = r.error_message or r.error or "未知錯誤"
+                        alerts.append({
+                            "id": f"crawler_{r.key}",
+                            "type": "crawler_failed",
+                            "title": f"爬蟲失敗：{r.key}",
+                            "detail": err_msg,
+                            "created_at": _format_dt(r.last_run),
+                            "status": "active",
+                        })
+
+                # 來源2：資料異常（score 為 null 或 0）
+                anomaly_rows = (await session.execute(
+                    select(Clinic).where(
+                        (Clinic.score == None) | (Clinic.score == 0)
+                    ).order_by(Clinic.name).limit(30)
+                )).scalars().all()
+                for r in anomaly_rows:
+                    alerts.append({
+                        "id": f"anomaly_{r.id}",
+                        "type": "data_anomaly",
+                        "title": f"資料異常：{r.name}",
+                        "detail": f"診所 {r.name} 的綜合評分為 {'null' if r.score is None else r.score}，請確認資料來源。",
+                        "created_at": _format_dt(r.created_at),
+                        "status": "active",
+                    })
+
+                return {"alerts": alerts}
+    except Exception as e:
+        print(f"[alerts] DB error, fallback: {e}")
+
+    # JSON fallback
+    crawler_status = _load_json(_CRAWLER_STATUS_PATH, {})
+    for key, val in crawler_status.items():
+        if isinstance(val, dict) and val.get("status") == "failed":
+            alerts.append({
+                "id": f"crawler_{key}",
+                "type": "crawler_failed",
+                "title": f"爬蟲失敗：{key}",
+                "detail": val.get("error", "未知錯誤"),
+                "created_at": val.get("last_run"),
+                "status": "active",
+            })
+
+    clinics = _load_json(_CLINICS_PATH, [])
+    for c in clinics:
+        score = c.get("score")
+        if score is None or score == 0:
+            alerts.append({
+                "id": f"anomaly_{c.get('id', '')}",
+                "type": "data_anomaly",
+                "title": f"資料異常：{c.get('name', '未知診所')}",
+                "detail": f"診所 {c.get('name', '')} 的綜合評分為 {score}，請確認資料來源。",
+                "created_at": None,
+                "status": "active",
+            })
+
+    return {"alerts": alerts}
+
+
+@router.patch("/alerts/resolve/{alert_id:path}")
+async def resolve_alert(alert_id: str):
+    if not alert_id.startswith("crawler_"):
+        raise HTTPException(status_code=400, detail="只有爬蟲失敗類告警支援標記已處理")
+
+    crawler_key = alert_id[len("crawler_"):]
+    SessionLocal, Clinic, UnlockRecord, BroadcastRecord, CrawlerStatus = _get_session()
+
+    try:
+        if SessionLocal:
+            async with SessionLocal() as session:
+                r = await session.get(CrawlerStatus, crawler_key)
+                if not r:
+                    raise HTTPException(status_code=404, detail="Alert not found")
+                r.status = "resolved"
+                r.error_message = None
+                r.error = None
+                await session.commit()
+                return {"ok": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[resolve_alert] DB error, fallback: {e}")
+
+    crawler_status = _load_json(_CRAWLER_STATUS_PATH, {})
+    if crawler_key not in crawler_status:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    crawler_status[crawler_key]["status"] = "resolved"
+    crawler_status[crawler_key].pop("error", None)
+    _save_json(_CRAWLER_STATUS_PATH, crawler_status)
+    return {"ok": True}
+
+
 async def _run_crawler(crawler: str) -> None:
     SessionLocal, Clinic, UnlockRecord, BroadcastRecord, CrawlerStatus = _get_session()
     now = _now_tw()
