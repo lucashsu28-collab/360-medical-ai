@@ -97,6 +97,7 @@ def push_report_to_user(user_id: str, state: str) -> None:
     state 格式：clinic_xxx 或 doctor_xxx。
     找不到診所/醫師或 LINE API 錯誤時拋出 ValueError / httpx.HTTPStatusError。
     """
+    print(f"[push_report] start, state={state!r}", flush=True)
     if not LINE_CHANNEL_ACCESS_TOKEN:
         raise ValueError("LINE_CHANNEL_ACCESS_TOKEN not configured")
     messages: list[dict[str, Any]] = []
@@ -105,6 +106,7 @@ def push_report_to_user(user_id: str, state: str) -> None:
         from services.recommend import get_clinic_by_id
         from services.report import build_clinic_flex_report
         clinic = get_clinic_by_id(clinic_id)
+        print(f"[push_report] clinic found: {clinic is not None}, id={clinic_id}", flush=True)
         if not clinic:
             raise ValueError(f"clinic not found: {clinic_id}")
         name = clinic.get("name") or "該診所"
@@ -113,6 +115,7 @@ def push_report_to_user(user_id: str, state: str) -> None:
             "text": f"你剛才在看【{name}】的報告對嗎？\n我幫你把完整評鑑結果整理出來 👇",
         })
         flex = build_clinic_flex_report(clinic)
+        print(f"[push_report] flex built ok", flush=True)
         messages.append({
             "type": "flex",
             "altText": f"{name} 完整報告",
