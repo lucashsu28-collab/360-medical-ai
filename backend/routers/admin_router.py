@@ -171,7 +171,7 @@ async def log_unlock(request: Request):
                 now = _now_tw()
                 record_id = f"ul_{now.strftime('%Y%m%d%H%M%S')}_{user_id[:8]}"
                 session.add(UnlockRecord(
-                    id=record_id, time=now,
+                    id=record_id, time=now.replace(tzinfo=None),
                     user_id=user_id, target_name=target_name, unlock_type=unlock_type
                 ))
                 await session.commit()

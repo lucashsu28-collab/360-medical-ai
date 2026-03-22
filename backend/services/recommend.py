@@ -29,7 +29,12 @@ def get_clinic_by_id(clinic_id: str) -> dict[str, Any] | None:
         )
         engine = create_engine(db_url, pool_pre_ping=True)
         with engine.connect() as conn:
+            # 先精確查 id
             row = conn.execute(text("SELECT * FROM clinics WHERE id = :id"), {"id": clinic_id}).fetchone()
+            # 找不到就查 mock index（c001~c999 對應真實診所順序）
+            if not row and clinic_id.startswith("c") and clinic_id[1:].isdigit():
+                idx = int(clinic_id[1:]) - 1
+                row = conn.execute(text("SELECT * FROM clinics ORDER BY id LIMIT 1 OFFSET :offset"), {"offset": idx}).fetchone()
             if row:
                 return dict(row._mapping)
     except Exception as e:
