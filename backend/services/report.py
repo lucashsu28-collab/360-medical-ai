@@ -171,7 +171,7 @@ def build_clinic_flex_report(clinic: dict[str, Any]) -> dict[str, Any]:
         if google_place_id
         else f"https://www.google.com/search?q={name_encoded}+評論"
     )
-    nhi_url = f"https://www.google.com/search?q={name_encoded}+site:info.nhi.gov.tw"
+    nhi_url = "https://ma.mohw.gov.tw/Accessibility/BASSearch/MASearchBAS"
 
     dimension_rows = [
         _dimension_row("司法糾紛 ⚖️", judicial, max_val=10, source_url=judicial_url),
