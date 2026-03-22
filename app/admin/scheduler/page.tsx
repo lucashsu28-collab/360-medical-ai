@@ -67,9 +67,10 @@ export default function AdminSchedulerPage() {
   useEffect(() => {
     fetch(`${API_URL}/api/admin/stats`)
       .then((r) => (r.ok ? r.json() : {}))
-      .then((data) => {
-        if (data.crawler_status) {
-          setStatusMap((prev) => ({ ...prev, ...data.crawler_status }));
+      .then((data: Record<string, unknown>) => {
+        const cs = data.crawler_status as Record<CrawlerKey, CrawlerStatus> | undefined;
+        if (cs) {
+          setStatusMap((prev) => ({ ...prev, ...cs }));
         }
       })
       .catch(() => {});
