@@ -64,10 +64,11 @@ def _calc_total_score(c: dict) -> float:
     return sum(scores)
 
 
-def _clean_search(text: str) -> str:
-    """Remove punctuation/spaces so '名媛芭比時尚' matches '名媛芭比.時尚'"""
-    import re
-    return re.sub(r'[.\s\u00b7\u30fb\-_·・]', '', text)
+import re as _re
+
+def _clean_search(s: str) -> str:
+    """Remove dots/spaces/dashes so '名媛芭比時尚' matches '名媛芭比.時尚'"""
+    return _re.sub(r'[.\s·・\u00b7\u30fb\-_]', '', s)
 
 
 @app.get("/api/clinics")
@@ -78,20 +79,20 @@ async def list_clinics(search: str = "", city: str = "", min_score: float = 0, l
         async with _SessionLocal() as session:
             q = select(ClinicModel)
             if search:
-                # Strip special chars from both search term and DB column
-                # regexp_replace(name, '[.\s·・\-_]', '', 'g') ILIKE %cleaned_search%
                 clean_kw = _clean_search(search)
-                clean_col_name = func.regexp_replace(
-                    ClinicModel.name, r'[.\s\u00b7\u30fb\-_]', '', 'g'
-                )
-                clean_col_addr = func.regexp_replace(
-                    ClinicModel.address, r'[.\s\u00b7\u30fb\-_]', '', 'g'
-                )
+                # Use raw SQL text clause: regexp_replace on both name and address columns
+                # This is more reliable than func.regexp_replace().ilike() in SQLAlchemy
+                CLEAN_PATTERN = r'[.\s\u00b7\u30fb\-_]'
                 q = q.where(
                     or_(
-                        clean_col_name.ilike(f"%{clean_kw}%"),
-                        clean_col_addr.ilike(f"%{clean_kw}%"),
-                        # Fallback: original ILIKE for addresses with numbers/slashes
+                        # cleaned DB column vs cleaned search term
+                        sa_text(
+                            "regexp_replace(clinics.name, '[.\\\\s·・\\\\-_]', '', 'g') ILIKE :ckw"
+                        ).bindparams(ckw=f"%{clean_kw}%"),
+                        sa_text(
+                            "regexp_replace(clinics.address, '[.\\\\s·・\\\\-_]', '', 'g') ILIKE :ckw2"
+                        ).bindparams(ckw2=f"%{clean_kw}%"),
+                        # Fallback original search
                         ClinicModel.name.ilike(f"%{search}%"),
                         ClinicModel.address.ilike(f"%{search}%"),
                     )
