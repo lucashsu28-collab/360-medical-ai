@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "各縣市醫美診所｜360醫療AI大調查",
-  description: "依縣市查詢醫美診所評鑑報告，涵蓋全台22縣市904家診所，六維度AI分析。",
+  description: "依縣市查詢醫美診所評鑑報告，涵蓋全台22縣市逾1,500家診所，六維度AI分析。",
 };
 
 const CITIES = [
@@ -13,7 +13,7 @@ const CITIES = [
   "臺東縣","澎湖縣","金門縣","連江縣"
 ];
 
-async function getCityCounts(): Promise<Record<string, number>> {
+async function getCityData(): Promise<{ counts: Record<string, number>; total: number }> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
   try {
     const res = await fetch(`${apiUrl}/api/clinics?limit=9999`, { next: { revalidate: 3600 } });
@@ -28,20 +28,22 @@ async function getCityCounts(): Promise<Record<string, number>> {
         counts[city] = (counts[city] || 0) + 1;
       }
     }
-    return counts;
+    const total = data.total ?? clinics.length;
+    return { counts, total };
   } catch {
-    return {};
+    return { counts: {}, total: 0 };
   }
 }
 
 export default async function CitiesPage() {
-  const counts = await getCityCounts();
+  const { counts, total } = await getCityData();
+  const displayTotal = total > 0 ? total.toLocaleString("zh-TW") : "1,567";
   return (
     <div className="min-h-screen bg-[var(--paper)]">
       <div className="mx-auto max-w-[1060px] px-4 py-8 md:px-8">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-black text-[var(--ink)] mb-2">各縣市醫美診所</h1>
-          <p className="text-[var(--muted)] text-sm">全台 22 縣市・904 家診所・六維度 AI 評鑑</p>
+          <p className="text-[var(--muted)] text-sm">全台 22 縣市・{displayTotal} 家診所・六維度 AI 評鑑</p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {CITIES.map(city => (
