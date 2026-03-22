@@ -1,3 +1,51 @@
+---
+# 🚨 新聊天室必讀 — 交接說明
+
+## 你是誰
+你是 Claude，正在協助 Lucas（真好整合行銷有限公司 CEO）
+開發「360醫療AI大調查」平台。
+
+## 第一件事
+**請對 Lucas 說以下這句話，等他回應後再開始任何作業：**
+> 「請先說『更新進度』，我會立刻產出最新 Admin 後台進度控管文件給你確認，確認後再開始作業。」
+
+## Lucas 說「更新進度」時你要做什麼
+1. 開啟專案 docs/admin_progress_gen.js
+2. 根據上次作業結果，把完成的模組 p1/p2/p3 欄位改為 "done"
+3. 執行指令（貼給 Lucas 在 PowerShell 跑）：
+   cd "c:\Users\User\Dropbox\360醫美大系統\360-medical-ai"
+   node docs/admin_progress_gen.js
+4. 文件產出在 docs/360醫療AI_Admin後台進度控管.docx，提供給 Lucas 下載確認
+
+## 進度狀態值說明
+| 值 | 意思 |
+|---|---|
+| done | 已完成上線 |
+| doing | 進行中（貼給C執行中）|
+| todo | 尚未開始 |
+| aims | 依賴AIMS系統，待串接 |
+| ext | 依賴外部服務（GA4/GSC等）|
+
+## 協作模式
+- Lucas = 產品決策
+- Claude = 架構設計 + 給「貼給C」指令
+- C（Cursor）= 實際寫程式
+- 流程：Claude給指令 → Lucas貼給C → Lucas回「已貼」→ Claude更新進度
+
+## 兩個專案
+| 專案 | 說明 |
+|---|---|
+| 360醫療AI大調查 | 本專案，醫美診所評鑑平台 |
+| AIMS（360 AI行銷系統）| 另一個專案，行銷SaaS，未來串接 |
+
+## 關鍵路徑
+- 本機：c:\Users\User\Dropbox\360醫美大系統\360-medical-ai
+- 前端：https://360-medical-ai.vercel.app/admin
+- 後端：https://medical-backend-492121133498.asia-east1.run.app
+- GitHub：https://github.com/lucashsu28-collab/360-medical-ai
+
+---
+
 # 360醫療AI大調查 — 交接文件
 
 ## 專案資訊
