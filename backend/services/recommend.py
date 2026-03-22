@@ -5,12 +5,28 @@ import json
 import os
 from typing import Any
 
-_data_path = os.path.join(os.path.dirname(__file__), "../data/clinics_real.json")
+# 依序嘗試幾個可能的路徑
+def _find_data_path():
+    candidates = [
+        os.path.join(os.path.dirname(__file__), "../data/clinics_real.json"),
+        os.path.join(os.path.dirname(__file__), "clinics_real.json"),
+        "/app/clinics_real.json",
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return p
+    return candidates[0]  # fallback，讓後面的 open 拋出正確錯誤
+
+_data_path = _find_data_path()
 
 
 def _load_clinics() -> list[dict[str, Any]]:
-    with open(_data_path, encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(_data_path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"[recommend] 無法載入 clinics_real.json: {e}", flush=True)
+        return []
 
 
 CLINICS = _load_clinics()

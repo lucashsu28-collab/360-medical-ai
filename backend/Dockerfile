@@ -9,6 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 應用程式
 COPY . .
+# 確保診所資料可被讀取
+RUN ls -la /app/data/ 2>/dev/null || echo "data/ not found"
 
 # Cloud Run 預設聽 8080
 EXPOSE 8080
