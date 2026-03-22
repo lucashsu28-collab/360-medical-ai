@@ -52,8 +52,11 @@ function filterClinics(
   const partnerOnly = getParamList(searchParams, "partnerOnly").includes("1");
 
   const q = typeof searchParams.q === "string" ? searchParams.q.trim() : "";
+  // Strip special chars for fuzzy match (handles "名媛芭比.時尚" vs "名媛芭比時尚")
+  const cleanStr = (s: string) => s.replace(/[.\s·・\-_]/g, "");
+  const cleanQ = cleanStr(q);
   return list.filter((c) => {
-    if (q && !(c.name || "").includes(q)) return false;
+    if (q && !cleanStr(c.name || "").includes(cleanQ)) return false;
     if (districts.length > 0) {
       const cities = districts.flatMap((d) => CITY_MAP[d] ?? []);
       if (cities.length > 0 && !cities.some((city) => (c.address || "").startsWith(city)))
