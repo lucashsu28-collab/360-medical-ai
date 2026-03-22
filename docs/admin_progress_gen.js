@@ -116,6 +116,8 @@ const phase2Modules = [
     items:["新增 /about 關於我們頁面","新增 /scoring 評分標準頁面","新增 /clinic-update 診所更新資料申請表單","新增 /partnership 我想合作佔位頁面","SiteNav 導覽列加入對應連結與「我想合作」按鈕"] },
   { num:"B8", name:"前台診所資料館命名統一", status:"done",
     items:["SiteNav「合作診所」改為「診所資料館」","首頁/診所列表/診所詳細頁/優惠頁全數更新","/partners 頁面標題與說明文字統一"] },
+  { num:"B9", name:"衛福部ODS診所資料擴充（784筆新增，DB總計1688筆）", status:"done",
+    items:["下載衛福部醫事司ODS（24,138筆全台開業機構）","篩選整形外科+皮膚科共945筆","排除醫院/法人僅保留診所層級806筆","去重後匯入784筆新診所","DB總診所數從904筆擴充至1688筆","新增欄位：legal_score=10, judicial_score=10, score=20"] },
 ];
 
 const phase3Modules = [
