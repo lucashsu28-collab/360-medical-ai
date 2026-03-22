@@ -86,7 +86,7 @@ const modules = [
     items:["查看對話記錄（全部/指定用戶）","標記好的回答 / 壞的回答","查看壞回答統計（哪類問題答不好）","新增/編輯FAQ知識庫","測試模式（直接跟AI對話測試）","匯出對話記錄CSV"] },
   { num:"#12", name:"評分規則管理",           route:"/admin/scoring",          p1:"done",  p2:"todo", p3:"todo",
     items:["各維度權重設定（Google/司法/合法登記/行政處分）","司法案件扣分規則（1件扣幾分、上限幾分）","行政處分扣分規則","Google評分換算規則（幾星換算幾分）","新產業評分規則設定（牙醫/眼科等）","規則變更記錄（誰改的、改了什麼）"] },
-  { num:"#13", name:"告警系統",               route:"/admin/alerts",           p1:"done",  p2:"todo", p3:"todo",
+  { num:"#13", name:"告警系統",               route:"/admin/alerts",           p1:"done",  p2:"done", p3:"todo",
     items:["爬蟲失敗通知（Email/LINE推播）","資料異常警示（分數異常變動）","Cloud Run服務異常通知","API回應時間過慢警示","告警歷史記錄","告警閾值設定"] },
 ];
 
