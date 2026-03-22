@@ -126,17 +126,42 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Main */}
       <main
         style={{
           marginLeft: 220,
           flex: 1,
           background: "#F8FAFC",
           minHeight: "100vh",
-          padding: 24,
         }}
       >
-        {children}
+        <div style={{
+          background: "#fff",
+          borderBottom: "1px solid #E2E8F0",
+          padding: "12px 24px",
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+        }}>
+          <a
+            href="https://360-medical-ai.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: "8px 18px",
+              background: "#0F6E56",
+              color: "#fff",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            前往前台 →
+          </a>
+        </div>
+        <div style={{ padding: 24 }}>
+          {children}
+        </div>
       </main>
     </div>
   );
