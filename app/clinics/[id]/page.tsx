@@ -61,41 +61,6 @@ function FakeFogContent({ clinicName }: { clinicName: string }) {
   );
 }
 
-function ReviewItem({
-  author,
-  date,
-  rating,
-  text,
-}: {
-  author: string;
-  date: string;
-  rating: number;
-  text: string;
-}) {
-  return (
-    <article className="border-b border-[var(--line)] py-4 last:border-b-0">
-      <div className="mb-2 flex items-center gap-2">
-        <span className="text-[13px] font-bold text-[var(--ink)]">{author}</span>
-        <span className="text-[12px] text-[var(--muted)]">{date}</span>
-        <span
-          className="text-[13px] font-medium"
-          style={{ fontFamily: "var(--font-dm-mono)", color: "var(--blue)" }}
-        >
-          {rating.toFixed(1)}
-        </span>
-      </div>
-      <p className="text-[13px] leading-relaxed text-[var(--ink2)]">{text}</p>
-    </article>
-  );
-}
-
-const FAKE_REVIEWS = [
-  { author: "王**", date: "2024-02-15", rating: 4.5, text: "醫師解說清楚，術後恢復順利，整體滿意。唯一是預約要提早。" },
-  { author: "林**", date: "2024-01-28", rating: 5, text: "環境乾淨，護理師很親切，雷射效果符合預期，會再回診。" },
-  { author: "陳**", date: "2024-01-10", rating: 4, text: "價格透明，沒有強迫推銷。術後有一點紅腫，幾天就退了。" },
-  { author: "張**", date: "2023-12-22", rating: 4.5, text: "第一次做醫美有點緊張，醫師和團隊都很專業，體驗不錯。" },
-  { author: "李**", date: "2023-12-05", rating: 4, text: "交通方便，診所空間舒適。療程效果中規中矩，可接受。" },
-];
 
 export async function generateMetadata({
   params,
@@ -264,25 +229,35 @@ export default async function ClinicDetailPage({
             </section>
 
             {/* 消費者評論 */}
-            <section className="rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,.04)]">
-              <h2 className="mb-4 text-[16px] font-bold text-[var(--ink)]">
-                消費者評論
-              </h2>
-              <p className="mb-4 text-[13px] text-[var(--muted)]">
-                共 {reviewCount} 則評論 · 以下為精選摘要
-              </p>
-              <div className="divide-y-0">
-                {FAKE_REVIEWS.map((r, i) => (
-                  <ReviewItem
-                    key={i}
-                    author={r.author}
-                    date={r.date}
-                    rating={r.rating}
-                    text={r.text}
-                  />
-                ))}
-              </div>
-            </section>
+            {clinic.google_rating != null && (
+              <section className="rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,.04)]">
+                <h2 className="mb-4 text-[16px] font-bold text-[var(--ink)]">
+                  消費者評論
+                </h2>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="text-center">
+                    <div className="text-4xl font-black text-[var(--blue)]">{clinic.google_rating.toFixed(1)}</div>
+                    <div className="text-[12px] text-[var(--muted)] mt-1">Google 評分</div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[13px] text-[var(--ink2)] mb-3">
+                      共 <strong>{reviewCount.toLocaleString("zh-TW")}</strong> 則 Google 評論
+                    </div>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clinic.name)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-[8px] border border-[var(--line)] bg-white px-4 py-2 text-[13px] font-medium text-[var(--blue)] transition-colors hover:border-[var(--blue)]"
+                    >
+                      查看 Google Maps 完整評論 →
+                    </a>
+                  </div>
+                </div>
+                <p className="text-[12px] text-[var(--muted)] border-t border-[var(--line)] pt-3">
+                  評論內容由 Google Maps 用戶提供，360醫療AI大調查不對評論內容負責。
+                </p>
+              </section>
+            )}
           </main>
 
           {/* 右側欄 */}
