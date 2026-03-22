@@ -91,9 +91,9 @@ const modules = [
 ];
 
 const phase2Modules = [
-  { num:"B1", name:"PostgreSQL 接真實 DB", status:"todo",
+  { num:"B1", name:"PostgreSQL 接真實 DB", status:"done",
     items:["設計 schema（clinics/doctors/unlocks/broadcasts/crawler_status）","Alembic migration 建立","取代所有 JSON 檔案讀取","Admin 後台 13 模組全部接真實 DB"] },
-  { num:"B2", name:"GCP Cloud Scheduler 排程", status:"todo",
+  { num:"B2", name:"GCP Cloud Scheduler 排程", status:"done",
     items:["Google Places 每10天自動觸發","司法院每30天自動觸發","行政處分每30天自動觸發","新聞/社群每7天自動觸發"] },
   { num:"B3", name:"AIMS AI SEO 文章推送", status:"aims",
     items:["AIMS生成文章 → API推送至診所頁","診所詳細頁展示SEO文章區塊"] },
