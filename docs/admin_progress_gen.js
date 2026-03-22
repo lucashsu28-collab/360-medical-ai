@@ -90,6 +90,15 @@ const modules = [
     items:["爬蟲失敗通知（Email/LINE推播）","資料異常警示（分數異常變動）","Cloud Run服務異常通知","API回應時間過慢警示","告警歷史記錄","告警閾值設定"] },
 ];
 
+const phase1Modules = [
+  { num:"P1-1", name:"衛福部行政處分爬蟲（診所第4維度）", status:"todo",
+    items:["爬取 ma.mohw.gov.tw 行政裁處資料庫","比對904家診所建立裁處記錄","整合至clinics_real.json第4維度","診所詳細頁顯示行政處分記錄+來源連結"] },
+  { num:"P1-2", name:"診所↔醫師對應", status:"todo",
+    items:["從健保署資料建立診所-醫師關聯表","醫師頁面顯示所屬診所","診所頁面顯示執業醫師列表"] },
+  { num:"P1-3", name:"正式網域購買+綁定", status:"todo",
+    items:["購買正式網域","Vercel自訂網域綁定","Google Search Console提交Sitemap"] },
+];
+
 const phase2Modules = [
   { num:"B1", name:"PostgreSQL 接真實 DB", status:"done",
     items:["設計 schema（clinics/doctors/unlocks/broadcasts/crawler_status）","Alembic migration 建立","取代所有 JSON 檔案讀取","Admin 後台 13 模組全部接真實 DB"] },
@@ -208,6 +217,24 @@ const doc = new Document({
       new Paragraph({ spacing:{ after:120 }, children:[new TextRun({ text:"每個功能項目完成後於對應階段欄位更新狀態。", color:"888888", size:16, font:"Arial" })] }),
       ...modules.flatMap(m => [spacer(), makeDetail(m)]),
       spacer(),
+      new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun({ text:"Phase 1 待完成項目", font:"Arial", size:24, bold:true, color:NAVY })] }),
+      new Table({ width:{ size:8900, type:WidthType.DXA }, columnWidths:[500,2800,4400,1200],
+        rows:[
+          new TableRow({ tableHeader:true, children:[
+            headerCell("#", 500), headerCell("項目名稱", 2800), headerCell("子任務", 4400), headerCell("狀態", 1200),
+          ]}),
+          ...phase1Modules.map(m => new TableRow({ children:[
+            cell(m.num, { bold:true, color:GRAY, width:500, size:16, align:AlignmentType.CENTER }),
+            cell(m.name, { bold:true, width:2800, size:17 }),
+            new TableCell({ borders, width:{ size:4400, type:WidthType.DXA },
+              shading:{ fill:WHITE, type:ShadingType.CLEAR }, margins:{ top:80, bottom:80, left:120, right:120 },
+              children: m.items.map(item => new Paragraph({ spacing:{ after:60 }, children:[new TextRun({ text:"• "+item, size:16, font:"Arial" })] }))
+            }),
+            statusCell("","todo",1200),
+          ]})),
+        ]
+      }),
+      spacer(),
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun({ text:"Phase 2 基礎建設作業項目", font:"Arial", size:24, bold:true, color:NAVY })] }),
       new Table({ width:{ size:8900, type:WidthType.DXA }, columnWidths:[500,2800,4400,1200],
         rows:[
@@ -258,9 +285,79 @@ const doc = new Document({
   }]
 });
 
+// ── PROGRESS.md 產出 ──────────────────────────────────────────────────────────
+function genProgressMd() {
+  const statusIcon = { done:"✅完成", doing:"⚠️部分完成", todo:"❌未開始", aims:"🟣AIMS串接", ext:"⚠️部分完成" };
+  const p1status = { done:"✅完成", doing:"⚠️部分完成", todo:"❌未開始", aims:"🟣AIMS串接" };
+
+  const lines = [
+    `<!-- 新聊天室開場指令：開始作業 -->`,
+    `<!-- "開始作業" = 讀 docs/PROGRESS.md 後開始作業 -->`,
+    ``,
+    `# 360醫療AI大調查 — 專案進度`,
+    ``,
+    `**最後更新：${TODAY}**`,
+    ``,
+    `---`,
+    ``,
+    `## Phase 1 待完成項目`,
+    ``,
+    `| # | 項目 | 狀態 |`,
+    `|---|---|---|`,
+    ...phase1Modules.map(m => `| ${m.num} | ${m.name} | ${statusIcon[m.status]||"❌未開始"} |`),
+    ``,
+    `---`,
+    ``,
+    `## Admin 13模組`,
+    ``,
+    `| # | 模組名稱 | 路由 | 第一階段 | 第二階段 | 第三階段 |`,
+    `|---|---|---|---|---|---|`,
+    ...modules.map(m => {
+      const p3 = m.p3==="aims"?"🟣AIMS串接":m.p3==="ext"?"⚠️部分完成":p1status[m.p3]||"❌未開始";
+      return `| ${m.num} | ${m.name} | \`${m.route}\` | ${p1status[m.p1]||"❌"} | ${p1status[m.p2]||"❌"} | ${p3} |`;
+    }),
+    ``,
+    `---`,
+    ``,
+    `## Phase 2 基礎建設`,
+    ``,
+    `| # | 項目 | 狀態 |`,
+    `|---|---|---|`,
+    ...phase2Modules.map(m => `| ${m.num} | ${m.name} | ${statusIcon[m.status]||"❌未開始"} |`),
+    ``,
+    `---`,
+    ``,
+    `## Phase 3 商業變現`,
+    ``,
+    `| # | 項目 | 狀態 |`,
+    `|---|---|---|`,
+    ...phase3Modules.map(m => `| ${m.num} | ${m.name} | ${statusIcon[m.status]||"❌未開始"} |`),
+    ``,
+    `---`,
+    ``,
+    `## 專案資訊`,
+    ``,
+    `| 項目 | 內容 |`,
+    `|---|---|`,
+    `| 專案路徑 | \`c:\\Users\\User\\Dropbox\\360醫美大系統\\360-medical-ai\` |`,
+    `| 前端 URL | https://360-medical-ai.vercel.app |`,
+    `| GCP Cloud Run | https://medical-backend-492121133498.asia-east1.run.app |`,
+    `| Cloud SQL IP | 34.81.74.228 |`,
+    `| DB 名稱 | medical_ai |`,
+    `| DB 使用者 | postgres |`,
+    `| Git 最新 commit | 執行 \`git log -1 --oneline\` 確認 |`,
+    ``,
+  ];
+  return lines.join("\n");
+}
+
 // 執行：node docs/admin_progress_gen.js
-// 輸出：docs/360醫療AI_Admin後台進度控管.docx
+// 輸出：docs/360醫療AI_Admin後台進度控管.docx + docs/PROGRESS.md
 Packer.toBuffer(doc).then(b => {
   fs.writeFileSync("docs/360\u91ab\u7642AI_Admin\u5f8c\u53f0\u9032\u5ea6\u63a7\u7ba1.docx", b);
   console.log("\u2713 \u6587\u4ef6\u7522\u51fa\u5b8c\u6210\uff1adocs/360\u91ab\u7642AI_Admin\u5f8c\u53f0\u9032\u5ea6\u63a7\u7ba1.docx");
+
+  const md = genProgressMd();
+  fs.writeFileSync("docs/PROGRESS.md", md, "utf-8");
+  console.log("\u2713 PROGRESS.md \u7522\u51fa\u5b8c\u6210");
 });
