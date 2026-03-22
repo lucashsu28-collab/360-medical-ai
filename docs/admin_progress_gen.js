@@ -130,7 +130,7 @@ function makeDetail(m) {
           new TextRun({ text:"   "+m.route, color:"AAAACC", size:15, font:"Courier New" }),
         ]})]
       })
-    ]),
+    ]}),
     new TableRow({ children:[
       headerCell("功能項目", 5200), headerCell("第一階段", 1200), headerCell("第二階段", 1200),
     ]}),
