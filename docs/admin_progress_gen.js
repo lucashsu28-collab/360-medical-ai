@@ -99,7 +99,7 @@ const phase2Modules = [
     items:["AIMS生成文章 → API推送至診所頁","診所詳細頁展示SEO文章區塊"] },
   { num:"B4", name:"AIMS 口碑監測串接", status:"aims",
     items:["新聞/PTT/Dcard由AIMS爬蟲提供","整合至診所第5、6維度","整合至醫師第4、5維度"] },
-  { num:"B5", name:"Admin後台接真實DB", status:"todo",
+  { num:"B5", name:"Admin後台接真實DB", status:"done",
     items:["#4客戶列表串接AIMS","#6合作診所開通/停用接真實DB","#8數據分析串接GA4","其餘模組從mock改為真實資料"] },
   { num:"B6", name:"Google Places 真實評論抓取", status:"todo",
     items:["Places API抓取每家診所前5則評論","評論資料存進PostgreSQL DB","診所詳細頁展示真實評論（取代假資料）"] },
