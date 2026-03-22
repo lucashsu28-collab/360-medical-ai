@@ -20,6 +20,14 @@ _CLINICS_PATH = _DATA_DIR / "clinics_real.json"
 _UNLOCKS_PATH = _DATA_DIR / "unlock_records.json"
 _BROADCASTS_PATH = _DATA_DIR / "broadcast_records.json"
 _CRAWLER_STATUS_PATH = _DATA_DIR / "crawler_status.json"
+_SCORING_RULES_PATH = _DATA_DIR / "scoring_rules.json"
+
+_DEFAULT_SCORING_RULES: dict = {
+    "legal": {"has_registration": 20, "no_registration": 0},
+    "google_stars": {"4.5+": 15, "4.0-4.4": 12, "3.5-3.9": 9, "3.0-3.4": 6, "below_3.0": 3},
+    "google_reviews": {"1000+": 5, "500-999": 4, "100-499": 3, "1-99": 2, "0": 0},
+    "judicial": {"0_cases": 20, "1_case": 15, "2_cases": 10, "3_cases": 5, "4plus_cases": 0},
+}
 
 
 def _get_session():
@@ -505,6 +513,66 @@ async def resolve_alert(alert_id: str):
     crawler_status[crawler_key]["status"] = "resolved"
     crawler_status[crawler_key].pop("error", None)
     _save_json(_CRAWLER_STATUS_PATH, crawler_status)
+    return {"ok": True}
+
+
+def _get_scoring_session():
+    try:
+        from config import DATABASE_URL
+        from models.scoring_rule import ScoringRule
+        db_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace("postgresql://", "postgresql+asyncpg://")
+        engine = create_async_engine(db_url, echo=False, pool_pre_ping=True)
+        return async_sessionmaker(engine, expire_on_commit=False), ScoringRule
+    except Exception:
+        return None, None
+
+
+@router.get("/scoring-rules")
+async def get_scoring_rules():
+    SessionLocal, ScoringRule = _get_scoring_session()
+    try:
+        if SessionLocal:
+            async with SessionLocal() as session:
+                result = await session.execute(
+                    select(ScoringRule).order_by(desc(ScoringRule.id)).limit(1)
+                )
+                row = result.scalar_one_or_none()
+                if row:
+                    return {
+                        "rules": row.rules,
+                        "updated_at": _format_dt(row.updated_at),
+                        "updated_by": row.updated_by,
+                    }
+    except Exception as e:
+        print(f"[scoring-rules GET] DB error, fallback: {e}")
+
+    saved = _load_json(_SCORING_RULES_PATH, None)
+    return {"rules": saved or _DEFAULT_SCORING_RULES, "updated_at": None, "updated_by": None}
+
+
+@router.post("/scoring-rules")
+async def save_scoring_rules(request: Request):
+    body = await request.json()
+    rules = body.get("rules")
+    if not rules:
+        raise HTTPException(status_code=400, detail="rules required")
+
+    SessionLocal, ScoringRule = _get_scoring_session()
+    try:
+        if SessionLocal:
+            async with SessionLocal() as session:
+                new_rule = ScoringRule(
+                    rules=rules,
+                    updated_at=_now_tw().replace(tzinfo=None),
+                    updated_by="admin",
+                )
+                session.add(new_rule)
+                await session.commit()
+                return {"ok": True}
+    except Exception as e:
+        print(f"[scoring-rules POST] DB error, fallback: {e}")
+
+    _save_json(_SCORING_RULES_PATH, rules)
     return {"ok": True}
 
 
