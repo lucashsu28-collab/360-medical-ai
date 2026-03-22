@@ -86,32 +86,46 @@ python -m crawlers.merge_judicial      # 整合司法分數進 clinics_real.json
 ## 醫美平台開發進度（2026/03/22更新）
 
 ### ✅ 已完成
-- 前端展示版上線（Vercel）：https://360-medical-ai.vercel.app
+- 前端展示版上線（Vercel）
 - Gemini 2.5 Flash LINE AI顧問（push message）
 - LIFF串接（含page參數+auto_unlock自動送報告）
-- 診所Flex報告卡片（六維度，含各維度來源連結）
+- 診所Flex報告卡片（六維度+進度條+來源連結）
 - 醫師Flex報告卡片（四維度）
 - 霧化報告（加LINE解鎖）
-- 健保署904家真實診所資料（clinics_real.json）
-- Google Places評分（904家完整，places_results.json）
-- 衛福部醫師即時查詢（httpx+BeautifulSoup）
+- 健保署904家真實診所資料
+- Google Places評分（904家完整）
+- 衛福部醫師即時查詢
 - 醫師頁解鎖→confirm→跳LIFF→auto_unlock自動送報告到LINE
-- 司法院裁判書資料（904家，496家有真實案件，judicial_results.json）
-- 三維度真實資料整合進診所詳細頁（司法糾紛/Google評分/合法登記）
-- 診所詳細頁 generateMetadata（動態SEO title/description/OG）
-- Schema.org JSON-LD結構化標記（MedicalOrganization + AggregateRating）
-- 動態Sitemap（app/sitemap.ts，含904家診所URL，每日更新）
+- 司法院裁判書資料（904家，496家有真實案件）
+- 三維度真實資料整合進診所詳細頁
+- 解鎖報告各維度來源連結
+- Schema.org MedicalOrganization結構化標記
+- Sitemap自動生成（904家診所+城市頁+FAQ+專欄+百科）
+- generateMetadata動態SEO（每家診所獨立title/description/OG）
+- Admin後台13模組 P1 mock 全部完成（#1~#13，#4待AIMS串接）
+- Admin後台右上「前往前台」按鈕，前台SiteNav在admin路徑隱藏
+- FogReport解鎖行為寫入log-unlock記錄
+- GCP Cloud Scheduler三個排程（Google/司法院/衛福部）
+- FastAPI BackgroundTasks修正（避免Cloud Run截斷）
+- 前台AI SEO頁面：城市頁/FAQ/專欄/醫美百科/診所比較
+- SiteNav新增城市頁/醫美專欄/常見問題選單
 
-### ⏳ 待完成（優先順序）
-- 🔴 衛福部行政處分爬蟲（診所第6維度+醫師第3維度，附案件連結）
-- 🟡 新聞爬蟲（NLP情緒分析）
-- 🟡 PTT/Dcard社群爬蟲
+### ⏳ 待完成（Phase 1）
+- 🔴 衛福部行政處分爬蟲（診所第4維度+醫師第3維度）
 - 🟡 診所↔醫師對應
-- 🟡 Google Search Console提交Sitemap
-- 🟢 Admin後台13模組（Phase 2，整合進AI行銷系統）
-- 🟢 PostgreSQL接真實DB（Phase 2）
-- 🟢 GCP Cloud Scheduler自動排程（Phase 2）
-- 🟢 預約系統（Phase 3）
+- 🟡 正式網域購買+綁定Vercel+提交Google Search Console
+
+### ⏳ 待完成（Phase 2）
+- 🟢 B1 PostgreSQL接真實DB
+- 🟢 B2 GCP Cloud Scheduler（已建立排程，BackgroundTasks已修正）✅排程完成
+- 🟢 B3 AIMS AI SEO文章推送（依賴AIMS）
+- 🟢 B4 AIMS口碑監測串接（依賴AIMS）
+- 🟢 B5 Admin後台接真實DB
+
+### ⏳ 待完成（Phase 3）
+- 🔵 預約系統
+- 🔵 多醫療產業擴充
+- 🔵 付費解鎖/訂閱制
 
 ### Admin後台13模組規劃
 1. LINE OA AI醫美顧問系統
