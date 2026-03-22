@@ -10,19 +10,15 @@ _data_path = os.path.join(os.path.dirname(__file__), "../data/clinics_real.json"
 
 def _load_clinics() -> list[dict[str, Any]]:
     with open(_data_path, encoding="utf-8") as f:
-        data = json.load(f)
-    # 只取前50家做展示，之後可以全開
-    return data[:50]
+        return json.load(f)
 
 
 CLINICS = _load_clinics()
+_CLINIC_INDEX: dict[str, dict[str, Any]] = {c["id"]: c for c in CLINICS}
 
 
 def get_clinic_by_id(clinic_id: str) -> dict[str, Any] | None:
-    for c in CLINICS:
-        if c["id"] == clinic_id:
-            return c
-    return None
+    return _CLINIC_INDEX.get(clinic_id)
 
 
 def get_all_clinics() -> list[dict[str, Any]]:

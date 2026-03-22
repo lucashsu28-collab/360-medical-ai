@@ -15,12 +15,14 @@ from webhook.line import verify_signature, handle_webhook_body, set_liff_state, 
 from services.recommend import get_all_clinics
 from crawlers.doctor_mohw import search_doctor, get_doctor_detail
 from services.report import build_doctor_flex_report
+from routers.admin_router import router as admin_router
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
     description="LINE Webhook 與 AI 顧問後端",
     version="0.1.0",
 )
+app.include_router(admin_router)
 
 # 允許 LIFF 前端（Vercel）跨域呼叫 POST /api/liff-state
 _allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://360-medical-ai.vercel.app").strip().split(",")
@@ -44,9 +46,18 @@ async def health():
 
 
 @app.get("/api/clinics")
-async def list_clinics():
-    """回傳真實診所列表（來自 backend/data/clinics_real.json，前 50 家）。"""
-    return {"clinics": get_all_clinics()}
+async def list_clinics(search: str = "", limit: int = 50, offset: int = 0):
+    """回傳真實診所列表，支援搜尋、分頁。"""
+    all_clinics = get_all_clinics()
+    if search:
+        q = search.lower()
+        all_clinics = [
+            c for c in all_clinics
+            if q in c.get("name", "").lower() or q in c.get("address", "").lower()
+        ]
+    total = len(all_clinics)
+    page_clinics = all_clinics[offset: offset + limit]
+    return {"clinics": page_clinics, "total": total}
 
 
 @app.get("/api/doctors")
