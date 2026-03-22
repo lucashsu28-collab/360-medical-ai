@@ -66,7 +66,7 @@ export default function AdminUnlocksPage() {
     }
   };
 
-  const maskUserId = (uid: string) => `${uid.slice(0, 8)}****`;
+  const maskUserId = (uid: string) => uid;
 
   return (
     <div>
