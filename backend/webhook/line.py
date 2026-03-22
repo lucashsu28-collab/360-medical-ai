@@ -205,6 +205,28 @@ async def _handle_follow(user_id: str) -> None:
     await _push_text(user_id, welcome)
 
 
+async def _save_conversation(line_user_id: str, role: str, message: str) -> None:
+    """將對話寫入 line_conversations table，失敗時靜默忽略。"""
+    try:
+        from config import DATABASE_URL
+        from models.line_conversation import LineConversation
+        from datetime import datetime
+        from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+        db_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace("postgresql://", "postgresql+asyncpg://")
+        engine = create_async_engine(db_url, echo=False, pool_pre_ping=True)
+        SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+        async with SessionLocal() as session:
+            session.add(LineConversation(
+                line_user_id=line_user_id,
+                role=role,
+                message=message[:2000],  # 截斷超長訊息
+                created_at=datetime.utcnow(),
+            ))
+            await session.commit()
+    except Exception as e:
+        print(f"[save_conversation] DB error: {e}", flush=True)
+
+
 async def _handle_message(user_id: str, message: dict[str, Any]) -> None:
     """處理使用者文字訊息：支援「報告:clinic_xxx」「報告:doctor_xxx」觸發 Flex 報告，其餘走 Gemini。"""
     msg_type = message.get("type")
@@ -244,6 +266,9 @@ async def _handle_message(user_id: str, message: dict[str, Any]) -> None:
         await _push_text(user_id, "請輸入「報告:clinic_診所ID」或「報告:doctor_醫師ID」，例如：報告:clinic_c01")
         return
 
+    # 記錄使用者訊息
+    await _save_conversation(user_id, "user", text)
+
     print(f"[FLOW] calling gemini, user_id={user_id}", flush=True)
     try:
         from ai.gemini import handle_message as gemini_handle_message
@@ -254,6 +279,9 @@ async def _handle_message(user_id: str, message: dict[str, Any]) -> None:
         print(traceback.format_exc())
         reply_text = "抱歉，剛剛出了一點狀況，請再試一次或稍後再問～"
     print("[FLOW] gemini done, about to reply", flush=True)
+
+    # 記錄 AI 回覆
+    await _save_conversation(user_id, "assistant", reply_text)
     await _push_text(user_id, reply_text)
 
 

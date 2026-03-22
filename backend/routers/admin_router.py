@@ -340,6 +340,8 @@ async def send_test(request: Request):
             raise HTTPException(status_code=404, detail="Clinic not found")
         flex = build_clinic_flex_report(clinic)
         messages = [{"type": "flex", "altText": f"{clinic['name']} 評鑑報告", "contents": flex}]
+    elif message_type == "doctor":
+        messages = [{"type": "text", "text": "您查詢的醫師報告已解鎖，請至LINE查看完整評鑑資訊。"}]
     else:
         raise HTTPException(status_code=400, detail="Invalid message_type")
 
@@ -628,6 +630,40 @@ async def export_clinic_json(clinic_id: str):
     if not c:
         raise HTTPException(status_code=404, detail="Clinic not found")
     return c
+
+
+@router.get("/conversations")
+async def get_conversations(line_user_id: str = "", limit: int = 50, offset: int = 0):
+    try:
+        from config import DATABASE_URL
+        from models.line_conversation import LineConversation
+        db_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace("postgresql://", "postgresql+asyncpg://")
+        engine = create_async_engine(db_url, echo=False, pool_pre_ping=True)
+        SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+        async with SessionLocal() as session:
+            q = select(LineConversation).order_by(desc(LineConversation.id))
+            if line_user_id:
+                q = q.where(LineConversation.line_user_id == line_user_id)
+            total = (await session.execute(
+                select(func.count()).select_from(q.subquery())
+            )).scalar_one()
+            rows = (await session.execute(q.offset(offset).limit(limit))).scalars().all()
+            return {
+                "total": total,
+                "conversations": [
+                    {
+                        "id": r.id,
+                        "line_user_id": r.line_user_id,
+                        "role": r.role,
+                        "message": r.message,
+                        "created_at": _format_dt(r.created_at),
+                    }
+                    for r in rows
+                ],
+            }
+    except Exception as e:
+        print(f"[conversations] DB error: {e}")
+    return {"total": 0, "conversations": []}
 
 
 def _get_scoring_session():

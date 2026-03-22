@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-type Tab = "broadcasts" | "send";
+type Tab = "broadcasts" | "send" | "conversations";
 
 interface BroadcastRecord {
   id: string;
@@ -13,6 +13,14 @@ interface BroadcastRecord {
   message_type: string;
   target_name: string;
   status: "success" | "failed";
+}
+
+interface Conversation {
+  id: number;
+  line_user_id: string;
+  role: "user" | "assistant";
+  message: string;
+  created_at: string;
 }
 
 interface ClinicOption {
@@ -38,10 +46,38 @@ export default function AdminLineAIPage() {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
+  // Tab3 state
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [convTotal, setConvTotal] = useState(0);
+  const [convLoading, setConvLoading] = useState(false);
+  const [filterUserId, setFilterUserId] = useState("");
+  const [filterQuery, setFilterQuery] = useState("");
+
+  const adminToken = () =>
+    typeof window !== "undefined" ? (localStorage.getItem("admin_token") ?? "") : "";
+
+  const loadConversations = useCallback((uid: string) => {
+    setConvLoading(true);
+    const params = new URLSearchParams({ limit: "50" });
+    if (uid) params.set("line_user_id", uid);
+    fetch(`${API_URL}/api/admin/conversations?${params}`, {
+      headers: { "x-admin-token": adminToken() },
+    })
+      .then((r) => (r.ok ? r.json() : { total: 0, conversations: [] }))
+      .then((d) => {
+        setConversations(d.conversations ?? []);
+        setConvTotal(d.total ?? 0);
+      })
+      .catch(() => setConversations([]))
+      .finally(() => setConvLoading(false));
+  }, []);
+
   useEffect(() => {
     if (tab === "broadcasts") {
       setBLoading(true);
-      fetch(`${API_URL}/api/admin/broadcasts`)
+      fetch(`${API_URL}/api/admin/broadcasts`, {
+        headers: { "x-admin-token": adminToken() },
+      })
         .then((r) => (r.ok ? r.json() : { broadcasts: [] }))
         .then((d) => setBroadcasts(d.broadcasts ?? []))
         .finally(() => setBLoading(false));
@@ -51,7 +87,10 @@ export default function AdminLineAIPage() {
         .then((r) => (r.ok ? r.json() : { clinics: [] }))
         .then((d) => setClinicOptions(d.clinics ?? []));
     }
-  }, [tab, clinicOptions.length]);
+    if (tab === "conversations") {
+      loadConversations("");
+    }
+  }, [tab, clinicOptions.length, loadConversations]);
 
   const handleSend = async () => {
     if (!sendUserId.trim()) return;
@@ -105,12 +144,12 @@ export default function AdminLineAIPage() {
         LINE OA 管理
       </h1>
       <p style={{ color: "#64748B", fontSize: 14, marginBottom: 20 }}>
-        推播記錄查詢與手動測試發送（AI顧問對話記錄於 Phase 2 開放）
+        推播記錄、手動發送測試、AI 顧問對話記錄查詢
       </p>
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, marginBottom: 24, borderBottom: "2px solid #E2E8F0" }}>
-        {([["broadcasts", "推播記錄"], ["send", "手動發送"]] as [Tab, string][]).map(([t, label]) => (
+        {([["broadcasts", "推播記錄"], ["send", "手動發送"], ["conversations", "AI對話記錄"]] as [Tab, string][]).map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -354,6 +393,100 @@ export default function AdminLineAIPage() {
           >
             {sending ? "發送中…" : "發送"}
           </button>
+        </div>
+      )}
+
+      {/* Tab 3: AI 對話記錄 */}
+      {tab === "conversations" && (
+        <div>
+          {/* 篩選列 */}
+          <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+            <input
+              type="text"
+              value={filterUserId}
+              onChange={(e) => setFilterUserId(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setFilterQuery(filterUserId);
+                  loadConversations(filterUserId);
+                }
+              }}
+              placeholder="輸入 LINE User ID 篩選"
+              style={{
+                flex: 1, maxWidth: 320, padding: "8px 12px",
+                border: "1px solid #E2E8F0", borderRadius: 8,
+                fontSize: 13, outline: "none", fontFamily: "monospace",
+              }}
+            />
+            <button
+              onClick={() => { setFilterQuery(filterUserId); loadConversations(filterUserId); }}
+              style={{
+                padding: "8px 20px", background: "#3B82F6", color: "#fff",
+                border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              篩選
+            </button>
+            {filterQuery && (
+              <button
+                onClick={() => { setFilterUserId(""); setFilterQuery(""); loadConversations(""); }}
+                style={{
+                  padding: "8px 14px", background: "#F1F5F9", color: "#475569",
+                  border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer",
+                }}
+              >
+                清除
+              </button>
+            )}
+          </div>
+
+          <p style={{ fontSize: 13, color: "#94A3B8", marginBottom: 12 }}>
+            共 {convTotal} 筆{filterQuery ? `（篩選：${filterQuery.slice(0, 12)}…）` : ""}，顯示最新 50 筆
+          </p>
+
+          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead style={{ background: "#F8FAFC" }}>
+                <tr>
+                  {["時間", "LINE User ID", "角色", "訊息內容"].map((h) => (
+                    <th key={h} style={{ padding: "12px 14px", textAlign: "left", color: "#64748B", fontWeight: 600, borderBottom: "1px solid #E2E8F0", whiteSpace: "nowrap" }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {convLoading ? (
+                  <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>載入中…</td></tr>
+                ) : conversations.length === 0 ? (
+                  <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>尚無對話記錄</td></tr>
+                ) : (
+                  conversations.map((c) => (
+                    <tr key={c.id} style={{ borderBottom: "1px solid #F1F5F9", background: c.role === "assistant" ? "#F8FAFC" : "#fff" }}>
+                      <td style={{ padding: "10px 14px", color: "#94A3B8", whiteSpace: "nowrap", fontSize: 12 }}>
+                        {formatTime(c.created_at)}
+                      </td>
+                      <td style={{ padding: "10px 14px", color: "#475569", fontFamily: "monospace", fontSize: 11, whiteSpace: "nowrap" }}>
+                        {c.line_user_id.slice(0, 10)}…
+                      </td>
+                      <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
+                        <span style={{
+                          padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600,
+                          background: c.role === "user" ? "#EFF6FF" : "#F0FDF4",
+                          color: c.role === "user" ? "#3B82F6" : "#16A34A",
+                        }}>
+                          {c.role === "user" ? "用戶" : "AI"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "10px 14px", color: "#0F172A", maxWidth: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {c.message}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
