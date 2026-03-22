@@ -68,21 +68,27 @@ def _calc_total_score(c: dict) -> float:
 async def list_clinics(search: str = "", city: str = "", min_score: float = 0, limit: int = 20, offset: int = 0):
     try:
         async with _SessionLocal() as session:
+            from sqlalchemy import or_
             q = select(ClinicModel)
             if search:
                 q = q.where(
-                    ClinicModel.name.ilike(f"%{search}%") |
-                    ClinicModel.address.ilike(f"%{search}%")
+                    or_(
+                        ClinicModel.name.ilike(f"%{search}%"),
+                        ClinicModel.address.ilike(f"%{search}%")
+                    )
                 )
             if city:
                 q = q.where(ClinicModel.address.ilike(f"{city}%"))
+            if min_score > 0:
+                q = q.where(ClinicModel.score >= min_score)
+
             count_q = select(func.count()).select_from(q.subquery())
             total = (await session.execute(count_q)).scalar_one()
-            q = q.offset(offset).limit(limit)
-            rows = (await session.execute(q)).scalars().all()
+
+            rows = (await session.execute(q.offset(offset).limit(limit))).scalars().all()
             clinics = []
             for r in rows:
-                c = {
+                clinics.append({
                     "id": r.id, "name": r.name, "address": r.address,
                     "phone": r.phone, "specialty": r.specialty,
                     "google_rating": r.google_rating,
@@ -94,18 +100,13 @@ async def list_clinics(search: str = "", city: str = "", min_score: float = 0, l
                     "dispute_count": r.dispute_count,
                     "isPartner": r.is_partner,
                     "custom_note": r.custom_note,
-                }
-                if min_score > 0:
-                    total_score = sum([
-                        c.get("google_rating_score") or 0,
-                        (c.get("score_breakdown") or {}).get("judicial", 0),
-                        (c.get("score_breakdown") or {}).get("legal", 0),
-                    ])
-                    if total_score < min_score:
-                        continue
-                clinics.append(c)
+                    "website": r.website,
+                    "cont_start": r.cont_start,
+                    "treatments": r.treatments,
+                })
             return {"clinics": clinics, "total": total}
     except Exception as e:
+        print(f"[list_clinics] DB error fallback: {e}")
         all_clinics = get_all_clinics()
         if search:
             all_clinics = [c for c in all_clinics if search.lower() in c.get("name","").lower() or search.lower() in c.get("address","").lower()]
