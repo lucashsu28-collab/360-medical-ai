@@ -238,6 +238,71 @@ async def update_clinic(clinic_id: str, request: Request):
     return {"ok": True}
 
 
+@router.get("/partners")
+async def get_partners():
+    SessionLocal, Clinic, UnlockRecord, BroadcastRecord, CrawlerStatus = _get_session()
+    try:
+        if SessionLocal:
+            async with SessionLocal() as session:
+                rows = (await session.execute(
+                    select(Clinic).where(Clinic.is_partner == True).order_by(Clinic.name)
+                )).scalars().all()
+                return {"partners": [
+                    {
+                        "id": r.id, "name": r.name, "address": r.address,
+                        "phone": r.phone, "specialty": r.specialty,
+                        "is_partner": r.is_partner,
+                        "google_rating": r.google_rating,
+                        "score": r.score,
+                        "created_at": _format_dt(r.created_at),
+                    }
+                    for r in rows
+                ]}
+    except Exception as e:
+        print(f"[partners] DB error, fallback: {e}")
+
+    clinics = _load_json(_CLINICS_PATH, [])
+    partners = [c for c in clinics if c.get("isPartner") or c.get("is_partner")]
+    return {"partners": [
+        {
+            "id": c.get("id"), "name": c.get("name"), "address": c.get("address"),
+            "phone": c.get("phone"), "specialty": c.get("specialty"),
+            "is_partner": True,
+            "google_rating": c.get("google_rating"),
+            "score": c.get("score"),
+            "created_at": None,
+        }
+        for c in partners
+    ]}
+
+
+@router.patch("/partners/{clinic_id}/toggle")
+async def toggle_partner(clinic_id: str):
+    SessionLocal, Clinic, UnlockRecord, BroadcastRecord, CrawlerStatus = _get_session()
+    try:
+        if SessionLocal:
+            async with SessionLocal() as session:
+                r = await session.get(Clinic, clinic_id)
+                if not r:
+                    raise HTTPException(status_code=404, detail="Clinic not found")
+                r.is_partner = not r.is_partner
+                r.updated_at = _now_tw().replace(tzinfo=None)
+                await session.commit()
+                return {"ok": True, "is_partner": r.is_partner}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[toggle_partner] DB error, fallback: {e}")
+
+    clinics = _load_json(_CLINICS_PATH, [])
+    for c in clinics:
+        if c.get("id") == clinic_id:
+            c["isPartner"] = not c.get("isPartner", False)
+            _save_json(_CLINICS_PATH, clinics)
+            return {"ok": True, "is_partner": c["isPartner"]}
+    raise HTTPException(status_code=404, detail="Clinic not found")
+
+
 @router.post("/send-test")
 async def send_test(request: Request):
     from config import LINE_CHANNEL_ACCESS_TOKEN
