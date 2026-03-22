@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import ScoreCard from "@/components/ScoreCard";
 import FogReport from "@/components/FogReport";
 import DoctorSearch from "@/components/DoctorSearch";
@@ -96,6 +97,30 @@ const FAKE_REVIEWS = [
   { author: "李**", date: "2023-12-05", rating: 4, text: "交通方便，診所空間舒適。療程效果中規中矩，可接受。" },
 ];
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+  const res = await fetch(`${apiUrl}/api/clinics/${id}`, {
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return { title: "診所不存在" };
+  const clinic = (await res.json()) as ApiClinic;
+
+  return {
+    title: `${clinic.name} 評鑑報告｜360醫美大調查`,
+    description: `${clinic.name}位於${clinic.address ?? ""}，360綜合評分 ${clinic.score != null ? clinic.score.toFixed(1) : "—"} 分，含司法糾紛、Google評分、合法登記等多維度分析。`,
+    openGraph: {
+      title: `${clinic.name}｜360醫美評鑑`,
+      description: `查看 ${clinic.name} 的完整評鑑報告`,
+      url: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/clinics/${id}`,
+    },
+  };
+}
+
 export default async function ClinicDetailPage({
   params,
 }: {
@@ -132,6 +157,31 @@ export default async function ClinicDetailPage({
 
   return (
     <div className="min-h-screen bg-[var(--paper)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "MedicalOrganization",
+            "name": clinic.name,
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": clinic.address,
+              "addressCountry": "TW",
+            },
+            "telephone": clinic.phone || undefined,
+            "url": clinic.website || undefined,
+            "aggregateRating": clinic.google_rating ? {
+              "@type": "AggregateRating",
+              "ratingValue": clinic.google_rating,
+              "reviewCount": clinic.google_review_count || 0,
+              "bestRating": 5,
+              "worstRating": 1,
+            } : undefined,
+            "medicalSpecialty": clinic.specialty || undefined,
+          }),
+        }}
+      />
       <div className="mx-auto max-w-[1060px] px-4 py-8 md:px-8">
         <nav className="mb-6 text-[12px] text-[var(--muted)]" aria-label="麵包屑">
           <Link href="/" className="hover:text-[var(--blue)]">首頁</Link>
