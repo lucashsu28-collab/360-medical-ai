@@ -358,6 +358,6 @@ Packer.toBuffer(doc).then(b => {
   console.log("\u2713 \u6587\u4ef6\u7522\u51fa\u5b8c\u6210\uff1adocs/360\u91ab\u7642AI_Admin\u5f8c\u53f0\u9032\u5ea6\u63a7\u7ba1.docx");
 
   const md = genProgressMd();
-  fs.writeFileSync("docs/PROGRESS.md", md, "utf-8");
+  fs.writeFileSync("docs/PROGRESS.md", "\uFEFF" + md, { encoding: "utf8" });
   console.log("\u2713 PROGRESS.md \u7522\u51fa\u5b8c\u6210");
 });
