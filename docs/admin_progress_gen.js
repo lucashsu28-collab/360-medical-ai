@@ -72,7 +72,7 @@ const modules = [
     items:["顯示industry=medical_aesthetic的診所客戶","欄位：診所名稱、方案、付費狀態、加入日期","搜尋/篩選功能","快速跳轉到AIMS對應客戶頁面","新客戶從醫美平台匯入AIMS"] },
   { num:"#5",  name:"診所資料管理",            route:"/admin/clinics",          p1:"done",  p2:"doing", p3:"todo",
     items:["904家診所列表（搜尋/篩選/排序）","編輯診所資料（名稱、地址、電話、療程標籤）","手動調整評分（附調整原因記錄）","查看各維度分數明細","與AIMS品牌資料雙向同步","標記診所為合作/非合作"] },
-  { num:"#6",  name:"合作診所開通/停用",       route:"/admin/clinics/partners", p1:"done",  p2:"todo", p3:"todo",
+  { num:"#6",  name:"合作診所開通/停用",       route:"/admin/clinics/partners", p1:"done",  p2:"done", p3:"todo",
     items:["合作診所列表（狀態：開通/停用/審核中）","一鍵開通/停用（連動AIMS方案狀態）","設定前台曝光內容（介紹文字、圖片）","管理精選療程（新增/編輯/刪除）","管理優惠方案（效期/內容/限制）","合作診所前台預覽"] },
   { num:"#7",  name:"資料匯出",               route:"/admin/export",           p1:"done",  p2:"todo", p3:"todo",
     items:["診所清單匯出CSV（可篩選欄位）","醫師清單匯出CSV","單一診所完整報告匯出PDF","批次匯出多家診所報告","匯出紀錄查看"] },
