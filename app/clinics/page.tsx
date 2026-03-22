@@ -17,13 +17,13 @@ export interface ApiClinic {
   [key: string]: unknown;
 }
 
-const CITY_MAP: Record<string, string> = {
-  taipei: "台北市",
-  newtaipei: "新北市",
-  taoyuan: "桃園市",
-  taichung: "台中市",
-  tainan: "台南市",
-  kaohsiung: "高雄市",
+const CITY_MAP: Record<string, string[]> = {
+  taipei:    ["臺北市", "台北市"],
+  newtaipei: ["新北市"],
+  taoyuan:   ["桃園市"],
+  taichung:  ["臺中市", "台中市"],
+  tainan:    ["臺南市", "台南市"],
+  kaohsiung: ["高雄市"],
 };
 
 const TYPE_KEYWORDS: Record<string, string[]> = {
@@ -55,7 +55,7 @@ function filterClinics(
   return list.filter((c) => {
     if (q && !(c.name || "").includes(q)) return false;
     if (districts.length > 0) {
-      const cities = districts.map((d) => CITY_MAP[d]).filter(Boolean);
+      const cities = districts.flatMap((d) => CITY_MAP[d] ?? []);
       if (cities.length > 0 && !cities.some((city) => (c.address || "").startsWith(city)))
         return false;
     }
