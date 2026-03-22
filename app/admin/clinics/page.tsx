@@ -173,22 +173,21 @@ export default function AdminClinicsPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead style={{ background: "#F8FAFC" }}>
             <tr>
-              {["#","診所名稱","縣市","Google評分","司法案件","合法登記","行政處分","新聞媒體","社群討論","總分","操作"].map((h) => (
+              {["#","診所名稱","縣市","Google評分","司法案件","合法登記","新聞媒體","社群討論","總分","操作"].map((h) => (
                 <th key={h} style={{ padding: "12px 14px", textAlign: "left", color: "#64748B", fontWeight: 600, borderBottom: "1px solid #E2E8F0", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={11} style={{ padding: 32, textAlign: "center", color: "#94A3B8" }}>載入中...</td></tr>
+              <tr><td colSpan={10} style={{ padding: 32, textAlign: "center", color: "#94A3B8" }}>載入中...</td></tr>
             ) : clinics.length === 0 ? (
-              <tr><td colSpan={11} style={{ padding: 32, textAlign: "center", color: "#94A3B8" }}>沒有符合的診所</td></tr>
+              <tr><td colSpan={10} style={{ padding: 32, textAlign: "center", color: "#94A3B8" }}>沒有符合的診所</td></tr>
             ) : clinics.map((c, i) => {
               const sb = c.score_breakdown || {};
               const googleScore = c.google_rating_score ?? sb.google ?? null;
               const judicialScore = c.judicial_score ?? sb.judicial ?? null;
               const legalScore = c.legal_score ?? sb.legal ?? null;
-              const punishmentScore = sb.punishment ?? null;
               const tot = calcTotal(c);
               return (
                 <tr key={c.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
@@ -205,7 +204,6 @@ export default function AdminClinicsPage() {
                   <td style={{ padding: "10px 14px" }}><ScoreTag score={googleScore} /></td>
                   <td style={{ padding: "10px 14px" }}><ScoreTag score={judicialScore} /></td>
                   <td style={{ padding: "10px 14px" }}><ScoreTag score={legalScore} /></td>
-                  <td style={{ padding: "10px 14px" }}><ScoreTag score={punishmentScore} /></td>
                   <td style={{ padding: "10px 14px" }}><ScoreTag score={sb.news ?? null} /></td>
                   <td style={{ padding: "10px 14px" }}><ScoreTag score={sb.social ?? null} /></td>
                   <td style={{ padding: "10px 14px" }}>
