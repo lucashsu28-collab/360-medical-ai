@@ -10,7 +10,7 @@ const SOURCES = [
   {
     icon: "🏥",
     title: "衛福部健保署",
-    desc: "904家合法登記醫美診所完整資料，確保每一家受評診所均具備合法執業資格，資訊來自政府公開資料庫。",
+    desc: "逾1,500家合法登記醫美診所完整資料，確保每一家受評診所均具備合法執業資格，資訊來自政府公開資料庫。",
     tag: "政府開放資料",
     tagColor: "#0046b8",
     tagBg: "#e8f0fb",
@@ -162,7 +162,7 @@ export default function AboutPage() {
             立即查詢你想去的診所
           </h2>
           <p className="mb-8 text-sm leading-relaxed text-blue-100">
-            全台 904 家醫美診所，評分數據每月更新，免費查詢不需註冊
+            全台逾 1,567 家醫美診所，評分數據每月更新，免費查詢不需註冊
           </p>
           <Link
             href="/clinics"

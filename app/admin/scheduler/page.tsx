@@ -54,13 +54,13 @@ const CRAWLERS: CrawlerInfo[] = [
     key: "places",
     icon: "⭐",
     name: "Google Places 評分更新",
-    desc: "更新全部 904 家診所的 Google 評分與評論數。每次約 TWD 450，執行時間 ~30 分鐘。",
+    desc: "更新全部 1,567 家診所的 Google 評分與評論數。每次約 TWD 450，執行時間 ~30 分鐘。",
   },
   {
     key: "judicial",
     icon: "⚖️",
     name: "司法院裁判書爬取",
-    desc: "從司法院查詢 904 家診所的司法案件數。每日 6-12 點為維護時段，請避開。",
+    desc: "從司法院查詢 1,567 家診所的司法案件數。每日 6-12 點為維護時段，請避開。",
   },
   {
     key: "mohw",
