@@ -220,6 +220,10 @@ export default function AdminLineAIPage() {
             boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
           }}
         >
+          <div style={{ background: "#EFF6FF", borderRadius: 8, padding: "10px 14px", marginBottom: 18, fontSize: 13, color: "#1D4ED8" }}>
+            💡 此功能由「360醫美AI智能顧問」LINE官方帳號，主動推播訊息給指定用戶。
+            例如：將某診所評鑑報告推播給已加入的用戶。
+          </div>
           <div style={{ marginBottom: 18 }}>
             <label style={{ display: "block", fontSize: 13, color: "#475569", marginBottom: 6, fontWeight: 500 }}>
               LINE User ID
@@ -269,7 +273,7 @@ export default function AdminLineAIPage() {
           {sendType !== "custom" && (
             <div style={{ marginBottom: 18 }}>
               <label style={{ display: "block", fontSize: 13, color: "#475569", marginBottom: 6, fontWeight: 500 }}>
-                選擇診所
+                推播哪家診所的報告
               </label>
               <select
                 value={sendClinicId}
