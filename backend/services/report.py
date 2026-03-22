@@ -164,14 +164,14 @@ def build_clinic_flex_report(clinic: dict[str, Any]) -> dict[str, Any]:
         "margin": "xs",
     }
     name_encoded = urllib.parse.quote(name)
-    judicial_url = f"https://judgment.judicial.gov.tw/FJUD/qryresult.aspx?kw={name_encoded}&judtype=JUDBOOK&action=q"
-    nhi_url = f"https://info.nhi.gov.tw/INAE1000/INAE1000S01?QryField=Name&QryValue={name_encoded}"
-    place_id = clinic.get("google_place_id") or ""
+    judicial_url = f"https://judgment.judicial.gov.tw/FJUD/qrysimple.aspx?kw={name_encoded}"
+    google_place_id = clinic.get("google_place_id") or ""
     google_url = (
-        f"https://www.google.com/maps/place/?q=place_id:{place_id}"
-        if place_id
+        f"https://search.google.com/local/reviews?placeid={google_place_id}"
+        if google_place_id
         else f"https://www.google.com/search?q={name_encoded}+評論"
     )
+    nhi_url = f"https://www.google.com/search?q={name_encoded}+site:info.nhi.gov.tw"
 
     dimension_rows = [
         _dimension_row("司法糾紛 ⚖️", judicial, max_val=10, source_url=judicial_url),
