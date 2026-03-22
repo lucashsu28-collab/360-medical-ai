@@ -16,6 +16,7 @@ const LINE_CTA_URL = "https://lin.ee/6sTCRzm";
 
 export default function SiteNav() {
   const pathname = usePathname();
+  if (pathname.startsWith("/admin")) return null;
 
   return (
     <nav
