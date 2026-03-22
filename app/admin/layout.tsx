@@ -7,8 +7,15 @@ import Link from "next/link";
 const NAV_ITEMS = [
   { icon: "📊", label: "數據看板", href: "/admin" },
   { icon: "🏥", label: "診所資料管理", href: "/admin/clinics" },
+  { icon: "🤝", label: "合作診所管理", href: "/admin/partners" },
   { icon: "🔓", label: "報告解鎖記錄", href: "/admin/unlocks" },
+  { icon: "📤", label: "資料匯出", href: "/admin/export" },
+  { icon: "📈", label: "數據分析與排名", href: "/admin/analytics" },
   { icon: "💬", label: "LINE OA 管理", href: "/admin/line-ai" },
+  { icon: "📝", label: "內容管理 CMS", href: "/admin/cms" },
+  { icon: "🤖", label: "AI顧問訓練", href: "/admin/ai-training" },
+  { icon: "⚖️", label: "評分規則管理", href: "/admin/scoring" },
+  { icon: "🚨", label: "告警系統", href: "/admin/alerts" },
   { icon: "⚙️", label: "資料爬取排程", href: "/admin/scheduler" },
 ];
 
