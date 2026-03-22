@@ -7,6 +7,9 @@ const NAV_ITEMS = [
   { href: "/clinics", label: "查診所" },
   { href: "/doctors", label: "醫師查詢" },
   { href: "/treatments", label: "查療程" },
+  { href: "/cities", label: "各縣市" },
+  { href: "/blog", label: "醫美專欄" },
+  { href: "/faq", label: "常見問題" },
   { href: "/partners", label: "合作診所" },
   { href: "/promotions", label: "精選優惠" },
 ] as const;
