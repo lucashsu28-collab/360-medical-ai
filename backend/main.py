@@ -67,8 +67,8 @@ def _calc_total_score(c: dict) -> float:
 @app.get("/api/clinics")
 async def list_clinics(search: str = "", city: str = "", min_score: float = 0, limit: int = 20, offset: int = 0):
     try:
+        from sqlalchemy import or_
         async with _SessionLocal() as session:
-            from sqlalchemy import or_
             q = select(ClinicModel)
             if search:
                 q = q.where(
