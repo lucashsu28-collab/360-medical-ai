@@ -124,7 +124,7 @@ export default async function ClinicsPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const res = await fetch(`${apiUrl}/api/clinics`, { next: { revalidate: 3600 } });
+  const res = await fetch(`${apiUrl}/api/clinics?limit=904`, { next: { revalidate: 3600 } });
   const { clinics } = (await res.json()) as { clinics: ApiClinic[] };
   const list = Array.isArray(clinics) ? clinics : [];
 
