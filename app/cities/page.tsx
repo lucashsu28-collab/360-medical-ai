@@ -16,7 +16,7 @@ const CITIES = [
 async function getCityCounts(): Promise<Record<string, number>> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
   try {
-    const res = await fetch(`${apiUrl}/api/clinics?limit=904`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${apiUrl}/api/clinics?limit=9999`, { next: { revalidate: 3600 } });
     const data = await res.json();
     const clinics: { address?: string }[] = data.clinics ?? [];
     const counts: Record<string, number> = {};

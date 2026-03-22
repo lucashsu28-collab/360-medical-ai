@@ -105,7 +105,7 @@ export default function AdminDashboard() {
           fetch(`${API_URL}/api/clinics?limit=1`),
           fetch(`${API_URL}/api/admin/stats`),
           fetch(`${API_URL}/api/admin/unlocks?limit=8`),
-          fetch(`${API_URL}/api/clinics?limit=904`),
+          fetch(`${API_URL}/api/clinics?limit=9999`),
         ]);
         if (clinicsRes.status === "fulfilled" && clinicsRes.value.ok) {
           const data = await clinicsRes.value.json();

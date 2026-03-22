@@ -66,6 +66,7 @@ def _calc_total_score(c: dict) -> float:
 
 @app.get("/api/clinics")
 async def list_clinics(search: str = "", city: str = "", min_score: float = 0, limit: int = 20, offset: int = 0):
+    limit = min(limit, 9999)  # cap at 9999
     try:
         from sqlalchemy import or_
         async with _SessionLocal() as session:
