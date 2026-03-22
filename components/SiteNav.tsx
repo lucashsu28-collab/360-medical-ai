@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/promotions", label: "精選優惠" },
   { href: "/about", label: "關於我們" },
   { href: "/scoring", label: "評分標準" },
+  { href: "/clinic-update", label: "診所更新資料" },
 ] as const;
 
 /** 加 LINE 連結 */
@@ -81,6 +82,16 @@ export default function SiteNav() {
             </Link>
           );
         })}
+        <div
+          className="mx-1.5 h-5 w-px bg-[var(--line2)] md:mx-1.5"
+          aria-hidden
+        />
+        <Link
+          href="/partnership"
+          className="rounded-[7px] bg-[var(--green)] px-4 py-2 text-[13px] font-bold text-white no-underline shadow-[0_2px_8px_rgba(0,135,90,.22)] transition-colors duration-200 hover:bg-[var(--green-hover,#006e48)] md:px-5 md:py-2"
+        >
+          我想合作
+        </Link>
         <div
           className="mx-1.5 h-5 w-px bg-[var(--line2)] md:mx-1.5"
           aria-hidden
