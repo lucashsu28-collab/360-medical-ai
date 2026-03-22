@@ -109,6 +109,12 @@ python -m crawlers.merge_judicial      # 整合司法分數進 clinics_real.json
 - FastAPI BackgroundTasks修正（避免Cloud Run截斷）
 - 前台AI SEO頁面：城市頁/FAQ/專欄/醫美百科/診所比較
 - SiteNav新增城市頁/醫美專欄/常見問題選單
+- ✅ 解鎖報告 LINE 推播修復（LINE_CHANNEL_ACCESS_TOKEN 補設定至 Cloud Run 環境變數）
+- ✅ clinics_real.json 確認打包進 Cloud Run image（.gitkeep 機制）
+- ✅ 診所列表前台篩選修正（臺/台兩種寫法、limit=904）
+- ✅ 評分顯示 0.0 問題排查中（DB score 欄位為 null）
+
+最新 Git commit：3df2099
 
 ### ⏳ 待完成（Phase 1）
 - 🔴 衛福部行政處分爬蟲（診所第4維度+醫師第3維度）
