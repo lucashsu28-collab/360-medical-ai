@@ -16,7 +16,7 @@ interface ApiClinic {
 }
 
 export async function generateStaticParams() {
-  return CITY_LIST.map(city => ({ city: encodeURIComponent(city) }));
+  return CITY_LIST.map(city => ({ city }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ city: string }> }): Promise<Metadata> {
