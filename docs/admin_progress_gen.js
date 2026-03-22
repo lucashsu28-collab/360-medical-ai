@@ -112,6 +112,10 @@ const phase2Modules = [
     items:["#4客戶列表串接AIMS","#6合作診所開通/停用接真實DB","#8數據分析串接GA4","其餘模組從mock改為真實資料"] },
   { num:"B6", name:"Google Places 真實評論抓取", status:"todo",
     items:["Places API抓取每家診所前5則評論","評論資料存進PostgreSQL DB","診所詳細頁展示真實評論（取代假資料）"] },
+  { num:"B7", name:"前台新增頁面（關於我們/評分標準/診所更新資料/我想合作）", status:"done",
+    items:["新增 /about 關於我們頁面","新增 /scoring 評分標準頁面","新增 /clinic-update 診所更新資料申請表單","新增 /partnership 我想合作佔位頁面","SiteNav 導覽列加入對應連結與「我想合作」按鈕"] },
+  { num:"B8", name:"前台診所資料館命名統一", status:"done",
+    items:["SiteNav「合作診所」改為「診所資料館」","首頁/診所列表/診所詳細頁/優惠頁全數更新","/partners 頁面標題與說明文字統一"] },
 ];
 
 const phase3Modules = [
