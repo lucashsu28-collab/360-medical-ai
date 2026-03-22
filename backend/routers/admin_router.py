@@ -3,6 +3,8 @@ Admin API Router - 360醫療AI大調查
 Phase 2: 從 PostgreSQL 讀取資料，JSON fallback 保底
 """
 import asyncio
+import csv
+import io
 import json
 import os
 from datetime import datetime, timezone, timedelta
@@ -10,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func, update, desc
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
@@ -514,6 +517,117 @@ async def resolve_alert(alert_id: str):
     crawler_status[crawler_key].pop("error", None)
     _save_json(_CRAWLER_STATUS_PATH, crawler_status)
     return {"ok": True}
+
+
+def _make_csv_response(headers: list[str], rows: list[list], filename: str) -> StreamingResponse:
+    buf = io.StringIO()
+    buf.write("\ufeff")  # UTF-8 BOM for Excel compatibility
+    w = csv.writer(buf)
+    w.writerow(headers)
+    w.writerows(rows)
+    buf.seek(0)
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv; charset=utf-8-sig",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/export/clinics")
+async def export_clinics_csv():
+    SessionLocal, Clinic, UnlockRecord, BroadcastRecord, CrawlerStatus = _get_session()
+    headers = ["id", "name", "address", "phone", "specialty",
+               "google_rating", "google_review_count", "score",
+               "legal_score", "judicial_score", "is_partner", "created_at"]
+    try:
+        if SessionLocal:
+            async with SessionLocal() as session:
+                rows_db = (await session.execute(select(Clinic).order_by(Clinic.name))).scalars().all()
+                rows = [
+                    [r.id, r.name, r.address, r.phone, r.specialty,
+                     r.google_rating, r.google_review_count, r.score,
+                     r.legal_score, r.judicial_score, r.is_partner,
+                     _format_dt(r.created_at)]
+                    for r in rows_db
+                ]
+                return _make_csv_response(headers, rows, "clinics_export.csv")
+    except Exception as e:
+        print(f"[export/clinics] DB error, fallback: {e}")
+
+    clinics = _load_json(_CLINICS_PATH, [])
+    rows = [
+        [c.get("id"), c.get("name"), c.get("address"), c.get("phone"),
+         c.get("specialty"), c.get("google_rating"), c.get("google_review_count"),
+         c.get("score"), c.get("legal_score"), c.get("judicial_score"),
+         c.get("isPartner", c.get("is_partner", False)), None]
+        for c in clinics
+    ]
+    return _make_csv_response(headers, rows, "clinics_export.csv")
+
+
+@router.get("/export/unlocks")
+async def export_unlocks_csv():
+    SessionLocal, Clinic, UnlockRecord, BroadcastRecord, CrawlerStatus = _get_session()
+    headers = ["id", "clinic_name", "line_user_id", "unlock_type", "unlocked_at"]
+    try:
+        if SessionLocal:
+            async with SessionLocal() as session:
+                rows_db = (await session.execute(
+                    select(UnlockRecord).order_by(desc(UnlockRecord.time))
+                )).scalars().all()
+                rows = [
+                    [r.id, r.target_name, r.user_id, r.unlock_type, _format_dt(r.time)]
+                    for r in rows_db
+                ]
+                return _make_csv_response(headers, rows, "unlocks_export.csv")
+    except Exception as e:
+        print(f"[export/unlocks] DB error, fallback: {e}")
+
+    unlocks = _load_json(_UNLOCKS_PATH, [])
+    rows = [
+        [u.get("id"), u.get("target_name", u.get("clinic_name")),
+         u.get("user_id", u.get("line_user_id")),
+         u.get("unlock_type"), u.get("time", u.get("unlocked_at"))]
+        for u in unlocks
+    ]
+    return _make_csv_response(headers, rows, "unlocks_export.csv")
+
+
+@router.get("/export/clinic/{clinic_id}/pdf")
+async def export_clinic_json(clinic_id: str):
+    """單一診所完整資料匯出（JSON 格式，P3 升級為 PDF）"""
+    SessionLocal, Clinic, UnlockRecord, BroadcastRecord, CrawlerStatus = _get_session()
+    try:
+        if SessionLocal:
+            async with SessionLocal() as session:
+                r = await session.get(Clinic, clinic_id)
+                if not r:
+                    raise HTTPException(status_code=404, detail="Clinic not found")
+                return {
+                    "id": r.id, "name": r.name, "address": r.address,
+                    "phone": r.phone, "specialty": r.specialty,
+                    "website": r.website, "is_partner": r.is_partner,
+                    "google_rating": r.google_rating,
+                    "google_review_count": r.google_review_count,
+                    "score": r.score, "legal_score": r.legal_score,
+                    "judicial_score": r.judicial_score,
+                    "google_rating_score": r.google_rating_score,
+                    "dispute_count": r.dispute_count,
+                    "score_breakdown": r.score_breakdown,
+                    "custom_note": r.custom_note,
+                    "created_at": _format_dt(r.created_at),
+                    "updated_at": _format_dt(r.updated_at),
+                }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[export/clinic/{clinic_id}] DB error, fallback: {e}")
+
+    clinics = _load_json(_CLINICS_PATH, [])
+    c = next((x for x in clinics if x.get("id") == clinic_id), None)
+    if not c:
+        raise HTTPException(status_code=404, detail="Clinic not found")
+    return c
 
 
 def _get_scoring_session():
