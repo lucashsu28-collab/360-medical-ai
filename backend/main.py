@@ -10,6 +10,9 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, JSONResponse
 
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from models.clinic import Clinic as ClinicModel
 from config import LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN
 from webhook.line import verify_signature, handle_webhook_body, set_liff_state, push_report_to_user
 from services.recommend import get_all_clinics
@@ -23,6 +26,11 @@ app = FastAPI(
     version="0.1.0",
 )
 app.include_router(admin_router)
+
+from config import DATABASE_URL
+_db_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace("postgresql://", "postgresql+asyncpg://")
+_engine = create_async_engine(_db_url, echo=False, pool_pre_ping=True)
+_SessionLocal = async_sessionmaker(_engine, expire_on_commit=False)
 
 # 允許 LIFF 前端（Vercel）跨域呼叫 POST /api/liff-state
 _allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://360-medical-ai.vercel.app").strip().split(",")
@@ -58,27 +66,53 @@ def _calc_total_score(c: dict) -> float:
 
 @app.get("/api/clinics")
 async def list_clinics(search: str = "", city: str = "", min_score: float = 0, limit: int = 20, offset: int = 0):
-    """回傳真實診所列表，支援搜尋、縣市篩選、最低分數、分頁。"""
-    all_clinics = get_all_clinics()
-    if search:
-        q = search.lower()
-        all_clinics = [
-            c for c in all_clinics
-            if q in c.get("name", "").lower() or q in c.get("address", "").lower()
-        ]
-    if city:
-        all_clinics = [
-            c for c in all_clinics
-            if city in c.get("address", "")
-        ]
-    if min_score > 0:
-        all_clinics = [
-            c for c in all_clinics
-            if _calc_total_score(c) >= min_score
-        ]
-    total = len(all_clinics)
-    page_clinics = all_clinics[offset: offset + limit]
-    return {"clinics": page_clinics, "total": total}
+    try:
+        async with _SessionLocal() as session:
+            q = select(ClinicModel)
+            if search:
+                q = q.where(
+                    ClinicModel.name.ilike(f"%{search}%") |
+                    ClinicModel.address.ilike(f"%{search}%")
+                )
+            if city:
+                q = q.where(ClinicModel.address.ilike(f"{city}%"))
+            count_q = select(func.count()).select_from(q.subquery())
+            total = (await session.execute(count_q)).scalar_one()
+            q = q.offset(offset).limit(limit)
+            rows = (await session.execute(q)).scalars().all()
+            clinics = []
+            for r in rows:
+                c = {
+                    "id": r.id, "name": r.name, "address": r.address,
+                    "phone": r.phone, "specialty": r.specialty,
+                    "google_rating": r.google_rating,
+                    "google_review_count": r.google_review_count,
+                    "score": r.score, "legal_score": r.legal_score,
+                    "judicial_score": r.judicial_score,
+                    "google_rating_score": r.google_rating_score,
+                    "score_breakdown": r.score_breakdown,
+                    "dispute_count": r.dispute_count,
+                    "isPartner": r.is_partner,
+                    "custom_note": r.custom_note,
+                }
+                if min_score > 0:
+                    total_score = sum([
+                        c.get("google_rating_score") or 0,
+                        (c.get("score_breakdown") or {}).get("judicial", 0),
+                        (c.get("score_breakdown") or {}).get("legal", 0),
+                    ])
+                    if total_score < min_score:
+                        continue
+                clinics.append(c)
+            return {"clinics": clinics, "total": total}
+    except Exception as e:
+        all_clinics = get_all_clinics()
+        if search:
+            all_clinics = [c for c in all_clinics if search.lower() in c.get("name","").lower() or search.lower() in c.get("address","").lower()]
+        if city:
+            all_clinics = [c for c in all_clinics if city in c.get("address","")]
+        total = len(all_clinics)
+        return {"clinics": all_clinics[offset:offset+limit], "total": total}
 
 
 @app.get("/api/doctors")
@@ -95,7 +129,28 @@ async def api_get_doctor_detail(doc_seq: str):
 
 @app.get("/api/clinics/{clinic_id}")
 async def get_clinic(clinic_id: str):
-    """回傳單一診所詳情，找不到回傳 404。"""
+    try:
+        async with _SessionLocal() as session:
+            r = await session.get(ClinicModel, clinic_id)
+            if r:
+                return {
+                    "id": r.id, "name": r.name, "address": r.address,
+                    "phone": r.phone, "specialty": r.specialty,
+                    "google_rating": r.google_rating,
+                    "google_review_count": r.google_review_count,
+                    "score": r.score, "legal_score": r.legal_score,
+                    "judicial_score": r.judicial_score,
+                    "google_rating_score": r.google_rating_score,
+                    "score_breakdown": r.score_breakdown,
+                    "dispute_count": r.dispute_count,
+                    "isPartner": r.is_partner,
+                    "custom_note": r.custom_note,
+                    "website": r.website,
+                    "cont_start": r.cont_start,
+                    "treatments": r.treatments,
+                }
+    except Exception:
+        pass
     from services.recommend import get_clinic_by_id
     clinic = get_clinic_by_id(clinic_id)
     if not clinic:
