@@ -227,6 +227,11 @@ async def api_send_report(request: Request):
                 pass
             raise HTTPException(status_code=400, detail="用戶尚未加好友，請先加入官方帳號")
         raise HTTPException(status_code=502, detail="LINE API 錯誤")
+    except Exception as e:
+        import traceback
+        print(f"[send-report] UNEXPECTED ERROR: {e}", flush=True)
+        print(traceback.format_exc(), flush=True)
+        raise HTTPException(status_code=400, detail=str(e))
     return {"ok": True}
 
 
