@@ -105,7 +105,7 @@ export default function AdminLineAIPage() {
         LINE OA 管理
       </h1>
       <p style={{ color: "#64748B", fontSize: 14, marginBottom: 20 }}>
-        推播記錄查詢與手動測試發送
+        推播記錄查詢與手動測試發送（AI顧問對話記錄於 Phase 2 開放）
       </p>
 
       {/* Tabs */}

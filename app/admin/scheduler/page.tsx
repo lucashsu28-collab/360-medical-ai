@@ -19,6 +19,36 @@ interface CrawlerStatus {
   records_updated?: number;
 }
 
+const SCHEDULE_INFO: Record<CrawlerKey, { cycle: string; nextRun: (lastRun: string | null) => string }> = {
+  places: {
+    cycle: "每 10 天",
+    nextRun: (last) => {
+      if (!last) return "尚未執行";
+      const d = new Date(last);
+      d.setDate(d.getDate() + 10);
+      return d.toLocaleDateString("zh-TW");
+    },
+  },
+  judicial: {
+    cycle: "每 30 天",
+    nextRun: (last) => {
+      if (!last) return "尚未執行";
+      const d = new Date(last);
+      d.setDate(d.getDate() + 30);
+      return d.toLocaleDateString("zh-TW");
+    },
+  },
+  mohw: {
+    cycle: "每 30 天",
+    nextRun: (last) => {
+      if (!last) return "尚未執行";
+      const d = new Date(last);
+      d.setDate(d.getDate() + 30);
+      return d.toLocaleDateString("zh-TW");
+    },
+  },
+};
+
 const CRAWLERS: CrawlerInfo[] = [
   {
     key: "places",
@@ -41,10 +71,10 @@ const CRAWLERS: CrawlerInfo[] = [
 ];
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  success: { bg: "#F0FDF4", color: "#16A34A", label: "✅ 成功" },
-  running: { bg: "#FFFBEB", color: "#D97706", label: "⏳ 執行中" },
-  failed: { bg: "#FEF2F2", color: "#DC2626", label: "❌ 失敗" },
-  unknown: { bg: "#F1F5F9", color: "#64748B", label: "— 未執行" },
+  success: { bg: "#F0FDF4", color: "#16A34A", label: "執行成功" },
+  running: { bg: "#FFFBEB", color: "#D97706", label: "執行中..." },
+  failed: { bg: "#FEF2F2", color: "#DC2626", label: "執行失敗" },
+  unknown: { bg: "#F1F5F9", color: "#64748B", label: "未執行" },
 };
 
 export default function AdminSchedulerPage() {
@@ -86,7 +116,7 @@ export default function AdminSchedulerPage() {
         body: JSON.stringify({ crawler: key }),
       });
       if (res.ok) {
-        setTriggerResult((p) => ({ ...p, [key]: "已排程，爬蟲將在背景執行。" }));
+        setTriggerResult((p) => ({ ...p, [key]: "已排程，爬蟲執行中（約需數分鐘）" }));
         setStatusMap((p) => ({
           ...p,
           [key]: { ...p[key], status: "running" },
@@ -123,7 +153,7 @@ export default function AdminSchedulerPage() {
         資料爬取排程
       </h1>
       <p style={{ color: "#64748B", fontSize: 14, marginBottom: 24 }}>
-        手動觸發爬蟲或查看最後執行狀態
+        手動觸發爬蟲或查看最後執行狀態（排程自動執行於 Phase 2 開放）
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -169,9 +199,11 @@ export default function AdminSchedulerPage() {
                 <p style={{ fontSize: 13, color: "#64748B", margin: "0 0 8px" }}>
                   {crawler.desc}
                 </p>
-                <div style={{ fontSize: 12, color: "#94A3B8" }}>
-                  最後執行：{formatTime(status.last_run)}
-                  {status.records_updated != null && ` · 更新 ${status.records_updated} 筆`}
+                <div style={{ fontSize: 12, color: "#94A3B8", display: "flex", gap: 16 }}>
+                  <span>上次執行：{formatTime(status.last_run)}</span>
+                  <span>週期：{SCHEDULE_INFO[crawler.key].cycle}</span>
+                  <span>下次預計：{SCHEDULE_INFO[crawler.key].nextRun(status.last_run)}</span>
+                  {status.records_updated != null && <span>更新 {status.records_updated} 筆</span>}
                 </div>
                 {result && (
                   <div
@@ -215,9 +247,9 @@ export default function AdminSchedulerPage() {
                 }}
               >
                 {isTriggering
-                  ? "排程中…"
+                  ? "排程中..."
                   : status.status === "running"
-                  ? "執行中"
+                  ? "執行中..."
                   : "手動觸發"}
               </button>
             </div>

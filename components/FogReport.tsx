@@ -47,6 +47,17 @@ export default function FogReport({
     if (!liffId) {
       localStorage.setItem("lineEntry", JSON.stringify(lineEntry));
     }
+    // 記錄解鎖行為到 Admin
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    fetch(`${apiUrl}/api/admin/log-unlock`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: "web_" + lineEntry.id,
+        target_name: lineEntry.name,
+        unlock_type: lineEntry.type,
+      }),
+    }).catch(() => {});
     window.open(url, "_blank");
   };
 
