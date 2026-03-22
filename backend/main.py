@@ -45,15 +45,36 @@ async def health():
     return {"status": "ok"}
 
 
+def _calc_total_score(c: dict) -> float:
+    sb = c.get("score_breakdown", {}) or {}
+    scores = [
+        c.get("google_rating_score") or sb.get("google", 0) or 0,
+        sb.get("judicial", 0) or c.get("judicial_score", 0) or 0,
+        sb.get("legal", 0) or c.get("legal_score", 0) or 0,
+        sb.get("punishment", 0) or 0,
+    ]
+    return sum(scores)
+
+
 @app.get("/api/clinics")
-async def list_clinics(search: str = "", limit: int = 50, offset: int = 0):
-    """回傳真實診所列表，支援搜尋、分頁。"""
+async def list_clinics(search: str = "", city: str = "", min_score: float = 0, limit: int = 20, offset: int = 0):
+    """回傳真實診所列表，支援搜尋、縣市篩選、最低分數、分頁。"""
     all_clinics = get_all_clinics()
     if search:
         q = search.lower()
         all_clinics = [
             c for c in all_clinics
             if q in c.get("name", "").lower() or q in c.get("address", "").lower()
+        ]
+    if city:
+        all_clinics = [
+            c for c in all_clinics
+            if city in c.get("address", "")
+        ]
+    if min_score > 0:
+        all_clinics = [
+            c for c in all_clinics
+            if _calc_total_score(c) >= min_score
         ]
     total = len(all_clinics)
     page_clinics = all_clinics[offset: offset + limit]
