@@ -149,6 +149,7 @@ def push_report_to_user(user_id: str, state: str) -> None:
                 json={"to": user_id, "messages": messages},
                 timeout=10.0,
             )
+            print(f"[LINE PUSH RESULT] status={r.status_code} body={r.text[:500]}", flush=True)
             r.raise_for_status()
     except Exception as e:
         import traceback
