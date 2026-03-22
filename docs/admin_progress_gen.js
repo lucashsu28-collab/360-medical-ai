@@ -90,6 +90,19 @@ const modules = [
     items:["爬蟲失敗通知（Email/LINE推播）","資料異常警示（分數異常變動）","Cloud Run服務異常通知","API回應時間過慢警示","告警歷史記錄","告警閾值設定"] },
 ];
 
+const phase2Modules = [
+  { num:"B1", name:"PostgreSQL 接真實 DB", status:"todo",
+    items:["設計 schema（clinics/doctors/unlocks/broadcasts/crawler_status）","Alembic migration 建立","取代所有 JSON 檔案讀取","Admin 後台 13 模組全部接真實 DB"] },
+  { num:"B2", name:"GCP Cloud Scheduler 排程", status:"todo",
+    items:["Google Places 每10天自動觸發","司法院每30天自動觸發","行政處分每30天自動觸發","新聞/社群每7天自動觸發"] },
+  { num:"B3", name:"AIMS AI SEO 文章推送", status:"aims",
+    items:["AIMS生成文章 → API推送至診所頁","診所詳細頁展示SEO文章區塊"] },
+  { num:"B4", name:"AIMS 口碑監測串接", status:"aims",
+    items:["新聞/PTT/Dcard由AIMS爬蟲提供","整合至診所第5、6維度","整合至醫師第4、5維度"] },
+  { num:"B5", name:"Admin後台接真實DB", status:"todo",
+    items:["#4客戶列表串接AIMS","#6合作診所開通/停用接真實DB","#8數據分析串接GA4","其餘模組從mock改為真實資料"] },
+];
+
 const TODAY = new Date().toISOString().slice(0,10);
 const p1Done  = modules.filter(m=>m.p1==="done").length;
 const p1Doing = modules.filter(m=>m.p1==="doing").length;
@@ -183,6 +196,24 @@ const doc = new Document({
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun({ text:"各模組詳細功能清單", font:"Arial", size:24, bold:true, color:NAVY })] }),
       new Paragraph({ spacing:{ after:120 }, children:[new TextRun({ text:"每個功能項目完成後於對應階段欄位更新狀態。", color:"888888", size:16, font:"Arial" })] }),
       ...modules.flatMap(m => [spacer(), makeDetail(m)]),
+      spacer(),
+      new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun({ text:"Phase 2 基礎建設作業項目", font:"Arial", size:24, bold:true, color:NAVY })] }),
+      new Table({ width:{ size:8900, type:WidthType.DXA }, columnWidths:[500,2800,4400,1200],
+        rows:[
+          new TableRow({ tableHeader:true, children:[
+            headerCell("#", 500), headerCell("項目名稱", 2800), headerCell("子任務", 4400), headerCell("狀態", 1200),
+          ]}),
+          ...phase2Modules.map(m => new TableRow({ children:[
+            cell(m.num, { bold:true, color:GRAY, width:500, size:16, align:AlignmentType.CENTER }),
+            cell(m.name, { bold:true, width:2800, size:17 }),
+            new TableCell({ borders, width:{ size:4400, type:WidthType.DXA },
+              shading:{ fill:WHITE, type:ShadingType.CLEAR }, margins:{ top:80, bottom:80, left:120, right:120 },
+              children: m.items.map(item => new Paragraph({ spacing:{ after:60 }, children:[new TextRun({ text:"• "+item, size:16, font:"Arial" })] }))
+            }),
+            m.status==="aims" ? statusCell("AIMS串接","aims",1200) : statusCell("","todo",1200),
+          ]})),
+        ]
+      }),
       spacer(),
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun({ text:"新聊天室交接必看", font:"Arial", size:24, bold:true, color:NAVY })] }),
       ...[
