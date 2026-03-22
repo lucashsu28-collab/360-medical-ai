@@ -7,17 +7,35 @@ export const metadata: Metadata = {
 };
 
 const CITIES = [
-  { name: "臺北市", count: 120 },{ name: "新北市", count: 98 },{ name: "桃園市", count: 76 },
-  { name: "臺中市", count: 89 },{ name: "臺南市", count: 54 },{ name: "高雄市", count: 72 },
-  { name: "基隆市", count: 18 },{ name: "新竹市", count: 32 },{ name: "嘉義市", count: 22 },
-  { name: "新竹縣", count: 15 },{ name: "苗栗縣", count: 12 },{ name: "彰化縣", count: 28 },
-  { name: "南投縣", count: 10 },{ name: "雲林縣", count: 14 },{ name: "嘉義縣", count: 11 },
-  { name: "屏東縣", count: 19 },{ name: "宜蘭縣", count: 13 },{ name: "花蓮縣", count: 9 },
-  { name: "臺東縣", count: 7 },{ name: "澎湖縣", count: 4 },{ name: "金門縣", count: 3 },
-  { name: "連江縣", count: 1 },
+  "臺北市","新北市","桃園市","臺中市","臺南市","高雄市",
+  "基隆市","新竹市","嘉義市","新竹縣","苗栗縣","彰化縣",
+  "南投縣","雲林縣","嘉義縣","屏東縣","宜蘭縣","花蓮縣",
+  "臺東縣","澎湖縣","金門縣","連江縣"
 ];
 
-export default function CitiesPage() {
+async function getCityCounts(): Promise<Record<string, number>> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+  try {
+    const res = await fetch(`${apiUrl}/api/clinics?limit=904`, { next: { revalidate: 3600 } });
+    const data = await res.json();
+    const clinics: { address?: string }[] = data.clinics ?? [];
+    const counts: Record<string, number> = {};
+    for (const c of clinics) {
+      const addr = c.address || "";
+      const m = addr.match(/^(.*?[市縣])/);
+      if (m) {
+        const city = m[1];
+        counts[city] = (counts[city] || 0) + 1;
+      }
+    }
+    return counts;
+  } catch {
+    return {};
+  }
+}
+
+export default async function CitiesPage() {
+  const counts = await getCityCounts();
   return (
     <div className="min-h-screen bg-[var(--paper)]">
       <div className="mx-auto max-w-[1060px] px-4 py-8 md:px-8">
@@ -26,11 +44,11 @@ export default function CitiesPage() {
           <p className="text-[var(--muted)] text-sm">全台 22 縣市・904 家診所・六維度 AI 評鑑</p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {CITIES.map(c => (
-            <Link key={c.name} href={`/cities/${encodeURIComponent(c.name)}`}
+          {CITIES.map(city => (
+            <Link key={city} href={`/cities/${encodeURIComponent(city)}`}
               className="rounded-[14px] border border-[var(--line)] bg-white p-4 text-center transition-all hover:border-[var(--blue)] hover:shadow-md">
-              <div className="text-[15px] font-bold text-[var(--ink)] mb-1">{c.name}</div>
-              <div className="text-[12px] text-[var(--muted)]">{c.count} 家診所</div>
+              <div className="text-[15px] font-bold text-[var(--ink)] mb-1">{city}</div>
+              <div className="text-[12px] text-[var(--muted)]">{counts[city] ?? 0} 家診所</div>
             </Link>
           ))}
         </div>
