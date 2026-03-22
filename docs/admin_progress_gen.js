@@ -103,6 +103,15 @@ const phase2Modules = [
     items:["#4客戶列表串接AIMS","#6合作診所開通/停用接真實DB","#8數據分析串接GA4","其餘模組從mock改為真實資料"] },
 ];
 
+const phase3Modules = [
+  { num:"P3-1", name:"預約系統", status:"todo",
+    items:["合作診所後台上架療程/優惠","消費者端線上預約流程","抽傭機制設計與計算","金流串接（綠界/藍新）"] },
+  { num:"P3-2", name:"多醫療產業擴充", status:"todo",
+    items:["牙醫/眼科/生殖中心評鑑體系設計","各產業獨立評分規則","資料爬蟲擴充（各產業健保署資料）"] },
+  { num:"P3-3", name:"付費解鎖/訂閱制", status:"todo",
+    items:["消費者付費解鎖完整報告","診所訂閱曝光方案設計","金流串接（綠界/藍新）"] },
+];
+
 const TODAY = new Date().toISOString().slice(0,10);
 const p1Done  = modules.filter(m=>m.p1==="done").length;
 const p1Doing = modules.filter(m=>m.p1==="doing").length;
@@ -211,6 +220,24 @@ const doc = new Document({
               children: m.items.map(item => new Paragraph({ spacing:{ after:60 }, children:[new TextRun({ text:"• "+item, size:16, font:"Arial" })] }))
             }),
             m.status==="aims" ? statusCell("AIMS串接","aims",1200) : statusCell("","todo",1200),
+          ]})),
+        ]
+      }),
+      spacer(),
+      new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun({ text:"Phase 3 商業變現作業項目", font:"Arial", size:24, bold:true, color:NAVY })] }),
+      new Table({ width:{ size:8900, type:WidthType.DXA }, columnWidths:[500,2800,4400,1200],
+        rows:[
+          new TableRow({ tableHeader:true, children:[
+            headerCell("#", 500), headerCell("項目名稱", 2800), headerCell("子任務", 4400), headerCell("狀態", 1200),
+          ]}),
+          ...phase3Modules.map(m => new TableRow({ children:[
+            cell(m.num, { bold:true, color:GRAY, width:500, size:16, align:AlignmentType.CENTER }),
+            cell(m.name, { bold:true, width:2800, size:17 }),
+            new TableCell({ borders, width:{ size:4400, type:WidthType.DXA },
+              shading:{ fill:WHITE, type:ShadingType.CLEAR }, margins:{ top:80, bottom:80, left:120, right:120 },
+              children: m.items.map(item => new Paragraph({ spacing:{ after:60 }, children:[new TextRun({ text:"• "+item, size:16, font:"Arial" })] }))
+            }),
+            statusCell("","todo",1200),
           ]})),
         ]
       }),
