@@ -64,18 +64,36 @@ def _calc_total_score(c: dict) -> float:
     return sum(scores)
 
 
+def _clean_search(text: str) -> str:
+    """Remove punctuation/spaces so '名媛芭比時尚' matches '名媛芭比.時尚'"""
+    import re
+    return re.sub(r'[.\s\u00b7\u30fb\-_·・]', '', text)
+
+
 @app.get("/api/clinics")
 async def list_clinics(search: str = "", city: str = "", min_score: float = 0, limit: int = 20, offset: int = 0):
     limit = min(limit, 9999)  # cap at 9999
     try:
-        from sqlalchemy import or_
+        from sqlalchemy import or_, text as sa_text
         async with _SessionLocal() as session:
             q = select(ClinicModel)
             if search:
+                # Strip special chars from both search term and DB column
+                # regexp_replace(name, '[.\s·・\-_]', '', 'g') ILIKE %cleaned_search%
+                clean_kw = _clean_search(search)
+                clean_col_name = func.regexp_replace(
+                    ClinicModel.name, r'[.\s\u00b7\u30fb\-_]', '', 'g'
+                )
+                clean_col_addr = func.regexp_replace(
+                    ClinicModel.address, r'[.\s\u00b7\u30fb\-_]', '', 'g'
+                )
                 q = q.where(
                     or_(
+                        clean_col_name.ilike(f"%{clean_kw}%"),
+                        clean_col_addr.ilike(f"%{clean_kw}%"),
+                        # Fallback: original ILIKE for addresses with numbers/slashes
                         ClinicModel.name.ilike(f"%{search}%"),
-                        ClinicModel.address.ilike(f"%{search}%")
+                        ClinicModel.address.ilike(f"%{search}%"),
                     )
                 )
             if city:
