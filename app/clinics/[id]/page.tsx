@@ -6,6 +6,13 @@ import FogReport from "@/components/FogReport";
 import DoctorSearch from "@/components/DoctorSearch";
 import type { ScoreCardScores } from "@/components/ScoreCard";
 
+interface ClinicReview {
+  author_name: string;
+  rating: number | null;
+  text: string;
+  relative_time: string;
+}
+
 /** 後端 API 回傳的單一診所格式 */
 interface ApiClinic {
   id: string;
@@ -93,12 +100,14 @@ export default async function ClinicDetailPage({
 }) {
   const { id } = await params;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const res = await fetch(`${apiUrl}/api/clinics/${id}`, {
-    next: { revalidate: 3600 },
-  });
+  const [res, reviewsRes] = await Promise.all([
+    fetch(`${apiUrl}/api/clinics/${id}`, { next: { revalidate: 3600 } }),
+    fetch(`${apiUrl}/api/clinics/${id}/reviews`, { next: { revalidate: 3600 } }),
+  ]);
   if (!res.ok) notFound();
   const clinic = (await res.json()) as ApiClinic;
   if (!clinic?.id) notFound();
+  const reviews: ClinicReview[] = reviewsRes.ok ? await reviewsRes.json() : [];
 
   const phone = clinic.phone || "—";
   const reviewCount = clinic.google_review_count ?? 0;
@@ -253,7 +262,29 @@ export default async function ClinicDetailPage({
                     </a>
                   </div>
                 </div>
-                <p className="text-[12px] text-[var(--muted)] border-t border-[var(--line)] pt-3">
+
+                {/* 真實評論列表 */}
+                {reviews.length > 0 && (
+                  <ul className="mt-4 space-y-4 border-t border-[var(--line)] pt-4">
+                    {reviews.map((rv, idx) => (
+                      <li key={idx} className="flex gap-3">
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--off)] text-[13px] font-bold text-[var(--ink2)]">
+                          {rv.author_name?.charAt(0) || "?"}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[13px] font-medium text-[var(--ink)]">{rv.author_name || "匿名"}</span>
+                            <span className="text-[11px] text-[var(--amber)]">{"★".repeat(rv.rating ?? 0)}{"☆".repeat(5 - (rv.rating ?? 0))}</span>
+                            <span className="text-[11px] text-[var(--muted)]">{rv.relative_time}</span>
+                          </div>
+                          <p className="text-[13px] leading-relaxed text-[var(--ink2)] line-clamp-3">{rv.text}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <p className="text-[12px] text-[var(--muted)] border-t border-[var(--line)] pt-3 mt-4">
                   評論內容由 Google Maps 用戶提供，360醫療AI大調查不對評論內容負責。
                 </p>
               </section>

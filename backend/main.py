@@ -148,6 +148,37 @@ async def api_get_doctor_detail(doc_seq: str):
     return {"doctor": detail}
 
 
+@app.get("/api/clinics/{clinic_id}/reviews")
+async def get_clinic_reviews(clinic_id: str):
+    """取得診所的 Google 評論（最多5則，依時間降冪）"""
+    from sqlalchemy import text as sa_text
+    try:
+        async with _SessionLocal() as session:
+            result = await session.execute(
+                sa_text("""
+                    SELECT author_name, rating, text, relative_time
+                    FROM clinic_reviews
+                    WHERE clinic_id = :cid
+                    ORDER BY time DESC
+                    LIMIT 5
+                """),
+                {"cid": clinic_id},
+            )
+            rows = result.fetchall()
+            return [
+                {
+                    "author_name": r[0],
+                    "rating": r[1],
+                    "text": r[2],
+                    "relative_time": r[3],
+                }
+                for r in rows
+            ]
+    except Exception as e:
+        print(f"[get_clinic_reviews] error: {e}")
+        return []
+
+
 @app.get("/api/clinics/{clinic_id}")
 async def get_clinic(clinic_id: str):
     try:
