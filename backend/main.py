@@ -19,6 +19,7 @@ from services.recommend import get_all_clinics
 from crawlers.doctor_mohw import search_doctor, get_doctor_detail
 from services.report import build_doctor_flex_report
 from routers.admin_router import router as admin_router
+from routers.clinics_router import router as clinics_router
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
@@ -26,6 +27,7 @@ app = FastAPI(
     version="0.1.0",
 )
 app.include_router(admin_router)
+app.include_router(clinics_router)
 
 from config import DATABASE_URL
 _db_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace("postgresql://", "postgresql+asyncpg://")
@@ -146,37 +148,6 @@ async def api_search_doctors(name: str):
 async def api_get_doctor_detail(doc_seq: str):
     detail = await get_doctor_detail(doc_seq)
     return {"doctor": detail}
-
-
-@app.get("/api/clinics/{clinic_id}/reviews")
-async def get_clinic_reviews(clinic_id: str):
-    """取得診所的 Google 評論（最多5則，依時間降冪）"""
-    from sqlalchemy import text as sa_text
-    try:
-        async with _SessionLocal() as session:
-            result = await session.execute(
-                sa_text("""
-                    SELECT author_name, rating, text, relative_time
-                    FROM clinic_reviews
-                    WHERE clinic_id = :cid
-                    ORDER BY time DESC
-                    LIMIT 5
-                """),
-                {"cid": clinic_id},
-            )
-            rows = result.fetchall()
-            return [
-                {
-                    "author_name": r[0],
-                    "rating": r[1],
-                    "text": r[2],
-                    "relative_time": r[3],
-                }
-                for r in rows
-            ]
-    except Exception as e:
-        print(f"[get_clinic_reviews] error: {e}")
-        return []
 
 
 @app.get("/api/clinics/{clinic_id}")
