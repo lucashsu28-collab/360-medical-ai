@@ -1,384 +1,156 @@
----
-# 🚨 新聊天室必讀 — 交接說明
-
-## 你是誰
-你是 Claude，正在協助 Lucas（真好整合行銷有限公司 CEO）
-開發「360醫療AI大調查」平台。
-
-## 第一件事
-**請對 Lucas 說以下這句話，等他回應後再開始任何作業：**
-> 「請先說『更新進度』，我會立刻產出最新 Admin 後台進度控管文件給你確認，確認後再開始作業。」
-
-## Lucas 說「更新進度」時你要做什麼
-1. 開啟專案 docs/admin_progress_gen.js
-2. 根據上次作業結果，把完成的模組 p1/p2/p3 欄位改為 "done"
-3. 執行指令（貼給 Lucas 在 PowerShell 跑）：
-   cd "c:\Users\User\Dropbox\360醫美大系統\360-medical-ai"
-   node docs/admin_progress_gen.js
-4. 文件產出在 docs/360醫療AI_Admin後台進度控管.docx，提供給 Lucas 下載確認
-
-## 進度狀態值說明
-| 值 | 意思 |
-|---|---|
-| done | 已完成上線 |
-| doing | 進行中（貼給C執行中）|
-| todo | 尚未開始 |
-| aims | 依賴AIMS系統，待串接 |
-| ext | 依賴外部服務（GA4/GSC等）|
-
-## 協作模式
-- Lucas = 產品決策
-- Claude = 架構設計 + 給「貼給C」指令
-- C（Cursor）= 實際寫程式
-- 流程：Claude給指令 → Lucas貼給C → Lucas回「已貼」→ Claude更新進度
-
-## 兩個專案
-| 專案 | 說明 |
-|---|---|
-| 360醫療AI大調查 | 本專案，醫美診所評鑑平台 |
-| AIMS（360 AI行銷系統）| 另一個專案，行銷SaaS，未來串接 |
-
-## 關鍵路徑
-- 本機：c:\Users\User\Dropbox\360醫美大系統\360-medical-ai
-- 前端：https://360-medical-ai.vercel.app/admin
-- 後端：https://medical-backend-492121133498.asia-east1.run.app
-- GitHub：https://github.com/lucashsu28-collab/360-medical-ai
+# 360醫療AI大調查 — 開發交接文件
+> 最後更新：2026-03-29
 
 ---
 
-# 360醫療AI大調查 — 交接文件
+## 一、專案基本資訊
+| 項目 | 內容 |
+|------|------|
+| 本機路徑 | C:\Users\User\Dropbox\Projects\medical-ai |
+| 前端 | https://360-medical-ai.vercel.app |
+| 後端 | https://medical-backend-492121133498.asia-east1.run.app |
+| GitHub | https://github.com/lucashsu28-collab/360-medical-ai |
+| GCP 專案 | medical-ai-489522 |
+| 資料庫 | Cloud SQL 34.81.74.228（DB：medical_ai）|
 
-## 專案資訊
-- 前端：https://360-medical-ai.vercel.app
-- GitHub：https://github.com/lucashsu28-collab/360-medical-ai
-- 本機：c:\Users\User\Dropbox\360醫美大系統\360-medical-ai
-- 後端API：https://medical-backend-492121133498.asia-east1.run.app
-- GCP專案：medical-ai-489522，Cloud Run服務：medical-backend，region：asia-east1
+---
 
-## LINE設定
-- 官方帳號：360醫美AI智能顧問
-- 加入連結：https://lin.ee/6sTCRzm
-- Channel ID：2009297793
-- LIFF ID：2009360724-7DzjBKHU
-- Webhook：https://medical-backend-492121133498.asia-east1.run.app/webhook/line
-
-## 部署指令
-
-```powershell
-# 後端部署
-cd "c:\Users\User\Dropbox\360醫美大系統\360-medical-ai"
+## 二、部署指令
+```
 gcloud run deploy medical-backend --source backend --region asia-east1 --allow-unauthenticated --project medical-ai-489522
-
-# Git 提交
-git add .
-git commit -m "說明"
-git push
-
-# 執行爬蟲
-cd "c:\Users\User\Dropbox\360醫美大系統\360-medical-ai\backend"
-python -m crawlers.places_runner       # Google 評分
-python -m crawlers.judicial_runner     # 司法裁判書
-python -m crawlers.merge_judicial      # 整合司法分數進 clinics_real.json
 ```
 
 ---
 
-## 醫美平台開發進度（2026/03/22更新）
-
-### ✅ 已完成
-- 前端展示版上線（Vercel）
-- Gemini 2.5 Flash LINE AI顧問（push message）
-- LIFF串接（含page參數+auto_unlock自動送報告）
-- 診所Flex報告卡片（六維度+進度條+來源連結）
-- 醫師Flex報告卡片（四維度）
-- 霧化報告（加LINE解鎖）
-- 健保署904家真實診所資料
-- Google Places評分（904家完整）
-- 衛福部醫師即時查詢
-- 醫師頁解鎖→confirm→跳LIFF→auto_unlock自動送報告到LINE
-- 司法院裁判書資料（904家，496家有真實案件）
-- 三維度真實資料整合進診所詳細頁
-- 解鎖報告各維度來源連結
-- Schema.org MedicalOrganization結構化標記
-- Sitemap自動生成（904家診所+城市頁+FAQ+專欄+百科）
-- generateMetadata動態SEO（每家診所獨立title/description/OG）
-- Admin後台13模組 P1 mock 全部完成（#1~#13，#4待AIMS串接）
-- Admin後台右上「前往前台」按鈕，前台SiteNav在admin路徑隱藏
-- FogReport解鎖行為寫入log-unlock記錄
-- GCP Cloud Scheduler三個排程（Google/司法院/衛福部）
-- FastAPI BackgroundTasks修正（避免Cloud Run截斷）
-- 前台AI SEO頁面：城市頁/FAQ/專欄/醫美百科/診所比較
-- SiteNav新增城市頁/醫美專欄/常見問題選單
-- ✅ 解鎖報告 LINE 推播修復（LINE_CHANNEL_ACCESS_TOKEN 補設定至 Cloud Run 環境變數）
-- ✅ clinics_real.json 確認打包進 Cloud Run image（.gitkeep 機制）
-- ✅ 診所列表前台篩選修正（臺/台兩種寫法、limit=904）
-- ✅ 評分顯示 0.0 問題排查中（DB score 欄位為 null）
-
-最新 Git commit：3df2099
-
-### ⏳ 待完成（Phase 1）
-- 🔴 衛福部行政處分爬蟲（診所第4維度+醫師第3維度）
-- 🟡 診所↔醫師對應
-- 🟡 正式網域購買+綁定Vercel+提交Google Search Console
-
-### ⏳ 待完成（Phase 2）
-- 🟢 B1 PostgreSQL接真實DB
-- 🟢 B2 GCP Cloud Scheduler（已建立排程，BackgroundTasks已修正）✅排程完成
-- 🟢 B3 AIMS AI SEO文章推送（依賴AIMS）
-- 🟢 B4 AIMS口碑監測串接（依賴AIMS）
-- 🟢 B5 Admin後台接真實DB
-
-### ⏳ 待完成（Phase 3）
-- 🔵 預約系統
-- 🔵 多醫療產業擴充
-- 🔵 付費解鎖/訂閱制
-
-### Admin後台13模組規劃
-1. LINE OA AI醫美顧問系統
-2. 資料爬取系統管理（爬蟲排程控制）
-3. 醫美平台數據看板
-4. 客戶列表（AI行銷系統串接，industry=medical_aesthetic）
-5. 診所資料管理（與AI行銷系統品牌資料連動同步）
-6. 合作診所開通/停用（連動AI行銷系統方案狀態）
-7. 資料匯出（CSV/PDF）
-8. 網站數據分析與排名【重要數據資產】
-9. 報告解鎖管理
-10. 內容管理（CMS）
-11. AI顧問訓練/調教
-12. 評分規則管理（各維度權重，免改程式碼）
-13. 告警系統
-
-### 評鑑體系
-診所六維度：司法糾紛/Google評分/合法登記/行政處分罰款🚨/新聞媒體/社群討論
-醫師五維度：執照合法性/司法糾紛/行政處分罰款🚨/新聞媒體/社群口碑
-解鎖報告：每個維度附原始資料來源URL連結
+## 三、LINE 設定
+- 官方帳號：360醫美AI智能顧問
+- Channel ID：2009297793
+- LIFF ID：2009360724-7DzjBKHU
+- Webhook：https://medical-backend-492121133498.asia-east1.run.app/webhook/line
 
 ---
 
-## 技術架構
-
-- **Frontend**：Next.js 15 + Tailwind CSS，部署在 Vercel
-- **Backend**：Python + FastAPI，部署在 Google Cloud Run
-- **AI**：Gemini 2.5 Flash（診所推薦 + LINE 對話）
-- **資料儲存**：JSON 檔案（`backend/data/`），Phase 2 改 PostgreSQL
-- **爬蟲**：`backend/crawlers/`
-- **LINE Bot**：Webhook 接收訊息，回傳 Flex Message
-
-## 資料檔案
-
-| 檔案 | 說明 |
+## 四、資料規模
+| 資料 | 筆數 |
 |------|------|
-| `backend/data/clinics_real.json` | 904 家診所（含評分、司法分數、Google評分） |
-| `backend/data/places_results.json` | Google Places 評分原始資料（904 家） |
-| `backend/data/judicial_results.json` | 司法裁判書數量（904 家，496 家有案件） |
+| 診所（clinics） | 1,567+ 筆（含醫美+外科關鍵字） |
+| clinics_real.json | 904 筆原始診所 |
+| nhi_all.json | 24,321 筆 NHI |
+| places_results.json | 904 筆 Google 評分 |
+| judicial_results.json | 904 筆（496 家有案件）|
+| clinic_reviews | 13,600+ 則 Google 真實評論 |
 
-## 協作默契
-- C = Cursor（AI程式碼編輯器）
-- Claude給「貼給C」框框指令 → Lucas直接複製貼給C執行
-- 終端機用PowerShell，Claude標註「PowerShell 執行：」
-- 錯誤訊息直接貼給Claude，Claude直接給解法
-- 繁體中文溝通
-- 新對話開始說「繼續360醫療AI大調查專案」
+---
 
-## 簡稱對照
-- 醫美平台 = 360醫療AI大調查網站
-- AIMS = 360 AI行銷系統
-- C = Cursor
+## 五、評鑑體系
 
-## 架構說明
-- 醫美平台視為AIMS的一個客戶
-- AIMS AI SEO系統產生文章/關鍵字 → 推送到醫美平台診所頁面
-- AIMS AI口碑監測系統負責新聞/PTT/Dcard爬蟲 → 串接到醫美平台新聞媒體/社群討論維度
-- 合作診所由AIMS管理客戶後台上傳療程/優惠內容 → 醫美平台前台自動同步
-
-## 評鑑體系
-
-### 診所六維度
-1. 司法糾紛 ⚖️ — 司法院裁判書，已完成，每月更新
-2. Google評分 ⭐ — Google Places API，已完成，每10天更新
-3. 合法登記 🏛️ — 健保署24,321筆，已完成，每月更新
-4. 行政處分/罰款 🚨 — 衛福部，待開發（Phase 1）
-5. 新聞媒體 📰 — 等AIMS口碑監測系統串接
-6. 社群討論 💬 — 等AIMS口碑監測系統串接
+### 診所六維度（滿分 100）
+| 維度 | 分值 | 狀態 |
+|------|------|------|
+| 司法糾紛 | 20 分 | ✅ 完成 |
+| 合法登記 | 20 分 | ✅ 完成 |
+| Google 評分 | 20 分 | ✅ 完成 |
+| Google 評論數 | 5 分 | ✅ 完成 |
+| 行政處分 | 20 分 | ⏳ 待開發（資料來源待確認）|
+| 新聞媒體 | 20 分 | ⏳ 待 AIMS 串接 |
+| 社群討論 | — | ⏳ 待 AIMS 串接 |
 
 ### 醫師五維度
-1. 執照合法性 ✅ — 衛福部即時查詢，已完成
-2. 司法糾紛 ⚖️ — 司法院裁判書，已完成
-3. 行政處分/罰款 🚨 — 衛福部，待開發（Phase 1）
-4. 新聞媒體 📰 — 等AIMS口碑監測系統串接
-5. 社群口碑 💬 — 等AIMS口碑監測系統串接
+1. 執照合法性 ✅
+2. 司法糾紛 ✅
+3. 行政處分 ⏳ 待開發
+4. 新聞媒體 ⏳ 待 AIMS 串接
+5. 社群口碑 ⏳ 待 AIMS 串接
 
-### 解鎖報告
-- 每個維度附原始資料來源連結（帶診所名稱直接查詢）
-- 司法糾紛 → 司法院裁判書查詢（帶診所名）
-- Google評分 → Google評論頁（place_id直連）
-- 合法登記 → 衛福部醫事機構查詢
+---
 
-## 資料檔案
-| 檔案 | 筆數 | 更新方式 |
-|------|------|---------|
-| backend/data/clinics_real.json | 904筆 | 爬蟲更新（含六維度評分） |
-| backend/data/nhi_all.json | 24,321筆 | 每月 |
-| backend/data/places_results.json | 904筆 | 每10天 |
-| backend/data/judicial_results.json | 904筆（496家有案件）| 每月 |
+## 六、✅ 已完成
 
-## 已完成進度
-- ✅ 前端展示版上線（Vercel）
-- ✅ Gemini 2.5 Flash LINE AI顧問（push message）
-- ✅ LIFF串接（含page參數+auto_unlock自動送報告）
-- ✅ 診所Flex報告卡片（六維度+進度條+來源連結）
-- ✅ 醫師Flex報告卡片（四維度）
-- ✅ 霧化報告（加LINE解鎖）
-- ✅ 健保署904家真實診所資料
-- ✅ Google Places評分（904家完整）
-- ✅ 衛福部醫師即時查詢
-- ✅ 醫師頁解鎖→confirm→跳LIFF→auto_unlock自動送報告到LINE
-- ✅ 司法院裁判書資料（904家，496家有真實案件）
-- ✅ 三維度整合進診所詳細頁
-- ✅ 解鎖報告各維度來源連結（帶診所名稱直接查詢）
-- ✅ Schema.org MedicalOrganization結構化標記
-- ✅ Sitemap自動生成（904家診所）
-- ✅ generateMetadata動態SEO（每家診所獨立title/description/OG）
-- ✅ 商業模式運營企畫書v2
-- ✅ 系統開發架構規格書v2（含Admin後台13模組）
+### 前台（35 個頁面）
+- 首頁、診所列表（1,567 筆 + 臺台篩選）、診所詳細頁
+- 醫師列表 + 詳細頁
+- 療程列表 + 詳細頁
+- 診所對比工具
+- 各縣市導航頁
+- 部落格 + Wiki 百科 + FAQ
+- 合作診所頁、診所資料更新入口、我想合作頁
+- 推廣活動頁、關於我們、LIFF 頁
 
-## 待完成（Phase 1）
-- 🔴 衛福部行政處分爬蟲（診所第4維度+醫師第3維度，附案件連結）
-- 🟡 診所↔醫師對應
-- 🟡 正式網域購買+綁定Vercel+提交Google Search Console
-- 🟣 等AIMS口碑監測系統完成後串接新聞/社群兩個維度
+### 後台（13 模組，9 個接真實 DB）
+- ✅ 登入、儀表板統計
+- ✅ 診所管理（搜尋/編輯/評分）
+- ✅ 合作診所管理
+- ✅ 解鎖記錄查詢
+- ✅ 推播記錄查詢
+- ✅ 告警系統
+- ✅ 爬蟲排程管理（手動觸發）
+- ✅ 資料匯出（CSV + PDF）
+- ✅ 評分規則動態管理
+- ⏳ LINE AI 訓練（UI 完成，待後端串接）
+- ⏳ AI 訓練資料（UI 完成，待後端串接）
+- ⏳ GA4 流量分析（UI 完成，待串接）
+- ⏳ CMS 內容管理（UI 完成，待後端串接）
 
-## 待完成（Phase 2）
-- 🟢 Admin後台13模組（整合進AIMS後台）
-- 🟢 PostgreSQL接真實DB（取代JSON檔案）
-- 🟢 GCP Cloud Scheduler自動排程
-- 🟢 AIMS AI SEO文章推送到診所頁面
-- 🟢 合作診所後台管理（由AIMS管理客戶後台操作）
+### 後端 & 爬蟲
+- FastAPI + PostgreSQL + SQLAlchemy（10 個 Model）
+- 爬蟲：Google Places、司法院、衛福部、NHI、醫師查詢、評分計算（共 11 個）
+- GCP Cloud Scheduler 三個排程（Google 每 10 天 / 司法+衛福 每 30 天）
+- Google Places 真實評論入庫（13,600+ 則）
+- Alembic 資料庫遷移（5 個版本）
 
-## 待完成（Phase 3）
-- 🔵 預約系統（診所後台+消費者端+抽傭）
-- 🔵 多醫療產業擴充（牙醫/眼科/生殖中心）
+### LINE 整合
+- LINE Webhook + LIFF（auto_unlock）
+- Flex 報告卡片（診所六維度 + 醫師）
+- Gemini 2.5 Flash AI 顧問
+- 對話記錄儲存 DB
 
-## Admin後台13模組規劃（Phase 2，整合進AIMS）
-1. LINE OA AI醫美顧問系統（AI顧問設定、對話記錄、知識庫）
-2. 資料爬取系統管理（爬蟲排程控制、手動觸發、執行記錄）
-3. 醫美平台數據看板（流量/解鎖次數/診所查詢排行）
-4. 客戶列表（從AIMS帶入，industry=medical_aesthetic）
-5. 診所資料管理（審核/編輯，與AIMS品牌資料連動同步）
-6. 合作診所開通/停用（連動AIMS方案狀態）
-7. 資料匯出（診所/醫師CSV、單一診所PDF）
-8. 網站數據分析與排名【重要數據資產】（GA整合、查詢排行、轉換漏斗）
-9. 報告解鎖管理（解鎖記錄、付費狀態）
-10. 內容管理CMS（Banner/療程/優惠文案、LINE推播）
-11. AI顧問訓練/調教（對話記錄、標記好壞回答）
-12. 評分規則管理（各維度權重調整，免改程式碼）
-13. 告警系統（爬蟲失敗/資料異常/Cloud Run異常通知）
+### SEO
+- Schema.org MedicalOrganization 結構化標記
+- Sitemap 自動生成（診所+城市+FAQ+專欄+百科）
+- generateMetadata 動態 SEO（每家診所獨立 title/description/OG）
 
-## Admin後台13模組詳細功能項目
+---
 
-### 模組1：LINE OA AI醫美顧問系統
-- 查看AI顧問對話記錄（依用戶/時間篩選）
-- 設定歡迎訊息、圖文選單
-- 管理常見問題知識庫（新增/編輯/刪除）
-- 調整Gemini回答參數（溫度、字數限制）
-- 查看LINE用戶清單（加入時間、對話次數）
-- 手動推播訊息給所有用戶
+## 七、⏳ 待完成
 
-### 模組2：資料爬取系統管理
-- 各爬蟲最後執行時間、成功/失敗筆數
-- 手動觸發指定爬蟲（Google評分/司法院/健保署/行政處分）
-- 排程設定查看（下次執行時間）
-- 爬蟲執行log查看
-- 資料完整度儀表板（每個維度幾家有資料）
+### Phase 2（資料與分析）
+| 功能 | 優先 | 備註 |
+|------|------|------|
+| AIMS AI SEO 文章推送 | P1 | 依賴 AIMS 系統 |
+| AIMS 口碑監測串接 | P1 | 新聞 + 社群兩個維度 |
+| GA4 流量分析後台 | P2 | 後台 analytics 模組 |
+| CMS Banner/公告管理 | P2 | 後台 cms 模組 |
+| LINE 推播排程 | P2 | 目前僅手動 |
+| 爬蟲自動排程驗證 | P2 | Cloud Scheduler 驗證 |
 
-### 模組3：醫美平台數據看板
-- 今日/本週/本月頁面瀏覽數、獨立訪客
-- LINE加入人數趨勢圖
-- 報告解鎖次數趨勢圖
-- 診所頁面查詢TOP 20排行
-- 各維度資料完整度統計
+### Phase 3（功能擴展）
+| 功能 | 備註 |
+|------|------|
+| 診所預約系統 | 診所頁集成 + 抽傭 |
+| 診所↔醫師對應 | 改為診所後台自填 |
+| 多醫療產業擴充 | 牙科、眼科、生殖中心 |
+| 付費解鎖/訂閱制 | 商業化 |
 
-### 模組4：客戶列表（AIMS串接）
-- 顯示industry=medical_aesthetic的診所客戶
-- 欄位：診所名稱、方案、付費狀態、加入日期
-- 搜尋/篩選功能
-- 快速跳轉到AIMS對應客戶頁面
-- 新客戶從醫美平台匯入AIMS
+### Phase 4（優化）
+| 功能 | 備註 |
+|------|------|
+| 行政處分爬蟲 | 衛福部資料來源待確認 |
+| Email/LINE 告警推播 | 目前僅後台顯示 |
+| 正式網域購買 + 綁定 Vercel | — |
 
-### 模組5：診所資料管理
-- 904家診所列表（搜尋/篩選/排序）
-- 編輯診所資料（名稱、地址、電話、療程標籤）
-- 手動調整評分（附調整原因記錄）
-- 查看各維度分數明細
-- 與AIMS品牌資料雙向同步
-- 標記診所為合作/非合作
+---
 
-### 模組6：合作診所開通/停用
-- 合作診所列表（狀態：開通/停用/審核中）
-- 一鍵開通/停用（連動AIMS方案狀態）
-- 設定前台曝光內容（介紹文字、圖片）
-- 管理精選療程（新增/編輯/刪除）
-- 管理優惠方案（效期/內容/限制）
-- 合作診所前台預覽
+## 八、與 AIMS 串接（待開發）
+- 診所點「升級行銷方案」→ 呼叫 AIMS API → 自動建立客戶帳號
+- AIMS GitHub：https://github.com/lucashsu28-collab/ai-seo-geo-engine
 
-### 模組7：資料匯出
-- 診所清單匯出CSV（可篩選欄位）
-- 醫師清單匯出CSV
-- 單一診所完整報告匯出PDF
-- 批次匯出多家診所報告
-- 匯出紀錄查看
+---
 
-### 模組8：網站數據分析與排名【重要數據資產】
-- GA4整合（頁面流量、用戶來源、跳出率）
-- 診所頁面查詢排行榜（市場熱度指標）
-- 熱門療程搜尋關鍵字排行
-- 用戶地區分布地圖
-- 裝置分布（手機/電腦）
-- LINE轉換漏斗（看診所頁→加LINE→解鎖報告）
-- 資料可匯出Excel供業務使用
-
-### 模組9：報告解鎖管理
-- 解鎖記錄列表（LINE用戶/診所/時間）
-- 最多人解鎖診所排行
-- 付費/免費解鎖統計
-- 單一用戶解鎖歷史查詢
-- 異常解鎖偵測（同一用戶重複解鎖）
-
-### 模組10：內容管理CMS
-- 首頁Banner管理（圖片/連結/效期）
-- 療程分類圖片管理
-- 精選優惠文案編輯
-- 網站公告管理
-- LINE推播訊息（立即/排程推播）
-- SEO文案管理（接收AIMS AI SEO推送）
-
-### 模組11：AI顧問訓練/調教
-- 查看對話記錄（全部/指定用戶）
-- 標記好的回答👍 / 壞的回答👎
-- 查看壞回答統計（哪類問題答不好）
-- 新增/編輯FAQ知識庫
-- 測試模式（直接跟AI對話測試）
-- 匯出對話記錄CSV
-
-### 模組12：評分規則管理
-- 各維度權重設定（Google/司法/合法登記/行政處分）
-- 司法案件扣分規則（1件扣幾分、上限幾分）
-- 行政處分扣分規則
-- Google評分換算規則（幾星換算幾分）
-- 新產業評分規則設定（牙醫/眼科等）
-- 規則變更記錄（誰改的、改了什麼）
-
-### 模組13：告警系統
-- 爬蟲失敗通知（Email/LINE推播）
-- 資料異常警示（分數異常變動）
-- Cloud Run服務異常通知
-- API回應時間過慢警示
-- 告警歷史記錄
-- 告警閾值設定
-
-## 注意事項
-- data/目錄在.gitignore中，需用 git add -f 強制加入
-- 後端部署需在專案根目錄執行（不是在backend/目錄）
-- 司法院系統每日6-12點維護，爬蟲避開此時段
-- Google Places API費用：每次查詢約TWD 0.5元，904家約TWD 450元
-- VISA金融卡已綁定GCP帳戶（卡號末4碼2903）
+## 九、協作規則
+- Lucas（帥帥老大）= 產品決策
+- Claude = 架構規劃 + 給指令
+- 給 Code 的指令：全部放在單一框內，一鍵複製
+- 給 Lucas 的 PowerShell：全部放在單一框內，一鍵複製
+- 兩種框不可混在一起
+- 繁體中文溝通
+- 完成後 git commit + push
