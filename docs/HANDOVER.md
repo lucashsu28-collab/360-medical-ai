@@ -113,15 +113,18 @@ gcloud run deploy medical-backend --source backend --region asia-east1 --allow-u
 
 ## 七、⏳ 待完成
 
-### Phase 2（資料與分析）
-| 功能 | 優先 | 備註 |
-|------|------|------|
-| AIMS AI SEO 文章推送 | P1 | 依賴 AIMS 系統 |
-| AIMS 口碑監測串接 | P1 | 新聞 + 社群兩個維度 |
-| GA4 流量分析後台 | P2 | 後台 analytics 模組 |
-| CMS Banner/公告管理 | P2 | 後台 cms 模組 |
-| LINE 推播排程 | P2 | 目前僅手動 |
-| 爬蟲自動排程驗證 | P2 | Cloud Scheduler 驗證 |
+### Phase 2（待定義）
+> Lucas 整理中，稍後補入。
+
+### Phase 3（AIMS 串接與分析）
+| 功能 | 備註 |
+|------|------|
+| AIMS AI SEO 文章推送 | 依賴 AIMS 系統 |
+| AIMS 口碑監測串接 | 新聞 + 社群兩個維度 |
+| GA4 流量分析後台 | 後台 analytics 模組 |
+| CMS Banner/公告管理 | 後台 cms 模組 |
+| LINE 推播排程 | 目前僅手動 |
+| 爬蟲自動排程驗證 | Cloud Scheduler 驗證 |
 
 ### Phase 4（上線後再做）
 | 功能 | 備註 |
