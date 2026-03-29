@@ -47,20 +47,13 @@ export default function Home() {
       {/* ── Hero ── */}
       <section style={{ background: "#fff", padding: "72px 24px 60px", textAlign: "center", borderBottom: "1px solid #E2E8F0" }}>
         <div style={{ maxWidth: 640, margin: "0 auto" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#EBF8FF", border: "1px solid #BEE3F8", borderRadius: 999, padding: "4px 14px", marginBottom: 24 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#2B6CB0", display: "inline-block" }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#2B6CB0", letterSpacing: "0.05em" }}>全台第一・五維度AI評鑑</span>
-          </div>
-          <h1 style={{ fontSize: 40, fontWeight: 700, color: "#1A202C", letterSpacing: "0.05em", margin: "0 0 8px" }}>
-            醫美 AI 大調查
-          </h1>
-          <p style={{ fontSize: 22, fontWeight: 600, color: "#2B6CB0", letterSpacing: "0.15em", margin: "0 0 16px" }}>
-            美麗不踩雷
-          </p>
-          <p style={{ fontSize: 14, color: "#718096", lineHeight: 1.7, margin: "0 0 32px" }}>
+          <p style={{ fontSize: 13, color: "#718096", lineHeight: 1.7, margin: "0 0 20px" }}>
             司法紀錄・合法登記・真實口碑<br />
             輸入診所名稱，立刻看到你不知道的事。
           </p>
+          <h1 style={{ fontSize: 46, fontWeight: 800, color: "#1A202C", letterSpacing: "0.04em", lineHeight: 1.15, margin: "0 0 32px" }}>
+            醫美大調查，<span style={{ color: "#2B6CB0" }}>美麗不踩雷</span>
+          </h1>
           <div style={{ maxWidth: 540, margin: "0 auto 36px" }}>
             <SearchBox />
           </div>
