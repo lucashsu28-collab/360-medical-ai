@@ -20,6 +20,12 @@ from crawlers.doctor_mohw import search_doctor, get_doctor_detail
 from services.report import build_doctor_flex_report
 from routers.admin_router import router as admin_router
 from routers.clinics_router import router as clinics_router
+from routers.promotions import router as promotions_router
+from routers.partnership import router as partnership_router
+from routers.portal import router as portal_router
+from routers.admin_line import router as admin_line_router
+from routers.admin_cms import router as admin_cms_router
+from routers.appointments import router as appointments_router
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
@@ -28,6 +34,12 @@ app = FastAPI(
 )
 app.include_router(admin_router)
 app.include_router(clinics_router)
+app.include_router(promotions_router, prefix="/api")
+app.include_router(partnership_router, prefix="/api")
+app.include_router(portal_router, prefix="/api")
+app.include_router(admin_line_router, prefix="/api")
+app.include_router(admin_cms_router, prefix="/api")
+app.include_router(appointments_router, prefix="/api")
 
 from config import DATABASE_URL
 _db_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace("postgresql://", "postgresql+asyncpg://")
@@ -167,10 +179,16 @@ async def get_clinic(clinic_id: str):
                     "score_breakdown": r.score_breakdown,
                     "dispute_count": r.dispute_count,
                     "isPartner": r.is_partner,
+                    "is_partner": r.is_partner,
                     "custom_note": r.custom_note,
                     "website": r.website,
                     "cont_start": r.cont_start,
                     "treatments": r.treatments,
+                    "partner_since": str(r.partner_since) if r.partner_since else None,
+                    "line_oa_url": r.line_oa_url,
+                    "doctors": r.doctors or [],
+                    "promotions": r.promotions or [],
+                    "gallery": r.gallery or [],
                 }
     except Exception:
         pass

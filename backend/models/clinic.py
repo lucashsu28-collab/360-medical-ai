@@ -1,5 +1,5 @@
-from datetime import datetime
-from sqlalchemy import String, Float, Integer, DateTime, Text, JSON, Boolean
+from datetime import datetime, date
+from sqlalchemy import String, Float, Integer, DateTime, Text, JSON, Boolean, Date
 from sqlalchemy.orm import Mapped, mapped_column
 from models.base import Base
 
@@ -29,6 +29,13 @@ class Clinic(Base):
     score_breakdown: Mapped[dict | None] = mapped_column(JSON)
     dispute_count: Mapped[int | None] = mapped_column(Integer)
     treatments: Mapped[list | None] = mapped_column(JSON)
+
+    # P2-1: 合作診所欄位
+    partner_since: Mapped[date | None] = mapped_column(Date, nullable=True)
+    line_oa_url: Mapped[str | None] = mapped_column(Text)
+    doctors: Mapped[list | None] = mapped_column(JSON)
+    promotions: Mapped[list | None] = mapped_column(JSON)
+    gallery: Mapped[list | None] = mapped_column(JSON)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

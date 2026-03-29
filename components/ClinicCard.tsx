@@ -102,7 +102,11 @@ export default function ClinicCard({
     return (
       <Link
         href={href}
-        className="group flex cursor-pointer flex-col overflow-hidden rounded-[14px] border-[1.5px] border-[var(--line)] bg-white transition-all duration-[0.22s] hover:border-[var(--blue)] hover:shadow-[0_14px_36px_rgba(0,0,0,.09)] hover:-translate-y-0.5"
+        className={`group flex cursor-pointer flex-col overflow-hidden rounded-[14px] border-[1.5px] bg-white transition-all duration-[0.22s] hover:shadow-[0_14px_36px_rgba(0,0,0,.09)] hover:-translate-y-0.5 ${
+          isPartner
+            ? "border-amber-400 hover:border-amber-500 shadow-[0_0_0_1px_rgba(251,191,36,.3)]"
+            : "border-[var(--line)] hover:border-[var(--blue)]"
+        }`}
       >
         <div
           className="relative flex h-[120px] items-center justify-center text-[44px]"
@@ -115,8 +119,8 @@ export default function ClinicCard({
             <span aria-hidden>{imagePlaceholder}</span>
           )}
           {isPartner && (
-            <span className="absolute left-2.5 top-2.5 rounded px-2 py-1 text-[9px] font-bold text-white bg-[var(--blue)]">
-              ✦ 合作
+            <span className="absolute left-2.5 top-2.5 rounded-full px-2 py-0.5 text-[9px] font-bold text-black bg-amber-400">
+              ✦ 合作診所
             </span>
           )}
           {district && (
@@ -160,7 +164,11 @@ export default function ClinicCard({
   return (
     <Link
       href={href}
-      className="flex cursor-pointer items-stretch overflow-hidden rounded-[14px] border-[1.5px] border-[var(--line)] bg-white transition-all duration-[0.22s] hover:border-[var(--blue)] hover:shadow-[0_12px_40px_rgba(0,0,0,.1)] hover:translate-x-0.5"
+      className={`flex cursor-pointer items-stretch overflow-hidden rounded-[14px] border-[1.5px] bg-white transition-all duration-[0.22s] hover:shadow-[0_12px_40px_rgba(0,0,0,.1)] hover:translate-x-0.5 ${
+        isPartner
+          ? "border-amber-400 hover:border-amber-500 shadow-[0_0_0_1px_rgba(251,191,36,.2)]"
+          : "border-[var(--line)] hover:border-[var(--blue)]"
+      }`}
     >
       <div
         className="relative flex w-[150px] flex-shrink-0 items-center justify-center text-[48px]"
@@ -173,8 +181,8 @@ export default function ClinicCard({
           <span aria-hidden>{imagePlaceholder}</span>
         )}
         {isPartner && (
-          <span className="absolute left-2 top-2.5 rounded px-1.5 py-0.5 text-[9px] font-bold text-white bg-[var(--blue)]">
-            ✦ 合作
+          <span className="absolute left-2 top-2.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold text-black bg-amber-400">
+            ✦ 合作診所
           </span>
         )}
       </div>
