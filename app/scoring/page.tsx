@@ -2,316 +2,154 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "評分標準 | 360醫療AI大調查",
-  description: "360醫療AI大調查採100分制評鑑，資料全部公開，包含合法登記、Google評分、司法糾紛等維度說明。",
+  title: "評分標準｜360醫療AI大調查",
+  description: "360醫療AI大調查採100分制評鑑，五個維度各20分，資料全部公開，任何人都可以驗證。",
 };
 
-function ScoreTable({
-  headers,
-  rows,
-}: {
-  headers: string[];
-  rows: (string | number)[][];
-}) {
-  return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--line)]">
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="bg-[var(--off)]">
-            {headers.map((h) => (
-              <th
-                key={h}
-                className="border-b border-[var(--line)] px-4 py-3 text-left text-xs font-semibold text-[var(--muted)]"
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr
-              key={i}
-              className={i % 2 === 0 ? "bg-white" : "bg-[var(--paper)]"}
-            >
-              {row.map((cell, j) => (
-                <td
-                  key={j}
-                  className="border-b border-[var(--line)] px-4 py-3 font-medium text-[var(--ink2)]"
-                >
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function DimensionCard({
-  num,
-  title,
-  maxScore,
-  color,
-  bgColor,
-  children,
-  pending,
-}: {
-  num: string;
-  title: string;
-  maxScore: number;
-  color: string;
-  bgColor: string;
-  children?: React.ReactNode;
-  pending?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border border-[var(--line)] bg-white overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4" style={{ background: bgColor }}>
-        <div className="flex items-center gap-3">
-          <span
-            className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
-            style={{ background: color }}
-          >
-            {num}
-          </span>
-          <h3 className="text-base font-bold" style={{ color }}>
-            {title}
-          </h3>
-        </div>
-        <div className="flex items-center gap-2">
-          {pending ? (
-            <span className="rounded-full bg-[var(--off)] px-3 py-1 text-xs font-semibold text-[var(--muted)]">
-              建置中
-            </span>
-          ) : (
-            <span
-              className="rounded-full px-3 py-1 text-xs font-bold"
-              style={{ background: color, color: "#fff" }}
-            >
-              滿分 {maxScore} 分
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="p-5">
-        {pending ? (
-          <div className="flex items-center gap-3 rounded-xl border border-dashed border-[var(--line2)] bg-[var(--off)] px-5 py-6">
-            <span className="text-2xl">🚧</span>
-            <div>
-              <p className="text-sm font-semibold text-[var(--muted)]">此維度正在建置中</p>
-              <p className="mt-0.5 text-xs text-[var(--light)]">資料蒐集與評分規則制定中，預計 Phase 3 上線</p>
-            </div>
-          </div>
-        ) : (
-          children
-        )}
-      </div>
-    </div>
-  );
-}
+const DIMENSIONS = [
+  {
+    num: "1", title: "合法登記", status: "live", color: "#2B6CB0", bg: "#EBF8FF",
+    desc: "資料來源：衛福部健保署醫事機構查詢系統。確認診所是否具備合法醫療機構登記，為所有評分維度中最基礎的門檻條件。",
+    rows: [["有合法登記（健保署資料庫可查詢）", "20 分"], ["無法查詢登記記錄", "0 分"]],
+  },
+  {
+    num: "2", title: "Google 評分", status: "live", color: "#38A169", bg: "#C6F6D5",
+    desc: "資料來源：Google Places API（每10天自動更新）。Google 評分由星等（15分）與評論數量（5分）兩部分組成，合計 20 分。",
+    rows: [["4.5 星以上", "15 分"], ["4.0～4.4 星", "12 分"], ["3.5～3.9 星", "9 分"], ["3.0 星以下", "3 分"], ["評論 1,000則以上（額外）", "+5 分"]],
+  },
+  {
+    num: "3", title: "司法糾紛", status: "live", color: "#D69E2E", bg: "#FEFCBF",
+    desc: "資料來源：司法院裁判書查詢系統。以診所名稱為關鍵字統計涉及醫療糾紛之民事、刑事判決案件數，案件數越多分數越低。",
+    rows: [["0 件", "20 分"], ["1 件", "15 分"], ["2 件", "10 分"], ["3 件", "5 分"], ["4 件以上", "0 分"]],
+  },
+  {
+    num: "4", title: "新聞媒體", status: "pending", color: "#A0AEC0", bg: "#F7FAFC",
+    desc: "統計診所相關的新聞媒體報導正負評傾向，資料蒐集與評分規則制定中。",
+    rows: [],
+  },
+  {
+    num: "5", title: "社群口碑", status: "pending", color: "#A0AEC0", bg: "#F7FAFC",
+    desc: "分析社群平台（PTT、Dcard 等）的消費者討論情緒，資料蒐集與評分規則制定中。",
+    rows: [],
+  },
+];
 
 export default function ScoringPage() {
   return (
-    <main>
+    <div style={{ background: "#FAFAF8", minHeight: "100vh" }}>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-white px-4 pb-12 pt-16 text-center md:px-6 md:pb-14 md:pt-20">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.45]"
-          style={{
-            backgroundImage: "radial-gradient(var(--line) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
-          aria-hidden
-        />
-        <div className="relative mx-auto max-w-2xl">
-          <span className="mb-4 inline-block rounded-full bg-[var(--blue-lt)] px-4 py-1.5 text-xs font-semibold tracking-wider text-[var(--blue)]">
-            評分標準
-          </span>
-          <h1
-            className="mb-5 text-3xl font-black leading-snug text-[var(--ink)] md:text-4xl"
-            style={{ fontFamily: "var(--font-noto-serif-tc)" }}
-          >
-            100分制、全資料公開
-            <br className="hidden md:block" />
-            任何人都可以驗證
-          </h1>
-          <p className="mx-auto max-w-xl text-base leading-relaxed text-[var(--muted)]">
-            我們的評分採 100 分制，分為五個維度，每個維度的資料來源、計算邏輯全部公開透明，
-            不存在任何不透明的人工調整。
-          </p>
+      <div style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "36px 24px 32px", textAlign: "center" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#EBF8FF", border: "1px solid #BEE3F8", borderRadius: 20, padding: "3px 12px", marginBottom: 12 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#2B6CB0" }}>100分制・全資料公開・任何人都可以驗證</span>
         </div>
-      </section>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: "#1A202C", margin: "0 0 10px" }}>評分標準</h1>
+        <p style={{ fontSize: 14, color: "#718096", maxWidth: 540, margin: "0 auto" }}>
+          我們的評分採 100 分制，分為五個維度，每個維度的資料來源、計算邏輯全部公開透明，不存在任何不透明的人工調整。
+        </p>
+      </div>
 
-      {/* 總分概覽 */}
-      <section className="bg-[var(--paper)] px-4 py-10 md:px-6">
-        <div className="mx-auto max-w-4xl">
-          <div className="grid grid-cols-5 gap-3">
-            {[
-              { label: "合法登記", score: 20, color: "#0046b8", bg: "#e8f0fb" },
-              { label: "Google評分", score: 20, color: "#00875a", bg: "#e0f5ec" },
-              { label: "司法糾紛", score: 20, color: "#a86800", bg: "#fff3e0" },
-              { label: "品牌監測", score: 20, color: "#6b7f92", bg: "#f1f5f9", pending: true },
-              { label: "其他維度", score: 20, color: "#6b7f92", bg: "#f1f5f9", pending: true },
-            ].map((d) => (
-              <div
-                key={d.label}
-                className="rounded-xl p-3 text-center"
-                style={{ background: d.bg }}
-              >
-                <div
-                  className="text-xl font-black"
-                  style={{ color: d.pending ? "var(--light)" : d.color }}
-                >
-                  {d.score}分
+      {/* Overview card */}
+      <div style={{ maxWidth: 860, margin: "32px auto 0", padding: "0 24px" }}>
+        <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 12, padding: 24, marginBottom: 24 }}>
+          <p style={{ fontSize: 14, color: "#4A5568", marginBottom: 16, lineHeight: 1.7 }}>
+            我們相信：選擇醫美診所前，消費者應該有權獲取客觀、可驗證的資訊。所有評分資料均來自公開的官方來源，我們只做資料整合與呈現，不做任何主觀判斷。
+          </p>
+          <div style={{ background: "#2B6CB0", borderRadius: 10, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>100分滿分，五個維度各20分</span>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {DIMENSIONS.map((d) => (
+                <span key={d.num} style={{ fontSize: 12, fontWeight: 600, background: d.status === "live" ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.1)", color: d.status === "live" ? "#fff" : "rgba(255,255,255,.5)", borderRadius: 99, padding: "3px 10px" }}>
+                  {d.title}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Dimension cards */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 32 }}>
+          {DIMENSIONS.map((d) => (
+            <div key={d.num} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 12, overflow: "hidden" }}>
+              {/* Header */}
+              <div style={{ background: d.bg, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ width: 28, height: 28, borderRadius: "50%", background: d.color, color: "#fff", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {d.num}
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: d.color }}>{d.title}</span>
                 </div>
-                <div
-                  className="mt-1 text-xs font-semibold"
-                  style={{ color: d.pending ? "var(--light)" : d.color }}
-                >
-                  {d.label}
-                </div>
-                {d.pending && (
-                  <div className="mt-1 text-[10px] text-[var(--light)]">建置中</div>
+                {d.status === "live" ? (
+                  <span style={{ fontSize: 11, fontWeight: 700, background: d.color, color: "#fff", borderRadius: 99, padding: "3px 10px" }}>✅ 已上線・滿分 20 分</span>
+                ) : (
+                  <span style={{ fontSize: 11, fontWeight: 700, background: "#F7FAFC", color: "#A0AEC0", border: "1px solid #E2E8F0", borderRadius: 99, padding: "3px 10px" }}>⏳ 開發中</span>
                 )}
               </div>
-            ))}
-          </div>
-          <p className="mt-4 text-center text-xs text-[var(--muted)]">
-            五個維度各 20 分，合計 100 分
-          </p>
-        </div>
-      </section>
-
-      {/* 各維度詳細說明 */}
-      <section className="bg-white px-4 py-14 md:px-6 md:py-16">
-        <div className="mx-auto max-w-3xl space-y-8">
-
-          {/* 維度一：合法登記 */}
-          <DimensionCard num="1" title="合法登記" maxScore={20} color="#0046b8" bgColor="#e8f0fb">
-            <p className="mb-4 text-sm leading-relaxed text-[var(--muted)]">
-              資料來源：衛福部健保署醫事機構查詢系統。確認診所是否具備合法醫療機構登記，
-              為所有評分維度中最基礎的門檻條件。
-            </p>
-            <ScoreTable
-              headers={["條件", "分數"]}
-              rows={[
-                ["有合法登記（健保署資料庫可查詢）", "20 分"],
-                ["無法查詢登記記錄", "0 分"],
-              ]}
-            />
-          </DimensionCard>
-
-          {/* 維度二：Google評分 */}
-          <DimensionCard num="2" title="Google 評分" maxScore={20} color="#00875a" bgColor="#e0f5ec">
-            <p className="mb-4 text-sm leading-relaxed text-[var(--muted)]">
-              資料來源：Google Places API（每10天自動更新）。Google 評分由兩部分組成：
-              <strong className="text-[var(--ink2)]">星等（15分）</strong>與
-              <strong className="text-[var(--ink2)]">評論數量（5分）</strong>，合計 20 分。
-            </p>
-            <div className="space-y-4">
-              <div>
-                <p className="mb-2 text-xs font-semibold text-[var(--muted)]">星等（滿分 15 分）</p>
-                <ScoreTable
-                  headers={["Google 星等", "分數"]}
-                  rows={[
-                    ["4.5 星以上", "15 分"],
-                    ["4.0 ～ 4.4 星", "12 分"],
-                    ["3.5 ～ 3.9 星", "9 分"],
-                    ["3.0 ～ 3.4 星", "6 分"],
-                    ["3.0 星以下", "3 分"],
-                  ]}
-                />
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-semibold text-[var(--muted)]">評論數量（滿分 5 分）</p>
-                <ScoreTable
-                  headers={["評論則數", "分數"]}
-                  rows={[
-                    ["1,000 則以上", "5 分"],
-                    ["500 ～ 999 則", "4 分"],
-                    ["100 ～ 499 則", "3 分"],
-                    ["未達 100 則", "2 分"],
-                    ["0 則（無評論）", "0 分"],
-                  ]}
-                />
+              {/* Body */}
+              <div style={{ padding: "16px 20px" }}>
+                <p style={{ fontSize: 13, color: "#718096", lineHeight: 1.7, marginBottom: d.rows.length > 0 ? 14 : 0 }}>{d.desc}</p>
+                {d.rows.length > 0 && (
+                  <div style={{ border: "1px solid #E2E8F0", borderRadius: 8, overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: "#F7FAFC" }}>
+                          <th style={{ padding: "8px 14px", textAlign: "left", fontWeight: 600, color: "#718096", borderBottom: "1px solid #E2E8F0" }}>條件</th>
+                          <th style={{ padding: "8px 14px", textAlign: "right", fontWeight: 600, color: "#718096", borderBottom: "1px solid #E2E8F0" }}>分數</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {d.rows.map((row, i) => (
+                          <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#FAFAF8" }}>
+                            <td style={{ padding: "8px 14px", color: "#4A5568", borderBottom: i < d.rows.length - 1 ? "1px solid #E2E8F0" : "none" }}>{row[0]}</td>
+                            <td style={{ padding: "8px 14px", color: d.color, fontWeight: 700, textAlign: "right", borderBottom: i < d.rows.length - 1 ? "1px solid #E2E8F0" : "none" }}>{row[1]}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {d.status === "pending" && (
+                  <div style={{ background: "#F7FAFC", border: "1px dashed #E2E8F0", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 20 }}>🚧</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#718096" }}>此維度正在開發中</div>
+                      <div style={{ fontSize: 12, color: "#A0AEC0" }}>資料蒐集與評分規則制定中，預計近期上線</div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </DimensionCard>
-
-          {/* 維度三：司法糾紛 */}
-          <DimensionCard num="3" title="司法糾紛" maxScore={20} color="#a86800" bgColor="#fff3e0">
-            <p className="mb-4 text-sm leading-relaxed text-[var(--muted)]">
-              資料來源：司法院裁判書查詢系統（公開裁判書全文）。以診所名稱作為關鍵字，
-              統計涉及醫療糾紛之民事、刑事判決案件數，案件數越多則分數越低。
-            </p>
-            <ScoreTable
-              headers={["醫療糾紛案件數", "分數"]}
-              rows={[
-                ["0 件", "20 分"],
-                ["1 件", "15 分"],
-                ["2 件", "10 分"],
-                ["3 件", "5 分"],
-                ["4 件以上", "0 分"],
-              ]}
-            />
-          </DimensionCard>
-
-          {/* 維度四：品牌監測（建置中）*/}
-          <DimensionCard num="4" title="品牌監測" maxScore={20} color="#6b7f92" bgColor="#f1f5f9" pending />
-
-          {/* 維度五：其他維度（建置中）*/}
-          <DimensionCard num="5" title="其他維度" maxScore={20} color="#6b7f92" bgColor="#f1f5f9" pending />
+          ))}
         </div>
-      </section>
 
-      {/* 補充說明 */}
-      <section className="bg-[var(--paper)] px-4 py-10 md:px-6">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-[var(--line)] bg-white p-6 md:p-8">
-          <h2 className="mb-4 text-base font-bold text-[var(--ink)]">補充說明</h2>
-          <ul className="space-y-3 text-sm leading-relaxed text-[var(--muted)]">
-            <li className="flex gap-2">
-              <span className="mt-0.5 shrink-0 text-[var(--blue)]">•</span>
-              所有評分均以<strong className="text-[var(--ink2)]">診所為單位</strong>進行統計，而非醫師個人。
-            </li>
-            <li className="flex gap-2">
-              <span className="mt-0.5 shrink-0 text-[var(--blue)]">•</span>
-              Google 評分與司法資料每<strong className="text-[var(--ink2)]">月自動更新</strong>，以反映最新狀況。
-            </li>
-            <li className="flex gap-2">
-              <span className="mt-0.5 shrink-0 text-[var(--blue)]">•</span>
-              若您發現資料有誤或希望提出異議，請透過 LINE 官方帳號與我們聯繫，我們將在 5 個工作日內回覆。
-            </li>
-            <li className="flex gap-2">
-              <span className="mt-0.5 shrink-0 text-[var(--blue)]">•</span>
-              本平台<strong className="text-[var(--ink2)]">不接受診所付費提升評分</strong>，所有數值均由系統依規則自動計算。
-            </li>
+        {/* Notes */}
+        <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 12, padding: 24, marginBottom: 32 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>補充說明</h2>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+            {[
+              "所有評分均以診所為單位進行統計，而非醫師個人。",
+              "Google 評分每10天、司法資料每月自動更新，以反映最新狀況。",
+              "若您發現資料有誤，請透過 LINE 官方帳號與我們聯繫，我們將在 5 個工作日內回覆。",
+              "本平台不接受診所付費提升評分，所有數值均由系統依規則自動計算。",
+            ].map((item, i) => (
+              <li key={i} style={{ display: "flex", gap: 8, fontSize: 13, color: "#718096", lineHeight: 1.7 }}>
+                <span style={{ color: "#2B6CB0", flexShrink: 0 }}>•</span>
+                {item}
+              </li>
+            ))}
           </ul>
         </div>
-      </section>
+      </div>
 
       {/* CTA */}
-      <section className="bg-[var(--blue)] px-4 py-12 text-center md:px-6 md:py-14">
-        <div className="mx-auto max-w-xl">
-          <h2
-            className="mb-4 text-xl font-bold text-white md:text-2xl"
-            style={{ fontFamily: "var(--font-noto-serif-tc)" }}
-          >
-            了解評分標準後，查看你想去的診所吧
-          </h2>
-          <Link
-            href="/clinics"
-            className="inline-block rounded-xl bg-white px-8 py-3 text-base font-bold text-[var(--blue)] no-underline shadow-[0_4px_16px_rgba(0,0,0,0.15)] transition-transform duration-150 hover:-translate-y-0.5"
-          >
-            查詢診所評分 →
-          </Link>
-        </div>
-      </section>
-    </main>
+      <div style={{ background: "#2B6CB0", padding: "40px 24px", textAlign: "center" }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 16px" }}>了解評分標準後，查看你想去的診所吧</h2>
+        <Link
+          href="/clinics"
+          style={{ display: "inline-block", background: "#fff", color: "#2B6CB0", borderRadius: 10, padding: "12px 32px", fontSize: 15, fontWeight: 700, textDecoration: "none" }}
+        >
+          查詢診所評分 →
+        </Link>
+      </div>
+    </div>
   );
 }

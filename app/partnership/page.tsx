@@ -1,151 +1,156 @@
 "use client";
 import { useState } from "react";
 
-const BENEFITS = [
-  { icon: "🎯", title: "優惠療程曝光", desc: "優惠方案自動出現在「優惠療程搜尋」頁面，直連 LINE OA" },
-  { icon: "🏥", title: "診所頁面升級", desc: "展示醫師團隊、診所環境 Gallery、完整優惠資訊" },
-  { icon: "📊", title: "數據看板", desc: "專屬後台查看頁面瀏覽、預約量、上架優惠狀況" },
-  { icon: "🤖", title: "AI智能導流", desc: "360 LINE AI顧問主動推薦用戶至您的診所頁面" },
-];
-
 export default function PartnershipPage() {
   const [form, setForm] = useState({ clinic_name: "", contact: "", inquiry: "" });
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-  const [lineUrl, setLineUrl] = useState("https://lin.ee/6sTCRzm");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.clinic_name || !form.contact) return;
     setStatus("loading");
     try {
-      const res = await fetch("/api/partnership/inquiry", {
+      await fetch("/api/partnership/inquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (data.line_url) setLineUrl(data.line_url);
       setStatus("done");
+      window.open("https://lin.ee/6sTCRzm", "_blank");
     } catch {
       setStatus("error");
     }
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: "100%", boxSizing: "border-box",
+    padding: "10px 14px", border: "1px solid #E2E8F0", borderRadius: 8,
+    fontSize: 14, color: "#1A202C", outline: "none",
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--paper)]">
+    <div style={{ background: "#FAFAF8", minHeight: "100vh" }}>
       {/* Hero */}
-      <div className="border-b border-[var(--line)] bg-white px-4 pb-12 pt-12 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--blue-xl)] text-3xl">
-          🤝
+      <div style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "32px 32px 28px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#EBF8FF", border: "1px solid #BEE3F8", borderRadius: 20, padding: "3px 12px", marginBottom: 12 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#2B6CB0" }}>診所合作洽詢</span>
+          </div>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: "#1A202C", margin: 0 }}>全台每一家醫美診所，都擁有自己的專屬頁面</h1>
         </div>
-        <h1 className="mb-3 text-3xl font-black text-[var(--ink)] md:text-4xl" style={{ fontFamily: "var(--font-serif)" }}>
-          我想合作
-        </h1>
-        <p className="mx-auto max-w-[480px] text-[14px] leading-relaxed text-[var(--muted)]">
-          加入 360醫療AI大調查合作計畫，讓您的診所被更多潛在患者看見
-        </p>
       </div>
 
-      <div className="mx-auto max-w-[960px] px-4 py-12 md:px-8">
-        <div className="grid gap-10 lg:grid-cols-2">
-          {/* 左：合作優惠 */}
-          <div>
-            <h2 className="mb-6 text-[18px] font-bold text-[var(--ink)]">合作方案包含</h2>
-            <div className="space-y-4">
-              {BENEFITS.map((b) => (
-                <div key={b.title} className="flex gap-4 rounded-[12px] border border-[var(--line)] bg-white p-4">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] bg-[var(--blue-xl)] text-xl">
-                    {b.icon}
-                  </div>
-                  <div>
-                    <p className="font-bold text-[var(--ink)]">{b.title}</p>
-                    <p className="mt-0.5 text-[13px] text-[var(--muted)]">{b.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 rounded-[12px] border border-amber-200 bg-amber-50 p-4 text-[13px] text-amber-700">
-              <strong>早鳥優惠：</strong>現在加入即享首 3 個月免費體驗，無需信用卡。洽談完成後立即開通後台。
-            </div>
-          </div>
+      {/* Body */}
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 32px", display: "grid", gridTemplateColumns: "1fr 400px", gap: 40, alignItems: "flex-start" }}>
 
-          {/* 右：表單 */}
-          <div>
-            {status === "done" ? (
-              <div className="rounded-[14px] border border-[var(--line)] bg-white p-8 text-center">
-                <div className="mb-4 text-4xl">✅</div>
-                <h3 className="mb-2 text-[18px] font-bold text-[var(--ink)]">收到您的合作申請！</h3>
-                <p className="mb-6 text-[13px] text-[var(--muted)]">
-                  我們已收到您的資料，請點下方按鈕加入 LINE OA，我們將由專人與您聯繫說明合作細節。
-                </p>
-                <a
-                  href={lineUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block w-full rounded-[8px] bg-[#06C755] py-3 text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(6,199,85,.3)] transition-opacity hover:opacity-90"
-                >
-                  加入 LINE OA 繼續洽談
-                </a>
+        {/* Left copy */}
+        <div>
+          <p style={{ fontSize: 15, color: "#4A5568", lineHeight: 1.8, marginBottom: 20 }}>
+            360醫美AI大調查收錄全台 904 家醫美診所，每一家都有獨立的評鑑頁面，供消費者查詢、比較。
+          </p>
+          <p style={{ fontSize: 15, color: "#4A5568", lineHeight: 1.8, marginBottom: 32 }}>
+            若您希望讓診所的頁面更加精緻、豐富，讓有意願的消費者能看到更完整的診所樣貌，歡迎與我們聯繫洽詢。
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 32 }}>
+            {[
+              { icon: "🏥", title: "更完整的診所頁面", desc: "展示醫師團隊、診所環境 Gallery、優惠方案" },
+              { icon: "📊", title: "專屬數據看板", desc: "查看頁面瀏覽量、預約量、優惠點擊數" },
+              { icon: "🤖", title: "AI 智能導流", desc: "360 LINE AI 顧問主動推薦用戶至您的診所頁面" },
+              { icon: "🎯", title: "優惠療程曝光", desc: "優惠方案自動出現在「幫你找優惠療程」搜尋頁面" },
+            ].map((b) => (
+              <div key={b.title} style={{ display: "flex", gap: 14, background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: "14px 16px" }}>
+                <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 8, background: "#EBF8FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+                  {b.icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", marginBottom: 2 }}>{b.title}</div>
+                  <div style={{ fontSize: 13, color: "#718096" }}>{b.desc}</div>
+                </div>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="rounded-[14px] border border-[var(--line)] bg-white p-6 space-y-4">
-                <h2 className="text-[18px] font-bold text-[var(--ink)]">填寫合作申請</h2>
-                <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-[var(--ink)]">
-                    診所名稱 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={form.clinic_name}
-                    onChange={(e) => setForm({ ...form, clinic_name: e.target.value })}
-                    placeholder="例：台北信義美醫診所"
-                    className="w-full rounded-[8px] border border-[var(--line)] px-3 py-2.5 text-[14px] text-[var(--ink)] focus:border-[var(--blue)] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-[var(--ink)]">
-                    聯絡方式（電話或 Email） <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={form.contact}
-                    onChange={(e) => setForm({ ...form, contact: e.target.value })}
-                    placeholder="0912-345-678 或 contact@clinic.com"
-                    className="w-full rounded-[8px] border border-[var(--line)] px-3 py-2.5 text-[14px] text-[var(--ink)] focus:border-[var(--blue)] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-[var(--ink)]">詢問內容</label>
-                  <textarea
-                    rows={4}
-                    value={form.inquiry}
-                    onChange={(e) => setForm({ ...form, inquiry: e.target.value })}
-                    placeholder="請描述您的診所規模、主要療程項目，或對合作方案的問題..."
-                    className="w-full resize-none rounded-[8px] border border-[var(--line)] px-3 py-2.5 text-[14px] text-[var(--ink)] focus:border-[var(--blue)] focus:outline-none"
-                  />
-                </div>
-                {status === "error" && (
-                  <p className="text-[13px] text-red-500">送出失敗，請稍後再試或直接加 LINE 聯繫。</p>
-                )}
-                <button
-                  type="submit"
-                  disabled={status === "loading"}
-                  className="w-full rounded-[8px] bg-[var(--blue)] py-3 text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,70,184,.2)] transition-opacity disabled:opacity-60 hover:opacity-90"
-                >
-                  {status === "loading" ? "送出中..." : "送出申請"}
-                </button>
-                <p className="text-center text-[12px] text-[var(--muted)]">
-                  或直接{" "}
-                  <a href="https://lin.ee/6sTCRzm" target="_blank" rel="noopener noreferrer" className="text-[#06C755] font-medium">
-                    加 LINE OA
-                  </a>{" "}
-                  與我們聯繫
-                </p>
-              </form>
-            )}
+            ))}
           </div>
+          <p style={{ fontSize: 13, color: "#718096", fontStyle: "italic" }}>
+            填寫右側表單，或直接加入我們的 LINE 官方帳號，將有專人為您說明。
+          </p>
+        </div>
+
+        {/* Right form */}
+        <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 12, padding: 28 }}>
+          {status === "done" ? (
+            <div style={{ textAlign: "center", padding: "24px 0" }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>✅</div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A202C", marginBottom: 8 }}>收到您的洽詢！</h3>
+              <p style={{ fontSize: 13, color: "#718096", lineHeight: 1.7, marginBottom: 20 }}>
+                我們已收到您的資料，將於 1 個工作日內透過 LINE 或電話與您聯繫。
+              </p>
+              <a
+                href="https://lin.ee/6sTCRzm"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "block", padding: "12px 0", background: "#06C755", color: "#fff", borderRadius: 8, fontSize: 14, fontWeight: 700, textDecoration: "none", textAlign: "center" }}
+              >
+                加入 LINE OA 繼續洽談
+              </a>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: "#1A202C", margin: 0 }}>填寫洽詢資料</h2>
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#4A5568", marginBottom: 6 }}>
+                  診所名稱 <span style={{ color: "#E53E3E" }}>*</span>
+                </label>
+                <input
+                  type="text" required value={form.clinic_name}
+                  onChange={(e) => setForm({ ...form, clinic_name: e.target.value })}
+                  placeholder="例：台北信義美醫診所"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#4A5568", marginBottom: 6 }}>
+                  聯絡方式（電話或 Email） <span style={{ color: "#E53E3E" }}>*</span>
+                </label>
+                <input
+                  type="text" required value={form.contact}
+                  onChange={(e) => setForm({ ...form, contact: e.target.value })}
+                  placeholder="0912-345-678 或 contact@clinic.com"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#4A5568", marginBottom: 6 }}>
+                  詢問內容（選填）
+                </label>
+                <textarea
+                  rows={4} value={form.inquiry}
+                  onChange={(e) => setForm({ ...form, inquiry: e.target.value })}
+                  placeholder="請描述您的診所規模、主要療程或任何問題..."
+                  style={{ ...inputStyle, resize: "none" }}
+                />
+              </div>
+              {status === "error" && (
+                <p style={{ fontSize: 13, color: "#E53E3E" }}>送出失敗，請稍後再試。</p>
+              )}
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                style={{ padding: "12px 0", background: "#2B6CB0", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: status === "loading" ? 0.7 : 1 }}
+              >
+                {status === "loading" ? "送出中..." : "送出洽詢"}
+              </button>
+              <a
+                href="https://lin.ee/6sTCRzm"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "block", padding: "12px 0", background: "#06C755", color: "#fff", borderRadius: 8, fontSize: 14, fontWeight: 700, textDecoration: "none", textAlign: "center" }}
+              >
+                加入 LINE 直接洽詢
+              </a>
+              <p style={{ fontSize: 12, color: "#A0AEC0", textAlign: "center", margin: 0 }}>
+                送出後將有專人於 1 個工作日內回覆。
+              </p>
+            </form>
+          )}
         </div>
       </div>
     </div>
