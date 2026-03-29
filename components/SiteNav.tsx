@@ -2,110 +2,232 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 const NAV_ITEMS = [
-  { href: "/clinics", label: "診所資料館" },
+  { href: "/clinics", label: "全台診所資料館" },
   { href: "/doctors", label: "醫師查詢" },
   { href: "/treatments", label: "查療程" },
   { href: "/cities", label: "各縣市" },
   { href: "/blog", label: "醫美專欄" },
   { href: "/faq", label: "常見問題" },
-  { href: "/promotions", label: "優惠療程搜尋" },
-  { href: "/about", label: "關於我們" },
-  { href: "/scoring", label: "評分標準" },
+  { href: "/promotions", label: "幫你找優惠療程" },
   { href: "/clinic-update", label: "診所更新資料" },
 ] as const;
 
-/** 加 LINE 連結 */
 const LINE_CTA_URL = "https://lin.ee/6sTCRzm";
 
 export default function SiteNav() {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+
   if (pathname.startsWith("/admin")) return null;
   if (pathname.startsWith("/booking")) return null;
   if (pathname.startsWith("/portal")) return null;
 
   return (
     <nav
-      className="sticky top-0 z-[100] flex h-14 items-center justify-between border-b border-[var(--line)] bg-white/97 px-4 backdrop-blur-[16px] md:h-[62px] md:px-12"
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        background: "#fff",
+        borderBottom: "1px solid #E2E8F0",
+      }}
       role="navigation"
       aria-label="主導覽"
     >
-      <Link
-        href="/"
-        className="flex items-center gap-2.5 text-[#0d1b2a] no-underline md:gap-[11px]"
-        aria-label="360醫療AI大調查 首頁"
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "0 24px",
+          height: 60,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+        }}
       >
-        <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-[9px] bg-[var(--blue)] md:h-[38px] md:w-[38px]">
-          <span
-            className="relative z-10 font-[family-name:var(--font-dm-mono)] text-xs font-medium tracking-tight text-white"
-            style={{ fontFamily: "var(--font-dm-mono)" }}
+        {/* Logo */}
+        <Link
+          href="/"
+          style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flexShrink: 0 }}
+          aria-label="360醫療AI大調查 首頁"
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              background: "#2B6CB0",
+              borderRadius: 8,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 0,
+              flexShrink: 0,
+            }}
           >
             360
-          </span>
-          <span
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(255,255,255,.18), transparent)",
-            }}
-            aria-hidden
-          />
-        </div>
-        <div className="leading-[1.15]">
-          <div
-            className="text-base font-bold text-[var(--ink)] md:text-[16px]"
-            style={{ fontFamily: "var(--font-noto-serif-tc)" }}
-          >
-            醫療<span className="text-[var(--blue)] not-italic">AI</span>大調查
           </div>
-          <div className="text-[9.5px] font-medium tracking-wider text-[var(--muted)]">
-            醫美評鑑 · 全台最大
+          <div style={{ lineHeight: 1.25 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#1A202C" }}>
+              醫美AI大調查
+            </div>
+            <div style={{ fontSize: 10, color: "#718096", letterSpacing: "0.05em" }}>
+              醫美評鑑・全台最大
+            </div>
           </div>
-        </div>
-      </Link>
+        </Link>
 
-      <div className="flex flex-wrap items-center justify-end gap-0.5 md:flex-nowrap md:gap-1">
-        {NAV_ITEMS.map(({ href, label }) => {
-          const isActive =
-            pathname === href || pathname.startsWith(href + "/");
-          return (
+        {/* Desktop Nav */}
+        <div
+          className="nav-desktop"
+          style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" }}
+        >
+          {NAV_ITEMS.map(({ href, label }) => {
+            const isActive = pathname === href || pathname.startsWith(href + "/");
+            return (
+              <Link
+                key={href}
+                href={href}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? "#2B6CB0" : "#4A5568",
+                  background: isActive ? "#EBF8FF" : "transparent",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.15s",
+                }}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Desktop CTA Buttons */}
+        <div
+          className="nav-cta"
+          style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}
+        >
+          <Link
+            href="/partnership"
+            style={{
+              padding: "7px 16px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#2B6CB0",
+              border: "1px solid #2B6CB0",
+              background: "transparent",
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            我想合作
+          </Link>
+          <a
+            href={LINE_CTA_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: "7px 16px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#fff",
+              background: "#ED8936",
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 6px rgba(237,137,54,.35)",
+            }}
+          >
+            免費諮詢
+          </a>
+        </div>
+
+        {/* Mobile Hamburger */}
+        <button
+          className="nav-hamburger"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="展開選單"
+          style={{
+            display: "none",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 6,
+            flexDirection: "column",
+            gap: 5,
+          }}
+        >
+          <span style={{ display: "block", width: 22, height: 2, background: "#4A5568", borderRadius: 2 }} />
+          <span style={{ display: "block", width: 22, height: 2, background: "#4A5568", borderRadius: 2 }} />
+          <span style={{ display: "block", width: 22, height: 2, background: "#4A5568", borderRadius: 2 }} />
+        </button>
+      </div>
+
+      {/* Mobile Dropdown */}
+      {menuOpen && (
+        <div
+          style={{
+            borderTop: "1px solid #E2E8F0",
+            background: "#fff",
+            padding: "12px 16px 16px",
+          }}
+        >
+          {NAV_ITEMS.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
-              className={`rounded-[7px] px-2 py-1.5 text-[13px] font-medium no-underline transition-all duration-[0.18s] md:px-3 md:py-[7px] ${
-                isActive
-                  ? "bg-[var(--blue-lt)] text-[var(--blue)]"
-                  : "text-[var(--muted)] hover:bg-[var(--blue-lt)] hover:text-[var(--blue)]"
-              }`}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                display: "block",
+                padding: "10px 8px",
+                fontSize: 14,
+                color: "#4A5568",
+                textDecoration: "none",
+                borderBottom: "1px solid #F7FAFC",
+              }}
             >
               {label}
             </Link>
-          );
-        })}
-        <div
-          className="mx-1.5 h-5 w-px bg-[var(--line2)] md:mx-1.5"
-          aria-hidden
-        />
-        <Link
-          href="/partnership"
-          className="rounded-[7px] bg-[var(--green)] px-4 py-2 text-[13px] font-bold text-white no-underline shadow-[0_2px_8px_rgba(0,135,90,.22)] transition-colors duration-200 hover:bg-[var(--green-hover,#006e48)] md:px-5 md:py-2"
-        >
-          我想合作
-        </Link>
-        <div
-          className="mx-1.5 h-5 w-px bg-[var(--line2)] md:mx-1.5"
-          aria-hidden
-        />
-        <a
-          href={LINE_CTA_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-[7px] bg-[var(--line-green)] px-4 py-2 text-[13px] font-bold text-white no-underline shadow-[0_2px_8px_rgba(6,199,85,.25)] transition-colors duration-200 hover:bg-[var(--line-green-hover)] md:px-5 md:py-2"
-        >
-          免費諮詢
-        </a>
-      </div>
+          ))}
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <Link
+              href="/partnership"
+              onClick={() => setMenuOpen(false)}
+              style={{ flex: 1, padding: "10px 0", textAlign: "center", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#2B6CB0", border: "1px solid #2B6CB0", textDecoration: "none" }}
+            >
+              我想合作
+            </Link>
+            <a
+              href={LINE_CTA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMenuOpen(false)}
+              style={{ flex: 1, padding: "10px 0", textAlign: "center", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#fff", background: "#ED8936", textDecoration: "none" }}
+            >
+              免費諮詢
+            </a>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @media (max-width: 768px) {
+          .nav-desktop { display: none !important; }
+          .nav-cta { display: none !important; }
+          .nav-hamburger { display: flex !important; }
+        }
+      `}</style>
     </nav>
   );
 }

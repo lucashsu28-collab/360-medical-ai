@@ -1,9 +1,9 @@
-import { Suspense } from "react";
-import SearchBox from "@/components/SearchBox";
-import FilterBar from "@/components/FilterBar";
-import ClinicCard from "@/components/ClinicCard";
+"use client";
 
-export interface ApiClinic {
+import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+
+interface ApiClinic {
   id: string;
   name: string;
   address: string;
@@ -12,324 +12,341 @@ export interface ApiClinic {
   score?: number | null;
   google_rating?: number | null;
   google_review_count?: number | null;
-  isPartner?: boolean;
   is_partner?: boolean;
-  line_oa_url?: string;
+  isPartner?: boolean;
   [key: string]: unknown;
 }
 
-// ── 22 縣市定義 ────────────────────────────────────────────────────────────────
-const TAIWAN_CITIES: { canonical: string; variants: string[] }[] = [
-  { canonical: "台北市", variants: ["台北市", "臺北市"] },
-  { canonical: "新北市", variants: ["新北市"] },
-  { canonical: "基隆市", variants: ["基隆市"] },
-  { canonical: "桃園市", variants: ["桃園市"] },
-  { canonical: "新竹市", variants: ["新竹市"] },
-  { canonical: "新竹縣", variants: ["新竹縣"] },
-  { canonical: "苗栗縣", variants: ["苗栗縣"] },
-  { canonical: "台中市", variants: ["台中市", "臺中市"] },
-  { canonical: "彰化縣", variants: ["彰化縣"] },
-  { canonical: "南投縣", variants: ["南投縣"] },
-  { canonical: "雲林縣", variants: ["雲林縣"] },
-  { canonical: "嘉義市", variants: ["嘉義市"] },
-  { canonical: "嘉義縣", variants: ["嘉義縣"] },
-  { canonical: "台南市", variants: ["台南市", "臺南市"] },
-  { canonical: "高雄市", variants: ["高雄市"] },
-  { canonical: "屏東縣", variants: ["屏東縣"] },
-  { canonical: "宜蘭縣", variants: ["宜蘭縣"] },
-  { canonical: "花蓮縣", variants: ["花蓮縣"] },
-  { canonical: "台東縣", variants: ["台東縣", "臺東縣"] },
-  { canonical: "澎湖縣", variants: ["澎湖縣"] },
-  { canonical: "金門縣", variants: ["金門縣"] },
-  { canonical: "連江縣", variants: ["連江縣"] },
+const CITIES = [
+  "台北市", "新北市", "基隆市", "桃園市", "新竹市", "新竹縣",
+  "苗栗縣", "台中市", "彰化縣", "南投縣", "雲林縣", "嘉義市",
+  "嘉義縣", "台南市", "高雄市", "屏東縣", "宜蘭縣", "花蓮縣",
+  "台東縣", "澎湖縣", "金門縣", "連江縣",
 ];
 
-// ── 篩選定義 ───────────────────────────────────────────────────────────────────
-const CITY_MAP: Record<string, string[]> = {
-  taipei:    ["臺北市", "台北市"],
-  newtaipei: ["新北市"],
-  taoyuan:   ["桃園市"],
-  taichung:  ["臺中市", "台中市"],
-  tainan:    ["臺南市", "台南市"],
-  kaohsiung: ["高雄市"],
+const CITY_VARIANTS: Record<string, string[]> = {
+  "台北市": ["台北市", "臺北市"],
+  "台中市": ["台中市", "臺中市"],
+  "台南市": ["台南市", "臺南市"],
+  "台東縣": ["台東縣", "臺東縣"],
 };
 
-const TYPE_KEYWORDS: Record<string, string[]> = {
-  laser: ["雷射", "皮秒", "飛梭", "淨膚", "電波", "除毛", "光子", "染料", "IPL"],
-  injection: ["玻尿酸", "肉毒", "晶亮瓷", "童顏針", "埋線"],
-  surgery: ["雙眼皮", "隆鼻", "拉皮", "抽脂", "隆乳", "眼袋", "鼻整形", "眼整形"],
-  skin: ["保濕", "痘疤", "淡斑", "皮膚", "美白", "敏感", "酒糟"],
-};
-
-const FILTER_GROUPS = [
-  {
-    type: "multi" as const,
-    param: "district",
-    label: "地區",
-    options: [
-      { value: "taipei", label: "台北市" },
-      { value: "newtaipei", label: "新北市" },
-      { value: "taoyuan", label: "桃園市" },
-      { value: "taichung", label: "台中市" },
-      { value: "tainan", label: "台南市" },
-      { value: "kaohsiung", label: "高雄市" },
-    ],
-  },
-  {
-    type: "multi" as const,
-    param: "type",
-    label: "療程",
-    options: [
-      { value: "laser", label: "雷射光療" },
-      { value: "injection", label: "微整形" },
-      { value: "surgery", label: "外科手術" },
-      { value: "skin", label: "皮膚管理" },
-    ],
-  },
-  {
-    type: "single" as const,
-    param: "scoreMin",
-    label: "評分",
-    options: [
-      { value: "9", label: "9分以上" },
-      { value: "8", label: "8分以上" },
-      { value: "7.5", label: "7.5分以上" },
-    ],
-  },
-  {
-    type: "multi" as const,
-    param: "partnerOnly",
-    label: "",
-    options: [{ value: "1", label: "只看合作診所" }],
-  },
+const TREATMENT_FILTERS = [
+  { key: "injection", label: "微整形注射", keywords: ["玻尿酸", "肉毒", "晶亮瓷", "童顏針", "埋線"] },
+  { key: "laser",     label: "雷射光療",   keywords: ["雷射", "皮秒", "飛梭", "淨膚", "電波", "除毛", "IPL"] },
+  { key: "surgery",   label: "外科手術",   keywords: ["雙眼皮", "隆鼻", "拉皮", "抽脂", "隆乳"] },
+  { key: "skin",      label: "皮膚管理",   keywords: ["保濕", "痘疤", "淡斑", "皮膚", "美白", "敏感"] },
+  { key: "antiaging", label: "抗老緊緻",   keywords: ["電波", "音波", "拉提", "HIFU", "熱瑪吉"] },
+  { key: "body",      label: "體雕塑形",   keywords: ["冷凍", "超音波", "雕塑", "溶脂"] },
 ];
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-function getParamList(
-  searchParams: { [key: string]: string | string[] | undefined },
-  key: string
-): string[] {
-  const v = searchParams[key];
-  if (v == null) return [];
-  return Array.isArray(v) ? v : [v];
-}
+const MIN_SCORES = [
+  { value: 9, label: "9 分以上" },
+  { value: 8, label: "8 分以上" },
+  { value: 7, label: "7 分以上" },
+];
 
-const cleanStr = (s: string) => s.replace(/[.\s·・\-_]/g, "");
+const PAGE_SIZE = 20;
 
-function filterClinics(
-  list: ApiClinic[],
-  searchParams: { [key: string]: string | string[] | undefined }
-): ApiClinic[] {
-  const districts = getParamList(searchParams, "district");
-  const types = getParamList(searchParams, "type");
-  const scoreMin = searchParams.scoreMin;
-  const partnerOnly = getParamList(searchParams, "partnerOnly").includes("1");
-  const q = typeof searchParams.q === "string" ? searchParams.q.trim() : "";
-  const cleanQ = cleanStr(q);
-
-  return list.filter((c) => {
-    if (q && !cleanStr(c.name || "").includes(cleanQ)) return false;
-    if (districts.length > 0) {
-      const cities = districts.flatMap((d) => CITY_MAP[d] ?? []);
-      if (cities.length > 0 && !cities.some((city) => (c.address || "").startsWith(city)))
-        return false;
-    }
-    if (types.length > 0) {
-      const keywords = types.flatMap((t) => TYPE_KEYWORDS[t] ?? []);
-      const specialtyStr = c.specialty || "";
-      if (!keywords.some((kw) => specialtyStr.includes(kw))) return false;
-    }
-    if (scoreMin != null) {
-      const min = parseFloat(String(scoreMin));
-      if (!Number.isNaN(min) && (c.score ?? 0) < min) return false;
-    }
-    if (partnerOnly && !c.isPartner && !c.is_partner) return false;
-    return true;
-  });
-}
-
-function getCityGroups(clinics: ApiClinic[]): Map<string, ApiClinic[]> {
-  const groups = new Map<string, ApiClinic[]>();
-  for (const { canonical } of TAIWAN_CITIES) groups.set(canonical, []);
-  groups.set("其他", []);
-
-  for (const clinic of clinics) {
-    const addr = clinic.address || "";
-    let assigned = false;
-    for (const { canonical, variants } of TAIWAN_CITIES) {
-      if (variants.some((v) => addr.startsWith(v))) {
-        groups.get(canonical)!.push(clinic);
-        assigned = true;
-        break;
-      }
-    }
-    if (!assigned) groups.get("其他")!.push(clinic);
-  }
-
-  // 每縣市：合作診所優先，其次依評分
-  for (const [, arr] of groups) {
-    arr.sort((a, b) => {
-      const ap = a.isPartner || a.is_partner ? 1 : 0;
-      const bp = b.isPartner || b.is_partner ? 1 : 0;
-      if (bp !== ap) return bp - ap;
-      return (b.score ?? 0) - (a.score ?? 0);
-    });
-  }
-  return groups;
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-export default async function ClinicsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const res = await fetch(`${apiUrl}/api/clinics?limit=9999`, { next: { revalidate: 3600 } });
-  const { clinics } = (await res.json()) as { clinics: ApiClinic[] };
-  const list = Array.isArray(clinics) ? clinics : [];
-
-  const params = await searchParams;
-  const q = typeof params.q === "string" ? params.q : "";
-  const hasFilters = !!(
-    q ||
-    params.district ||
-    params.type ||
-    params.scoreMin ||
-    getParamList(params, "partnerOnly").includes("1")
-  );
-
-  const filtered = filterClinics(list, params);
+function ClinicRow({ clinic }: { clinic: ApiClinic }) {
+  const isPartner = !!(clinic.is_partner || clinic.isPartner);
+  const initials = clinic.name.slice(0, 2);
 
   return (
-    <div className="min-h-screen bg-[var(--paper)]">
-      {/* Hero + Search */}
-      <div className="border-b border-[var(--line)] bg-white px-4 pb-8 pt-10 text-center md:px-6">
-        <div className="relative z-10 mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,70,184,.1)] bg-[var(--blue-lt)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--blue)]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--blue)]" />
-          全台 {list.length} 家診所
-        </div>
-        <h2
-          className="relative z-10 mb-2 text-2xl font-[900] tracking-tight text-[var(--ink)] md:text-3xl lg:text-4xl"
-          style={{ fontFamily: "var(--font-noto-serif-tc)" }}
-        >
-          全台<span className="text-[var(--blue)]">診所</span>資料館
-        </h2>
-        <p className="relative z-10 mb-6 text-sm text-[var(--muted)]">
-          選地區・選療程・看六維度評鑑分數
-        </p>
-        <SearchBox
-          variant="compact"
-          icon="🏥"
-          placeholder="輸入診所名稱…"
-          searchPath="/clinics"
-          defaultValue={q}
-          buttonText="搜尋"
-        />
+    <Link
+      href={`/clinics/${clinic.id}`}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        background: "#fff",
+        border: isPartner ? "1px solid #F6AD55" : "1px solid #E2E8F0",
+        borderRadius: 10,
+        padding: "14px 16px",
+        textDecoration: "none",
+        transition: "box-shadow 0.15s",
+      }}
+    >
+      {/* Avatar */}
+      <div style={{
+        width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+        background: isPartner ? "#FFFBEB" : "#EBF8FF",
+        border: isPartner ? "1px solid #F6AD55" : "1px solid #BEE3F8",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 14, fontWeight: 700,
+        color: isPartner ? "#D69E2E" : "#2B6CB0",
+      }}>
+        {initials}
       </div>
 
-      {/* FilterBar */}
-      <Suspense fallback={<div className="h-14 border-b border-[var(--line)] bg-white" />}>
-        <FilterBar groups={FILTER_GROUPS} stickyTop={106} />
-      </Suspense>
-
-      {/* Content */}
-      <div className="mx-auto max-w-[1060px] px-4 py-6 md:px-8 md:py-8">
-        {hasFilters ? (
-          /* 搜尋 / 篩選結果 — 平鋪列表 */
-          <>
-            <p className="mb-4 text-[13px] text-[var(--muted)]">
-              共找到 <strong className="font-bold text-[var(--ink)]">{filtered.length}</strong> 家診所
-            </p>
-            <div className="flex flex-col gap-2.5">
-              {filtered.length === 0 ? (
-                <div className="rounded-[14px] border border-[var(--line)] bg-white py-16 text-center text-[var(--muted)]">
-                  目前沒有符合條件的診所，試試放寬篩選條件。
-                </div>
-              ) : (
-                filtered.map((clinic) => (
-                  <ClinicCard
-                    key={clinic.id}
-                    id={clinic.id}
-                    name={clinic.name}
-                    address={clinic.address}
-                    score={clinic.score ?? undefined}
-                    specialty={clinic.specialty}
-                    google_rating={clinic.google_rating ?? undefined}
-                    review_count={clinic.google_review_count ?? undefined}
-                    isPartner={clinic.isPartner || clinic.is_partner}
-                    variant="row"
-                  />
-                ))
-              )}
-            </div>
-          </>
-        ) : (
-          /* 預設 — 22縣市分組 */
-          <div className="space-y-10">
-            {Array.from(getCityGroups(list).entries())
-              .filter(([, clinicsArr]) => clinicsArr.length > 0)
-              .map(([city, clinicsArr]) => (
-                <section key={city}>
-                  <div className="mb-3 flex items-center gap-3">
-                    <h2 className="text-[16px] font-bold text-[var(--ink)]">{city}</h2>
-                    <span className="rounded-full bg-[var(--blue-lt)] px-2.5 py-0.5 text-[11px] font-bold text-[var(--blue)]">
-                      {clinicsArr.length} 家
-                    </span>
-                    {clinicsArr.some((c) => c.isPartner || c.is_partner) && (
-                      <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-600">
-                        ✦ 有合作診所
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {clinicsArr.slice(0, 10).map((clinic) => (
-                      <ClinicCard
-                        key={clinic.id}
-                        id={clinic.id}
-                        name={clinic.name}
-                        address={clinic.address}
-                        score={clinic.score ?? undefined}
-                        specialty={clinic.specialty}
-                        google_rating={clinic.google_rating ?? undefined}
-                        review_count={clinic.google_review_count ?? undefined}
-                        isPartner={clinic.isPartner || clinic.is_partner}
-                        variant="row"
-                      />
-                    ))}
-                    {clinicsArr.length > 10 && (
-                      <a
-                        href={`/clinics?district=${encodeURIComponent(
-                          city === "台北市" ? "taipei"
-                          : city === "新北市" ? "newtaipei"
-                          : city === "桃園市" ? "taoyuan"
-                          : city === "台中市" ? "taichung"
-                          : city === "台南市" ? "tainan"
-                          : city === "高雄市" ? "kaohsiung"
-                          : ""
-                        )}`}
-                        className="mt-1 block rounded-[10px] border border-dashed border-[var(--line)] py-3 text-center text-[13px] text-[var(--blue)] transition hover:border-[var(--blue)] hover:bg-[var(--blue-lt)]"
-                      >
-                        查看 {city} 全部 {clinicsArr.length} 家 →
-                      </a>
-                    )}
-                  </div>
-                </section>
-              ))}
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#1A202C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {clinic.name}
+          </span>
+          {isPartner && (
+            <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: "#D69E2E", background: "#FFFBEB", border: "1px solid #F6AD55", borderRadius: 99, padding: "1px 6px" }}>
+              合作
+            </span>
+          )}
+        </div>
+        <div style={{ fontSize: 12, color: "#718096" }}>{clinic.address || "—"}</div>
+        {clinic.specialty && (
+          <div style={{ fontSize: 11, color: "#A0AEC0", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {clinic.specialty}
           </div>
         )}
       </div>
 
-      <footer className="mt-auto border-t border-[var(--line)] bg-[var(--off)] px-6 py-5">
-        <div className="mx-auto flex max-w-[1060px] flex-wrap items-center justify-between gap-3">
-          <p className="text-[11px] text-[var(--muted)]">
-            © 360醫療AI大調查 · 評鑑分數由系統自動計算，不接受購買或修改
-          </p>
-          <span className="rounded-full bg-[var(--green-lt)] px-3 py-1 text-[10px] font-bold text-[var(--green)]">
-            ✅ 系統運作中
-          </span>
+      {/* Scores */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
+        {clinic.google_rating != null && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#ED8936" }}>
+              ★ {clinic.google_rating.toFixed(1)}
+            </div>
+            <div style={{ fontSize: 10, color: "#A0AEC0" }}>Google</div>
+          </div>
+        )}
+        {clinic.score != null && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#2B6CB0" }}>
+              {clinic.score.toFixed(1)}
+            </div>
+            <div style={{ fontSize: 10, color: "#A0AEC0" }}>綜合</div>
+          </div>
+        )}
+        <div style={{
+          padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
+          background: "#EBF8FF", color: "#2B6CB0", whiteSpace: "nowrap",
+        }}>
+          查看評鑑
         </div>
-      </footer>
+      </div>
+    </Link>
+  );
+}
+
+export default function ClinicsPage() {
+  const [clinics, setClinics] = useState<ApiClinic[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [city, setCity] = useState("");
+  const [treatment, setTreatment] = useState("");
+  const [minScore, setMinScore] = useState<number | null>(null);
+  const [partnerOnly, setPartnerOnly] = useState(false);
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    fetch(`${apiUrl}/api/clinics?limit=9999`)
+      .then((r) => r.json())
+      .then((data) => {
+        const list = Array.isArray(data.clinics) ? data.clinics : [];
+        setClinics(list);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    return clinics.filter((c) => {
+      if (q) {
+        const clean = (s: string) => s.replace(/[\s.\-_]/g, "");
+        if (!clean(c.name || "").includes(clean(q))) return false;
+      }
+      if (city) {
+        const variants = CITY_VARIANTS[city] ?? [city];
+        if (!variants.some((v) => (c.address || "").startsWith(v))) return false;
+      }
+      if (treatment) {
+        const tf = TREATMENT_FILTERS.find((t) => t.key === treatment);
+        if (tf) {
+          const spec = c.specialty || "";
+          if (!tf.keywords.some((kw) => spec.includes(kw))) return false;
+        }
+      }
+      if (minScore != null && (c.score ?? 0) < minScore) return false;
+      if (partnerOnly && !c.is_partner && !c.isPartner) return false;
+      return true;
+    }).sort((a, b) => {
+      const ap = a.is_partner || a.isPartner ? 1 : 0;
+      const bp = b.is_partner || b.isPartner ? 1 : 0;
+      if (bp !== ap) return bp - ap;
+      return (b.score ?? 0) - (a.score ?? 0);
+    });
+  }, [clinics, q, city, treatment, minScore, partnerOnly]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleFilterChange = () => setPage(1);
+
+  return (
+    <div style={{ background: "#FAFAF8", minHeight: "100vh" }}>
+      {/* Header */}
+      <div style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "32px 24px 24px", textAlign: "center" }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: "#1A202C", margin: "0 0 8px" }}>全台診所資料館</h1>
+        <p style={{ fontSize: 13, color: "#718096", margin: "0 0 20px" }}>選地區・選療程・看六維度評鑑分數</p>
+        <div style={{ maxWidth: 480, margin: "0 auto", position: "relative" }}>
+          <input
+            value={q}
+            onChange={(e) => { setQ(e.target.value); handleFilterChange(); }}
+            placeholder="搜尋診所名稱…"
+            style={{
+              width: "100%", boxSizing: "border-box",
+              padding: "10px 44px 10px 16px",
+              border: "1px solid #E2E8F0", borderRadius: 8,
+              fontSize: 14, outline: "none",
+            }}
+          />
+          <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: "#A0AEC0" }}>🔍</span>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px", display: "flex", gap: 20, alignItems: "flex-start" }}>
+
+        {/* Sidebar */}
+        <aside style={{ width: 210, flexShrink: 0, position: "sticky", top: 76 }}>
+          {/* City */}
+          <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#4A5568", marginBottom: 10 }}>📍 縣市</div>
+            <select
+              value={city}
+              onChange={(e) => { setCity(e.target.value); handleFilterChange(); }}
+              style={{ width: "100%", padding: "7px 10px", border: "1px solid #E2E8F0", borderRadius: 6, fontSize: 13, color: "#1A202C", background: "#fff", cursor: "pointer" }}
+            >
+              <option value="">全台灣</option>
+              {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          {/* Treatment */}
+          <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#4A5568", marginBottom: 10 }}>💆 療程類型</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[{ key: "", label: "全部療程" }, ...TREATMENT_FILTERS].map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => { setTreatment(t.key); handleFilterChange(); }}
+                  style={{
+                    padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: treatment === t.key ? 600 : 400,
+                    cursor: "pointer", textAlign: "left", border: "none",
+                    background: treatment === t.key ? "#EBF8FF" : "transparent",
+                    color: treatment === t.key ? "#2B6CB0" : "#4A5568",
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Min Score */}
+          <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#4A5568", marginBottom: 10 }}>⭐ 最低評分</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[{ value: null, label: "不限" }, ...MIN_SCORES].map((s) => (
+                <label key={String(s.value)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, color: "#4A5568" }}>
+                  <input
+                    type="radio"
+                    name="minScore"
+                    checked={minScore === s.value}
+                    onChange={() => { setMinScore(s.value); handleFilterChange(); }}
+                    style={{ accentColor: "#2B6CB0" }}
+                  />
+                  {s.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Partner */}
+          <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, color: "#4A5568" }}>
+              <input
+                type="checkbox"
+                checked={partnerOnly}
+                onChange={(e) => { setPartnerOnly(e.target.checked); handleFilterChange(); }}
+                style={{ accentColor: "#ED8936" }}
+              />
+              <span style={{ fontWeight: 600, color: "#D69E2E" }}>✦ 只看合作診所</span>
+            </label>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Result count */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ fontSize: 13, color: "#718096" }}>
+              {loading ? "載入中…" : (
+                <>共 <strong style={{ color: "#1A202C" }}>{filtered.length}</strong> 家診所</>
+              )}
+            </div>
+            {!loading && totalPages > 1 && (
+              <div style={{ fontSize: 12, color: "#718096" }}>
+                第 {page} / {totalPages} 頁
+              </div>
+            )}
+          </div>
+
+          {/* List */}
+          {loading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} style={{ height: 72, background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, animation: "pulse 1.5s infinite" }} />
+              ))}
+            </div>
+          ) : pageItems.length === 0 ? (
+            <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: "48px 24px", textAlign: "center", color: "#718096" }}>
+              沒有符合條件的診所，試試放寬篩選條件。
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {pageItems.map((c) => <ClinicRow key={c.id} clinic={c} />)}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && totalPages > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 24 }}>
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E2E8F0", background: page === 1 ? "#F7FAFC" : "#fff", color: page === 1 ? "#A0AEC0" : "#4A5568", fontSize: 13, cursor: page === 1 ? "default" : "pointer" }}
+              >
+                上一頁
+              </button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const p = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    style={{
+                      padding: "7px 14px", borderRadius: 6, border: "1px solid #E2E8F0", fontSize: 13, cursor: "pointer",
+                      background: p === page ? "#2B6CB0" : "#fff",
+                      color: p === page ? "#fff" : "#4A5568",
+                      fontWeight: p === page ? 600 : 400,
+                    }}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #E2E8F0", background: page === totalPages ? "#F7FAFC" : "#fff", color: page === totalPages ? "#A0AEC0" : "#4A5568", fontSize: 13, cursor: page === totalPages ? "default" : "pointer" }}
+              >
+                下一頁
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
