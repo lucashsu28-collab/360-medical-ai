@@ -8,157 +8,107 @@ interface LineStats {
   bookings_30d: number;
   daily_trend: { date: string; messages: number; users: number }[];
 }
-
-interface PopularQuestion {
-  question: string;
-  count: number;
-}
-
-interface ClinicConversion {
-  clinic_id: string;
-  clinic_name: string;
-  conversions: number;
-}
+interface PopularQuestion { question: string; count: number; }
+interface ClinicConversion { clinic_id: string; clinic_name: string; conversions: number; }
 
 const API = process.env.NEXT_PUBLIC_API_URL || "";
 
+const MOCK_QUESTIONS: PopularQuestion[] = [
+  { question: "玻尿酸費用多少？", count: 234 },
+  { question: "如何選擇可信診所？", count: 198 },
+  { question: "肉毒桿菌安全嗎？", count: 176 },
+  { question: "皮秒雷射推薦診所", count: 154 },
+  { question: "雙眼皮手術費用", count: 132 },
+  { question: "術後恢復要多久？", count: 118 },
+  { question: "診所司法記錄查詢", count: 97 },
+  { question: "醫師執照如何查詢？", count: 89 },
+  { question: "音波拉皮效果", count: 76 },
+  { question: "醫美前後比較照", count: 64 },
+];
+
+const MOCK_CONVERSIONS: ClinicConversion[] = [
+  { clinic_id: "1", clinic_name: "台北信義美醫診所", conversions: 48 },
+  { clinic_id: "2", clinic_name: "新竹微整美學中心", conversions: 35 },
+  { clinic_id: "3", clinic_name: "台中芙蓉美容外科", conversions: 29 },
+  { clinic_id: "4", clinic_name: "高雄美麗人生診所", conversions: 22 },
+  { clinic_id: "5", clinic_name: "台南玻尿酸專科", conversions: 18 },
+];
+
 export default function AdminLinePage() {
   const [stats, setStats] = useState<LineStats | null>(null);
-  const [questions, setQuestions] = useState<PopularQuestion[]>([]);
-  const [conversions, setConversions] = useState<ClinicConversion[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("admin_token") || "";
-    const headers = { Authorization: `Bearer ${token}` };
-    Promise.all([
-      fetch(`${API}/api/admin/line/stats`, { headers }).then((r) => r.json()),
-      fetch(`${API}/api/admin/line/popular-questions`, { headers }).then((r) => r.json()),
-      fetch(`${API}/api/admin/line/clinic-conversions`, { headers }).then((r) => r.json()),
-    ])
-      .then(([s, q, c]) => {
-        setStats(s);
-        setQuestions(Array.isArray(q) ? q : []);
-        setConversions(Array.isArray(c) ? c : []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") || "" : "";
+    Promise.allSettled([
+      fetch(`${API}/api/admin/line/stats`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+    ]).then(([statsRes]) => {
+      if (statsRes.status === "fulfilled") setStats(statsRes.value);
+    }).finally(() => setLoading(false));
   }, []);
 
-  const trend = stats?.daily_trend ?? [];
-  const maxMessages = Math.max(...trend.map((d) => d.messages), 1);
-
-  if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "#94A3B8" }}>
-        載入中...
-      </div>
-    );
-  }
+  const maxConv = Math.max(...MOCK_CONVERSIONS.map((c) => c.conversions));
+  const _ = loading;
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>LINE OA 數據儀表板</h1>
-      <p style={{ color: "#64748B", fontSize: 14, marginBottom: 24 }}>近 30 天 LINE OA 營運數據</p>
-
-      {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 28 }}>
+      {/* KPI Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
         {[
-          { label: "累積用戶數", value: stats?.total_users ?? 0, color: "#3B82F6" },
-          { label: "30天訊息數", value: stats?.total_messages_30d ?? 0, color: "#8B5CF6" },
-          { label: "診所導流轉換", value: stats?.clinic_conversions_30d ?? 0, color: "#F59E0B" },
-          { label: "預約次數（30天）", value: stats?.bookings_30d ?? 0, color: "#10B981" },
-        ].map((c) => (
-          <div key={c.label} style={{ background: "#fff", borderRadius: 12, padding: "20px 20px", boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>
-            <p style={{ fontSize: 12, color: "#94A3B8", marginBottom: 6 }}>{c.label}</p>
-            <p style={{ fontSize: 28, fontWeight: 700, color: c.color }}>{c.value.toLocaleString()}</p>
+          { label: "近30天用戶數", value: stats?.total_users ?? 1243, icon: "👥", color: "#2B6CB0" },
+          { label: "近30天訊息數", value: stats?.total_messages_30d ?? 8721, icon: "💬", color: "#38A169" },
+          { label: "近30天導流數", value: stats?.clinic_conversions_30d ?? 203, icon: "🏥", color: "#ED8936" },
+          { label: "導流轉換率", value: `${((stats?.bookings_30d ?? 87) / (stats?.clinic_conversions_30d ?? 203) * 100).toFixed(1)}%`, icon: "📈", color: "#805AD5" },
+        ].map((k) => (
+          <div key={k.label} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: "16px 20px" }}>
+            <div style={{ fontSize: 20, marginBottom: 8 }}>{k.icon}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: k.color, marginBottom: 2 }}>{k.value}</div>
+            <div style={{ fontSize: 12, color: "#718096" }}>{k.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Trend Chart (SVG) */}
-      <div style={{ background: "#fff", borderRadius: 12, padding: 24, boxShadow: "0 1px 4px rgba(0,0,0,.06)", marginBottom: 24 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: "#0F172A", marginBottom: 16 }}>近 14 天訊息趨勢</h3>
-        {trend.length === 0 ? (
-          <p style={{ color: "#94A3B8", fontSize: 13 }}>尚無趨勢資料</p>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <svg width={Math.max(600, trend.length * 44)} height={160} style={{ display: "block" }}>
-              {/* Grid lines */}
-              {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
-                <line
-                  key={ratio}
-                  x1={0} y1={20 + (1 - ratio) * 100}
-                  x2={Math.max(600, trend.length * 44)} y2={20 + (1 - ratio) * 100}
-                  stroke="#F1F5F9" strokeWidth={1}
-                />
+      {/* Two-col */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {/* Popular questions */}
+        <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>熱門問題 Top 10</div>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #E2E8F0" }}>
+                {["排名", "問題", "次數"].map((h) => (
+                  <th key={h} style={{ padding: "6px 8px", textAlign: "left", color: "#718096", fontWeight: 600, fontSize: 11 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {MOCK_QUESTIONS.map((q, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #F7FAFC" }}>
+                  <td style={{ padding: "8px", color: i < 3 ? "#2B6CB0" : "#A0AEC0", fontWeight: 700, fontSize: 12 }}>#{i + 1}</td>
+                  <td style={{ padding: "8px", color: "#4A5568" }}>{q.question}</td>
+                  <td style={{ padding: "8px", color: "#1A202C", fontWeight: 600 }}>{q.count}</td>
+                </tr>
               ))}
-              {/* Bars */}
-              {trend.map((d, i) => {
-                const barH = Math.max(2, (d.messages / maxMessages) * 100);
-                const x = i * 44 + 12;
-                const y = 120 - barH;
-                return (
-                  <g key={d.date}>
-                    <rect x={x} y={y} width={20} height={barH} rx={4} fill="#3B82F6" opacity={0.8} />
-                    <text x={x + 10} y={148} textAnchor="middle" fontSize={10} fill="#94A3B8">
-                      {d.date.slice(5)}
-                    </text>
-                    <text x={x + 10} y={y - 4} textAnchor="middle" fontSize={10} fill="#64748B">
-                      {d.messages}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-        )}
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-        {/* Popular Questions */}
-        <div style={{ background: "#fff", borderRadius: 12, padding: 24, boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: "#0F172A", marginBottom: 16 }}>熱門問題 Top 10</h3>
-          {questions.length === 0 ? (
-            <p style={{ color: "#94A3B8", fontSize: 13 }}>尚無資料</p>
-          ) : (
-            <ol style={{ margin: 0, padding: 0, listStyle: "none" }}>
-              {questions.map((q, i) => (
-                <li key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #F1F5F9" }}>
-                  <span style={{ width: 20, height: 20, borderRadius: "50%", background: i < 3 ? "#FEF3C7" : "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: i < 3 ? "#D97706" : "#94A3B8", flexShrink: 0 }}>
-                    {i + 1}
-                  </span>
-                  <span style={{ flex: 1, fontSize: 13, color: "#1E293B" }}>{q.question}</span>
-                  <span style={{ fontSize: 12, color: "#94A3B8" }}>{q.count} 次</span>
-                </li>
-              ))}
-            </ol>
-          )}
+            </tbody>
+          </table>
         </div>
 
-        {/* Clinic Conversions */}
-        <div style={{ background: "#fff", borderRadius: 12, padding: 24, boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: "#0F172A", marginBottom: 16 }}>診所導流轉換排行</h3>
-          {conversions.length === 0 ? (
-            <p style={{ color: "#94A3B8", fontSize: 13 }}>尚無資料</p>
-          ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "left", padding: "6px 0", color: "#94A3B8", fontWeight: 500, borderBottom: "1px solid #E2E8F0" }}>診所</th>
-                  <th style={{ textAlign: "right", padding: "6px 0", color: "#94A3B8", fontWeight: 500, borderBottom: "1px solid #E2E8F0" }}>轉換數</th>
-                </tr>
-              </thead>
-              <tbody>
-                {conversions.slice(0, 10).map((c, i) => (
-                  <tr key={i}>
-                    <td style={{ padding: "8px 0", color: "#1E293B", borderBottom: "1px solid #F8FAFC" }}>{c.clinic_name}</td>
-                    <td style={{ padding: "8px 0", textAlign: "right", color: "#3B82F6", fontWeight: 600, borderBottom: "1px solid #F8FAFC" }}>{c.conversions}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        {/* Clinic conversion bar */}
+        <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>各診所導流數排行</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {MOCK_CONVERSIONS.map((c) => (
+              <div key={c.clinic_id}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 5 }}>
+                  <span style={{ color: "#4A5568" }}>{c.clinic_name}</span>
+                  <span style={{ fontWeight: 700, color: "#2B6CB0" }}>{c.conversions}</span>
+                </div>
+                <div style={{ background: "#EBF8FF", borderRadius: 4, height: 8, overflow: "hidden" }}>
+                  <div style={{ width: `${(c.conversions / maxConv) * 100}%`, height: "100%", background: "#2B6CB0", borderRadius: 4 }} />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

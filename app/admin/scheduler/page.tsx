@@ -3,124 +3,55 @@
 import { useEffect, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-
 type CrawlerKey = "places" | "judicial" | "mohw";
 
-interface CrawlerInfo {
-  name: string;
-  desc: string;
-  icon: string;
-  key: CrawlerKey;
-}
+interface CrawlerStatus { last_run: string | null; status: "success" | "running" | "failed" | "unknown"; records_updated?: number; }
 
-interface CrawlerStatus {
-  last_run: string | null;
-  status: "success" | "running" | "failed" | "unknown";
-  records_updated?: number;
-}
-
-const SCHEDULE_INFO: Record<CrawlerKey, { cycle: string; nextRun: (lastRun: string | null) => string }> = {
-  places: {
-    cycle: "每 10 天",
-    nextRun: (last) => {
-      if (!last) return "尚未執行";
-      const d = new Date(last);
-      d.setDate(d.getDate() + 10);
-      return d.toLocaleDateString("zh-TW");
-    },
-  },
-  judicial: {
-    cycle: "每 30 天",
-    nextRun: (last) => {
-      if (!last) return "尚未執行";
-      const d = new Date(last);
-      d.setDate(d.getDate() + 30);
-      return d.toLocaleDateString("zh-TW");
-    },
-  },
-  mohw: {
-    cycle: "每 30 天",
-    nextRun: (last) => {
-      if (!last) return "尚未執行";
-      const d = new Date(last);
-      d.setDate(d.getDate() + 30);
-      return d.toLocaleDateString("zh-TW");
-    },
-  },
-};
-
-const CRAWLERS: CrawlerInfo[] = [
-  {
-    key: "places",
-    icon: "⭐",
-    name: "Google Places 評分更新",
-    desc: "更新全部 1,567 家診所的 Google 評分與評論數。每次約 TWD 450，執行時間 ~30 分鐘。",
-  },
-  {
-    key: "judicial",
-    icon: "⚖️",
-    name: "司法院裁判書爬取",
-    desc: "從司法院查詢 1,567 家診所的司法案件數。每日 6-12 點為維護時段，請避開。",
-  },
-  {
-    key: "mohw",
-    icon: "🚨",
-    name: "衛福部行政處分爬取",
-    desc: "查詢衛福部行政裁處資料庫，取得診所行政處分記錄（第 4 維度，開發中）。",
-  },
+const TASKS = [
+  { key: "places" as CrawlerKey, icon: "⭐", name: "Google Places 評分更新", cycle: "每10天", live: true, desc: "更新全部 904 家診所的 Google 評分與評論數。每次約 TWD 450，執行時間 ~30 分鐘。" },
+  { key: "judicial" as CrawlerKey, icon: "⚖️", name: "司法院裁判書更新", cycle: "每30天", live: true, desc: "從司法院查詢 904 家診所的司法案件數。每日 6-12 點為維護時段，請避開。" },
+  { key: "mohw" as CrawlerKey, icon: "🏛️", name: "健保署診所資料同步", cycle: "每7天", live: true, desc: "更新衛福部健保署醫事機構登記資料，確保合法登記分數準確。" },
+  { key: "news" as unknown as CrawlerKey, icon: "📰", name: "新聞媒體監測", cycle: "每天", live: false, desc: "統計診所相關新聞媒體報導正負評傾向（第4維度，開發中）。" },
+  { key: "social" as unknown as CrawlerKey, icon: "💬", name: "社群口碑監測", cycle: "每天", live: false, desc: "分析 PTT、Dcard 等社群平台的診所討論情緒（第5維度，開發中）。" },
 ];
 
-const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  success: { bg: "#F0FDF4", color: "#16A34A", label: "執行成功" },
-  running: { bg: "#FFFBEB", color: "#D97706", label: "執行中..." },
-  failed: { bg: "#FEF2F2", color: "#DC2626", label: "執行失敗" },
-  unknown: { bg: "#F1F5F9", color: "#64748B", label: "未執行" },
-};
+const MOCK_LOGS = [
+  { time: "2026-03-29 14:32", task: "Google Places 評分更新", result: "success", duration: "28分鐘", records: 904 },
+  { time: "2026-03-25 09:15", task: "健保署診所資料同步", result: "success", duration: "5分鐘", records: 24321 },
+  { time: "2026-02-28 22:00", task: "司法院裁判書更新", result: "success", duration: "14分鐘", records: 904 },
+  { time: "2026-02-19 14:32", task: "Google Places 評分更新", result: "success", duration: "31分鐘", records: 904 },
+];
 
 export default function AdminSchedulerPage() {
-  const [statusMap, setStatusMap] = useState<Record<CrawlerKey, CrawlerStatus>>({
+  const [statusMap, setStatusMap] = useState<Record<string, CrawlerStatus>>({
     places: { last_run: null, status: "unknown" },
     judicial: { last_run: null, status: "unknown" },
     mohw: { last_run: null, status: "unknown" },
   });
-  const [triggering, setTriggering] = useState<Record<CrawlerKey, boolean>>({
-    places: false,
-    judicial: false,
-    mohw: false,
-  });
-  const [triggerResult, setTriggerResult] = useState<Record<CrawlerKey, string>>({
-    places: "",
-    judicial: "",
-    mohw: "",
-  });
+  const [triggering, setTriggering] = useState<Record<string, boolean>>({});
+  const [triggerResult, setTriggerResult] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetch(`${API_URL}/api/admin/stats`)
       .then((r) => (r.ok ? r.json() : {}))
       .then((data: Record<string, unknown>) => {
         const cs = data.crawler_status as Record<CrawlerKey, CrawlerStatus> | undefined;
-        if (cs) {
-          setStatusMap((prev) => ({ ...prev, ...cs }));
-        }
+        if (cs) setStatusMap((prev) => ({ ...prev, ...cs }));
       })
       .catch(() => {});
   }, []);
 
-  const handleTrigger = async (key: CrawlerKey) => {
+  const handleTrigger = async (key: string) => {
     setTriggering((p) => ({ ...p, [key]: true }));
     setTriggerResult((p) => ({ ...p, [key]: "" }));
     try {
       const res = await fetch(`${API_URL}/api/admin/trigger-crawl`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ crawler: key }),
       });
       if (res.ok) {
         setTriggerResult((p) => ({ ...p, [key]: "已排程，爬蟲執行中（約需數分鐘）" }));
-        setStatusMap((p) => ({
-          ...p,
-          [key]: { ...p[key], status: "running" },
-        }));
+        setStatusMap((p) => ({ ...p, [key]: { ...(p[key] || {}), status: "running" } }));
       } else {
         const d = await res.json().catch(() => ({}));
         setTriggerResult((p) => ({ ...p, [key]: d.detail ?? "觸發失敗" }));
@@ -132,129 +63,131 @@ export default function AdminSchedulerPage() {
     }
   };
 
-  const formatTime = (t: string | null) => {
-    if (!t) return "尚未執行";
-    try {
-      return new Date(t).toLocaleString("zh-TW", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return t;
+  const handleTriggerAll = async () => {
+    for (const t of TASKS.filter((t) => t.live)) {
+      await handleTrigger(t.key as string);
     }
   };
 
+  const formatTime = (t: string | null) => {
+    if (!t) return "尚未執行";
+    try { return new Date(t).toLocaleString("zh-TW", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }); }
+    catch { return t; }
+  };
+
+  const getStatusStyle = (s: string) => ({
+    success: { bg: "#F0FFF4", color: "#38A169", label: "✅ 啟用" },
+    running: { bg: "#FFF5E6", color: "#ED8936", label: "⏳ 執行中" },
+    failed: { bg: "#FFF5F5", color: "#E53E3E", label: "❌ 失敗" },
+    unknown: { bg: "#F7FAFC", color: "#A0AEC0", label: "— 未執行" },
+  }[s] ?? { bg: "#F7FAFC", color: "#A0AEC0", label: s });
+
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0F172A", marginBottom: 6 }}>
-        資料爬取排程
-      </h1>
-      <p style={{ color: "#64748B", fontSize: 14, marginBottom: 24 }}>
-        手動觸發爬蟲或查看最後執行狀態（排程自動執行於 Phase 2 開放）
-      </p>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+        <button
+          onClick={handleTriggerAll}
+          style={{ padding: "9px 22px", background: "#2B6CB0", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+        >
+          立即執行全部
+        </button>
+      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {CRAWLERS.map((crawler) => {
-          const status = statusMap[crawler.key];
-          const style = STATUS_STYLE[status.status] ?? STATUS_STYLE.unknown;
-          const isTriggering = triggering[crawler.key];
-          const result = triggerResult[crawler.key];
+      {/* Task list */}
+      <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, overflow: "hidden", marginBottom: 24 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead style={{ background: "#F7FAFC" }}>
+            <tr>
+              {["任務名稱", "排程週期", "上次執行", "結果", "下次執行", "狀態", "操作"].map((h) => (
+                <th key={h} style={{ padding: "11px 14px", textAlign: "left", color: "#718096", fontWeight: 600, borderBottom: "1px solid #E2E8F0", fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {TASKS.map((task) => {
+              const status = statusMap[task.key as string] || { last_run: null, status: "unknown" };
+              const ss = getStatusStyle(task.live ? status.status : "pending_dev");
+              const isTriggering = triggering[task.key as string];
+              const result = triggerResult[task.key as string];
 
-          return (
-            <div
-              key={crawler.key}
-              style={{
-                background: "#fff",
-                borderRadius: 12,
-                padding: "22px 24px",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 20,
-              }}
-            >
-              <div style={{ fontSize: 32, lineHeight: 1, marginTop: 2 }}>{crawler.icon}</div>
+              return (
+                <tr key={task.key as string} style={{ borderBottom: "1px solid #F7FAFC" }}>
+                  <td style={{ padding: "13px 14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 18 }}>{task.icon}</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1A202C" }}>{task.name}</div>
+                        <div style={{ fontSize: 11, color: "#A0AEC0", marginTop: 1 }}>{task.desc.slice(0, 40)}...</div>
+                      </div>
+                    </div>
+                    {result && (
+                      <div style={{ marginTop: 6, fontSize: 11, color: result.includes("失敗") || result.includes("錯誤") ? "#E53E3E" : "#38A169" }}>
+                        {result}
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ padding: "13px 14px", color: "#4A5568" }}>{task.cycle}</td>
+                  <td style={{ padding: "13px 14px", color: "#718096", whiteSpace: "nowrap" }}>{formatTime(status.last_run)}</td>
+                  <td style={{ padding: "13px 14px" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: ss.bg, color: ss.color, borderRadius: 99, padding: "3px 10px" }}>
+                      {task.live ? ss.label : "⏳ 開發中"}
+                    </span>
+                  </td>
+                  <td style={{ padding: "13px 14px", color: "#718096", whiteSpace: "nowrap" }}>—</td>
+                  <td style={{ padding: "13px 14px" }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, background: task.live ? "#F0FFF4" : "#F7FAFC", color: task.live ? "#38A169" : "#A0AEC0", borderRadius: 99, padding: "3px 10px" }}>
+                      {task.live ? "啟用" : "未啟用"}
+                    </span>
+                  </td>
+                  <td style={{ padding: "13px 14px" }}>
+                    {task.live ? (
+                      <button
+                        onClick={() => handleTrigger(task.key as string)}
+                        disabled={isTriggering || status.status === "running"}
+                        style={{ padding: "5px 14px", background: isTriggering || status.status === "running" ? "#F7FAFC" : "#2B6CB0", color: isTriggering || status.status === "running" ? "#A0AEC0" : "#fff", border: "none", borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: isTriggering || status.status === "running" ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
+                      >
+                        {isTriggering || status.status === "running" ? "執行中..." : "立即執行"}
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 12, color: "#A0AEC0" }}>設定</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, color: "#0F172A", margin: 0 }}>
-                    {crawler.name}
-                  </h3>
-                  <span
-                    style={{
-                      background: style.bg,
-                      color: style.color,
-                      padding: "3px 10px",
-                      borderRadius: 20,
-                      fontSize: 12,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {style.label}
+      {/* Recent logs */}
+      <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ padding: "14px 18px", borderBottom: "1px solid #E2E8F0", fontSize: 14, fontWeight: 700, color: "#1A202C" }}>
+          最近執行日誌
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead style={{ background: "#F7FAFC" }}>
+            <tr>
+              {["時間", "任務名稱", "執行結果", "耗時", "更新筆數"].map((h) => (
+                <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: "#718096", fontWeight: 600, borderBottom: "1px solid #E2E8F0", fontSize: 12 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {MOCK_LOGS.map((log, i) => (
+              <tr key={i} style={{ borderBottom: "1px solid #F7FAFC" }}>
+                <td style={{ padding: "10px 14px", color: "#718096", whiteSpace: "nowrap" }}>{log.time}</td>
+                <td style={{ padding: "10px 14px", color: "#4A5568" }}>{log.task}</td>
+                <td style={{ padding: "10px 14px" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, background: "#F0FFF4", color: "#38A169", borderRadius: 99, padding: "2px 10px" }}>
+                    ✅ 成功
                   </span>
-                </div>
-                <p style={{ fontSize: 13, color: "#64748B", margin: "0 0 8px" }}>
-                  {crawler.desc}
-                </p>
-                <div style={{ fontSize: 12, color: "#94A3B8", display: "flex", gap: 16 }}>
-                  <span>上次執行：{formatTime(status.last_run)}</span>
-                  <span>週期：{SCHEDULE_INFO[crawler.key].cycle}</span>
-                  <span>下次預計：{SCHEDULE_INFO[crawler.key].nextRun(status.last_run)}</span>
-                  {status.records_updated != null && <span>更新 {status.records_updated} 筆</span>}
-                </div>
-                {result && (
-                  <div
-                    style={{
-                      marginTop: 10,
-                      padding: "8px 12px",
-                      background: result.includes("失敗") || result.includes("錯誤") ? "#FEF2F2" : "#F0FDF4",
-                      color: result.includes("失敗") || result.includes("錯誤") ? "#DC2626" : "#16A34A",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  >
-                    {result}
-                  </div>
-                )}
-              </div>
-
-              <button
-                onClick={() => handleTrigger(crawler.key)}
-                disabled={isTriggering || status.status === "running"}
-                style={{
-                  padding: "9px 20px",
-                  background:
-                    isTriggering || status.status === "running"
-                      ? "#E2E8F0"
-                      : "#3B82F6",
-                  color:
-                    isTriggering || status.status === "running"
-                      ? "#94A3B8"
-                      : "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor:
-                    isTriggering || status.status === "running"
-                      ? "not-allowed"
-                      : "pointer",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                {isTriggering
-                  ? "排程中..."
-                  : status.status === "running"
-                  ? "執行中..."
-                  : "手動觸發"}
-              </button>
-            </div>
-          );
-        })}
+                </td>
+                <td style={{ padding: "10px 14px", color: "#4A5568" }}>{log.duration}</td>
+                <td style={{ padding: "10px 14px", fontWeight: 700, color: "#2B6CB0" }}>{log.records.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

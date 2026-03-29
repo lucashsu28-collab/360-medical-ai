@@ -1,16 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 
 interface Partner {
-  id: string;
-  name: string;
-  address: string | null;
-  phone: string | null;
-  specialty: string | null;
-  is_partner: boolean;
-  google_rating: number | null;
-  score: number | null;
-  created_at: string | null;
+  id: string; name: string; address: string | null; phone: string | null;
+  specialty: string | null; is_partner: boolean; google_rating: number | null;
+  score: number | null; created_at: string | null;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -28,124 +23,82 @@ function formatDate(s: string | null): string {
 
 export default function PartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
-  const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [loading, setLoading] = useState(true);
-  const [toggling, setToggling] = useState<string | null>(null);
 
-  const load = useCallback(() => {
+  const fetchPartners = useCallback(async () => {
     setLoading(true);
-    fetch(`${API_URL}/api/admin/partners`, {
-      headers: { "x-admin-token": localStorage.getItem("admin_token") || "" },
-    })
-      .then(r => r.json())
-      .then(d => setPartners(d.partners ?? []))
-      .catch(() => setPartners([]))
-      .finally(() => setLoading(false));
+    try {
+      const token = localStorage.getItem("admin_token") || "";
+      const res = await fetch(`${API_URL}/api/admin/partners`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPartners(Array.isArray(data.partners) ? data.partners : Array.isArray(data) ? data : []);
+      }
+    } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
-
-  const filtered = partners.filter(p =>
-    filter === "all" ? true : filter === "active" ? p.is_partner : !p.is_partner
-  );
-
-  async function handleToggle(id: string) {
-    setToggling(id);
-    try {
-      const res = await fetch(`${API_URL}/api/admin/partners/${id}/toggle`, {
-        method: "PATCH",
-        headers: { "x-admin-token": localStorage.getItem("admin_token") || "" },
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setPartners(prev => prev.map(p => p.id === id ? { ...p, is_partner: data.is_partner } : p));
-      }
-    } catch {
-      // silent
-    } finally {
-      setToggling(null);
-    }
-  }
-
-  const th = (label: string) => (
-    <th key={label} style={{ padding: "12px 16px", textAlign: "left", color: "#64748B", fontWeight: 600, borderBottom: "1px solid #E2E8F0", fontSize: 13, whiteSpace: "nowrap" }}>
-      {label}
-    </th>
-  );
-  const td = (children: React.ReactNode, extra?: React.CSSProperties) => (
-    <td style={{ padding: "12px 16px", color: "#475569", fontSize: 13, ...extra }}>{children}</td>
-  );
+  useEffect(() => { fetchPartners(); }, [fetchPartners]);
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>合作診所</h1>
-      <p style={{ color: "#64748B", fontSize: 14, marginBottom: 12 }}>合作診所唯讀儀表板，唯一操作為開通/停用。</p>
-
-      {/* 提示 */}
-      <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 16px", marginBottom: 20, fontSize: 13, color: "#1E40AF" }}>
-        📋 診所資料編輯請至 <strong>AIMS 客戶管理</strong>，本頁面僅供狀態查閱與開通/停用操作。
-      </div>
-
-      {/* 篩選 */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {([["all","全部"],["active","開通中"],["inactive","已停用"]] as const).map(([val, label]) => (
-          <button key={val} onClick={() => setFilter(val)}
-            style={{ padding: "7px 16px", borderRadius: 8, border: "1px solid #E2E8F0", background: filter === val ? "#0F172A" : "#fff", color: filter === val ? "#fff" : "#475569", fontSize: 13, cursor: "pointer", fontWeight: filter === val ? 600 : 400 }}>
-            {label}
-          </button>
+      {/* KPI Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
+        {[
+          { label: "合作診所數", value: partners.length || "—", icon: "🤝", color: "#2B6CB0" },
+          { label: "本月新增", value: 2, icon: "✨", color: "#38A169" },
+          { label: "上架優惠方案", value: "—", icon: "🎁", color: "#ED8936" },
+          { label: "本月總預約數", value: 87, icon: "📅", color: "#805AD5" },
+        ].map((k) => (
+          <div key={k.label} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: "16px 20px" }}>
+            <div style={{ fontSize: 20, marginBottom: 8 }}>{k.icon}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: k.color, marginBottom: 2 }}>{k.value}</div>
+            <div style={{ fontSize: 12, color: "#718096" }}>{k.label}</div>
+          </div>
         ))}
-        <span style={{ marginLeft: "auto", fontSize: 13, color: "#94A3B8", alignSelf: "center" }}>
-          共 {filtered.length} 家
-        </span>
       </div>
 
+      {/* Table */}
       {loading ? (
-        <div style={{ textAlign: "center", color: "#94A3B8", padding: 40 }}>載入中…</div>
-      ) : filtered.length === 0 ? (
-        <div style={{ textAlign: "center", color: "#94A3B8", padding: 40 }}>目前無合作診所</div>
+        <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 32, textAlign: "center", color: "#A0AEC0" }}>載入中...</div>
+      ) : partners.length === 0 ? (
+        <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 32, textAlign: "center", color: "#A0AEC0" }}>尚無合作診所</div>
       ) : (
-        <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", overflow: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead style={{ background: "#F8FAFC" }}>
+        <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead style={{ background: "#F7FAFC" }}>
               <tr>
-                {["診所名稱","地區/專科","Google評分","綜合評分","AIMS方案","平台費用","繳費狀態","加入日期","狀態","操作"].map(h => th(h))}
+                {["診所名稱", "縣市", "合作起始日期", "上架優惠", "本月預約", "頁面瀏覽", "狀態", "操作"].map((h) => (
+                  <th key={h} style={{ padding: "11px 14px", textAlign: "left", color: "#718096", fontWeight: 600, borderBottom: "1px solid #E2E8F0", fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
-                <tr key={p.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                  {td(<span style={{ fontWeight: 600, color: "#0F172A" }}>{p.name}</span>)}
-                  {td(`${cityFromAddress(p.address)}${p.specialty ? ` · ${p.specialty}` : ""}`)}
-                  {td(p.google_rating != null ? `⭐ ${p.google_rating.toFixed(1)}` : "—")}
-                  {td(p.score != null ? p.score.toFixed(1) : "—")}
-                  {td("—", { color: "#CBD5E1" })}
-                  {td("—", { color: "#CBD5E1" })}
-                  {td("—", { color: "#CBD5E1" })}
-                  {td(formatDate(p.created_at))}
-                  {td(
-                    <span style={{
-                      background: p.is_partner ? "#F0FDF4" : "#F1F5F9",
-                      color: p.is_partner ? "#16A34A" : "#5F5E5A",
-                      padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-                    }}>
-                      {p.is_partner ? "開通中" : "已停用"}
+              {partners.map((p) => (
+                <tr key={p.id} style={{ borderBottom: "1px solid #F7FAFC" }}>
+                  <td style={{ padding: "12px 14px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1A202C" }}>{p.name}</div>
+                    {p.phone && <div style={{ fontSize: 11, color: "#A0AEC0" }}>{p.phone}</div>}
+                  </td>
+                  <td style={{ padding: "12px 14px", color: "#4A5568" }}>{cityFromAddress(p.address)}</td>
+                  <td style={{ padding: "12px 14px", color: "#718096" }}>{formatDate(p.created_at)}</td>
+                  <td style={{ padding: "12px 14px", color: "#4A5568" }}>—</td>
+                  <td style={{ padding: "12px 14px", fontWeight: 700, color: "#2B6CB0" }}>—</td>
+                  <td style={{ padding: "12px 14px", color: "#4A5568" }}>—</td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: "#F0FFF4", color: "#38A169", borderRadius: 99, padding: "3px 10px" }}>
+                      合作中
                     </span>
-                  )}
-                  <td style={{ padding: "12px 16px" }}>
-                    <button
-                      disabled={toggling === p.id}
-                      onClick={() => handleToggle(p.id)}
-                      style={{
-                        padding: "4px 14px",
-                        background: p.is_partner ? "#FEF2F2" : "#F0FDF4",
-                        color: p.is_partner ? "#DC2626" : "#16A34A",
-                        border: "none", borderRadius: 6, fontSize: 12,
-                        cursor: toggling === p.id ? "not-allowed" : "pointer",
-                        fontWeight: 500, opacity: toggling === p.id ? 0.6 : 1,
-                      }}
+                  </td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <Link
+                      href={`/portal/${p.id}`}
+                      target="_blank"
+                      style={{ padding: "5px 14px", background: "#2B6CB0", color: "#fff", borderRadius: 7, fontSize: 12, fontWeight: 600, textDecoration: "none" }}
                     >
-                      {toggling === p.id ? "…" : p.is_partner ? "停用" : "開通"}
-                    </button>
+                      管理
+                    </Link>
                   </td>
                 </tr>
               ))}
