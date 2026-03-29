@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import select, update, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db import get_db
+from database import get_db
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
