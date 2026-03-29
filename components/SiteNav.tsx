@@ -4,13 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/clinics", label: "查診所" },
+  { href: "/clinics", label: "診所資料館" },
   { href: "/doctors", label: "醫師查詢" },
   { href: "/treatments", label: "查療程" },
   { href: "/cities", label: "各縣市" },
   { href: "/blog", label: "醫美專欄" },
   { href: "/faq", label: "常見問題" },
-  { href: "/partners", label: "全台診所資料館" },
   { href: "/promotions", label: "優惠療程搜尋" },
   { href: "/about", label: "關於我們" },
   { href: "/scoring", label: "評分標準" },
