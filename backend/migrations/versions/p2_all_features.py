@@ -7,7 +7,7 @@ Create Date: 2026-03-29
 from alembic import op
 
 revision = 'p2_all_features'
-down_revision = 'b6_clinic_reviews'
+down_revision = ('c3d4e5f6a7b8', 'b6_clinic_reviews')
 branch_labels = None
 depends_on = None
 
