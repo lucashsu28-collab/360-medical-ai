@@ -67,6 +67,9 @@ export default function AdminClinicsPage() {
   const [detail, setDetail] = useState<Clinic | null>(null);
   const [editNote, setEditNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [accountModal, setAccountModal] = useState<Clinic | null>(null);
+  const [accountForm, setAccountForm] = useState({ email: "", password: "" });
+  const [accountMsg, setAccountMsg] = useState("");
 
   const fetchClinics = useCallback(async () => {
     setLoading(true);
@@ -111,6 +114,28 @@ export default function AdminClinicsPage() {
       fetchClinics();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const createAccount = async () => {
+    if (!accountModal || !accountForm.email || !accountForm.password) return;
+    setAccountMsg("");
+    const token = localStorage.getItem("admin_token") || "";
+    try {
+      const res = await fetch(`${API_URL}/api/admin/cms/clinic-accounts`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ clinic_id: accountModal.id, email: accountForm.email, password: accountForm.password }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setAccountMsg("帳號建立成功！");
+        setTimeout(() => { setAccountModal(null); setAccountMsg(""); setAccountForm({ email: "", password: "" }); }, 1500);
+      } else {
+        setAccountMsg(d.detail || "建立失敗");
+      }
+    } catch {
+      setAccountMsg("連線失敗");
     }
   };
 
@@ -221,6 +246,10 @@ export default function AdminClinicsPage() {
                         style={{ padding: "4px 10px", background: "#F0FDF4", color: "#16A34A", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
                         詳細
                       </button>
+                      <button onClick={() => { setAccountModal(c); setAccountForm({ email: "", password: "" }); setAccountMsg(""); }}
+                        style={{ padding: "4px 10px", background: "#FEF3C7", color: "#D97706", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
+                        建立帳號
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -312,6 +341,48 @@ export default function AdminClinicsPage() {
                   {saving ? "儲存中..." : "儲存備註"}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 建立後台帳號 Modal */}
+      {accountModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 420, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0F172A", margin: 0 }}>建立後台帳號</h3>
+              <button onClick={() => setAccountModal(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#94A3B8" }}>✕</button>
+            </div>
+            <p style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>為「{accountModal.name}」建立診所後台登入帳號</p>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#374151", marginBottom: 6 }}>Email *</label>
+              <input
+                type="email"
+                required
+                value={accountForm.email}
+                onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+                placeholder="clinic@example.com"
+                style={{ width: "100%", padding: "9px 12px", border: "1px solid #E2E8F0", borderRadius: 8, fontSize: 14, boxSizing: "border-box" }}
+              />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#374151", marginBottom: 6 }}>密碼 *</label>
+              <input
+                type="text"
+                required
+                value={accountForm.password}
+                onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
+                placeholder="至少8碼"
+                style={{ width: "100%", padding: "9px 12px", border: "1px solid #E2E8F0", borderRadius: 8, fontSize: 14, boxSizing: "border-box" }}
+              />
+            </div>
+            {accountMsg && (
+              <p style={{ fontSize: 13, color: accountMsg.includes("成功") ? "#10B981" : "#EF4444", marginBottom: 12 }}>{accountMsg}</p>
+            )}
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setAccountModal(null)} style={{ padding: "9px 16px", background: "#F1F5F9", border: "none", borderRadius: 8, color: "#475569", fontSize: 13, cursor: "pointer" }}>取消</button>
+              <button onClick={createAccount} style={{ padding: "9px 20px", background: "#F59E0B", border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>建立帳號</button>
             </div>
           </div>
         </div>

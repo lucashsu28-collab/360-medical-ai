@@ -227,8 +227,34 @@ async def _save_conversation(line_user_id: str, role: str, message: str) -> None
         print(f"[save_conversation] DB error: {e}", flush=True)
 
 
+async def _is_human_mode(user_id: str) -> bool:
+    """檢查該用戶是否處於人工客服模式（human_mode = True）。"""
+    try:
+        from config import DATABASE_URL
+        from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+        from sqlalchemy import text
+        db_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace("postgresql://", "postgresql+asyncpg://")
+        engine = create_async_engine(db_url, echo=False, pool_pre_ping=True)
+        SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+        async with SessionLocal() as session:
+            r = await session.execute(
+                text("SELECT human_mode FROM line_conversations WHERE user_id = :uid LIMIT 1"),
+                {"uid": user_id},
+            )
+            row = r.fetchone()
+            return bool(row and row[0])
+    except Exception as e:
+        print(f"[human_mode check] error: {e}", flush=True)
+        return False
+
+
 async def _handle_message(user_id: str, message: dict[str, Any]) -> None:
     """處理使用者文字訊息：支援「報告:clinic_xxx」「報告:doctor_xxx」觸發 Flex 報告，其餘走 Gemini。"""
+    # 人工客服模式：AI 靜默，讓諮詢師在 LINE OA Manager 直接接聊
+    if await _is_human_mode(user_id):
+        print(f"[FLOW] user {user_id} in human mode, AI silent", flush=True)
+        return
+
     msg_type = message.get("type")
     if msg_type != "text":
         await _push_text(user_id, "目前僅支援文字訊息，請輸入文字與我對話。")

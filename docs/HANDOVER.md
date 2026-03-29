@@ -75,17 +75,17 @@ gcloud run deploy medical-backend --source backend --region asia-east1 --allow-u
 - 前台AI SEO頁面（城市/FAQ/專欄/百科/比較）
 - 診所列表904筆+臺台篩選修正
 
-## 七、⏳ P2 待開發（進行中）
+## 七、✅ P2 已完成
 
 | # | 項目 | 說明 |
 |---|------|------|
-| 1 | 全台診所資料館重構 | 選單改「全台診所資料館」；未付費（陽春）/付費（精美）雙層；依縣市分組+搜尋 |
-| 2 | 優惠療程搜尋 | 選單改「優惠療程搜尋」；四維篩選（大類/部位/效果/價格）；付費診所排前；直連LINE OA |
-| 3 | 我想合作頁面 | 表單（診所名稱/聯絡方式/詢問內容）→ 送出後導向平台總LINE OA |
-| 4 | 輕量診所後台 | /portal/[clinic_id]；Email+密碼登入；七模組（基本資料/療程/優惠/醫師/Gallery/預約/數據） |
-| 5 | Admin LINE OA 數據儀表板 | 總對話數/熱門問題Top10/各診所導流轉換率；近14天趨勢折線圖 |
-| 6 | Admin CMS 審核流程 | 內容上架前合規審核；醫療廣告禁用詞自動標記；人工審核通過才上架 |
-| 7 | 預約客服系統 | LIFF五步驟預約；成功後切換人工客服模式；診所諮詢師在LINE OA Manager直接接聊；Admin預約管理+抽傭基礎 |
+| ✅ 1 | 全台診所資料館重構 | 縣市分組、partner amber雙層版面、/clinics 統一 |
+| ✅ 2 | 優惠療程搜尋 | /promotions 四維篩選、API proxy、合作診所排前 |
+| ✅ 3 | 我想合作頁面 | /partnership 表單、POST /api/partnership/inquiry、導向 LINE OA |
+| ✅ 4 | 輕量診所後台 | /portal/login + 七模組、JWT auth、compliance 審核 |
+| ✅ 5 | Admin LINE OA 數據儀表板 | /admin/line、SVG趨勢圖、熱門問題、診所轉換 |
+| ✅ 6 | Admin CMS 審核流程 | /admin/cms 重寫、合規警告標記、禁用詞管理 |
+| ✅ 7 | 預約客服系統 | /booking LIFF五步驟、human_mode靜默、/admin/appointments 管理 |
 
 ## 八、⏳ P3 待開發（AIMS完成後）
 
