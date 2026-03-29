@@ -2,53 +2,47 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 
-interface PromotionItem {
+const LIFF_ID = "2009360724-7DzjBKHU";
+
+interface Promotion {
   id: number;
-  title: string;
-  price?: string;
+  clinic_id: number;
+  clinic_name: string;
+  clinic_google_rating?: number;
+  treatment_name: string;
+  treatment_category?: string;
   description?: string;
+  price_label?: string;
+  expires_at?: string;
+  image_url?: string;
+  is_active: boolean;
+  // legacy fallback fields
+  title?: string;
+  price?: string;
   valid_until?: string;
   category?: string;
-  body_part?: string;
-  effect?: string;
-  clinic_id: string;
-  clinic_name: string;
-  city?: string;
-  district?: string;
-  is_partner: boolean;
   line_oa_url?: string;
+  is_partner?: boolean;
 }
 
-interface FilterOptions {
-  categories: string[];
-  parts: string[];
-  effects: string[];
-  price_ranges: string[];
-}
-
-const PRICE_RANGES = [
-  { label: "全部", value: "" },
-  { label: "5,000 以下", value: "0-5000" },
-  { label: "5,001–20,000", value: "5001-20000" },
-  { label: "20,001–50,000", value: "20001-50000" },
-  { label: "50,000 以上", value: "50001-999999" },
+const GRADIENT_BG = [
+  "linear-gradient(135deg, #FED7AA 0%, #FBB040 100%)",
+  "linear-gradient(135deg, #BEE3F8 0%, #63B3ED 100%)",
+  "linear-gradient(135deg, #C6F6D5 0%, #48BB78 100%)",
+  "linear-gradient(135deg, #E9D8FD 0%, #9F7AEA 100%)",
+  "linear-gradient(135deg, #FEB2B2 0%, #FC8181 100%)",
+  "linear-gradient(135deg, #FEFCBF 0%, #F6E05E 100%)",
 ];
 
 export default function PromotionsPage() {
-  const [items, setItems] = useState<PromotionItem[]>([]);
-  const [options, setOptions] = useState<FilterOptions>({ categories: [], parts: [], effects: [], price_ranges: [] });
+  const [items, setItems] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("");
   const [part, setPart] = useState("");
   const [effect, setEffect] = useState("");
   const [priceRange, setPriceRange] = useState("");
 
-  useEffect(() => {
-    fetch("/api/promotions/categories")
-      .then((r) => r.json())
-      .then(setOptions)
-      .catch(() => {});
-  }, []);
+  const hasFilters = !!(category || part || effect || priceRange);
 
   const loadItems = useCallback(() => {
     setLoading(true);
@@ -66,60 +60,63 @@ export default function PromotionsPage() {
 
   useEffect(() => { loadItems(); }, [loadItems]);
 
+  const clearFilters = () => { setCategory(""); setPart(""); setEffect(""); setPriceRange(""); };
+
+  const selectStyle: React.CSSProperties = {
+    padding: "8px 12px", border: "1px solid #E2E8F0", borderRadius: 8,
+    fontSize: 13, color: "#1A202C", background: "#fff", cursor: "pointer", outline: "none",
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--paper)]">
+    <div style={{ background: "#FAFAF8", minHeight: "100vh" }}>
+
       {/* Hero */}
-      <div className="border-b border-[var(--line)] bg-white px-4 pb-8 pt-10 text-center">
-        <div className="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,70,184,.1)] bg-[var(--blue-lt)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--blue)]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--blue)]" />
-          優惠療程搜尋
+      <div style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "32px 32px 24px" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#EBF8FF", border: "1px solid #BEE3F8", borderRadius: 20, padding: "3px 12px", marginBottom: 12 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#2B6CB0" }}>優惠療程搜尋</span>
+          </div>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: "#1A202C", margin: "0 0 8px" }}>幫你找優惠療程</h1>
+          <p style={{ fontSize: 13, color: "#718096", margin: 0 }}>
+            以下優惠由合作診所提供，非平台評鑑推薦。點選療程可直接透過 LINE OA 預約。
+          </p>
         </div>
-        <h2 className="mb-2 text-2xl font-[900] tracking-tight text-[var(--ink)] md:text-3xl" style={{ fontFamily: "var(--font-noto-serif-tc)" }}>
-          合作診所<span className="text-[var(--blue)]">優惠療程</span>
-        </h2>
-        <p className="mx-auto max-w-[560px] text-[12px] leading-relaxed text-[var(--muted)]">
-          以下優惠由合作診所提供，非平台評鑑推薦。點選療程可直接透過 LINE OA 預約。
-        </p>
       </div>
 
       {/* Filters */}
-      <div className="sticky top-0 z-10 border-b border-[var(--line)] bg-white px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,.04)]">
-        <div className="mx-auto flex max-w-[1060px] flex-wrap gap-2">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="rounded-[8px] border border-[var(--line)] bg-white px-3 py-2 text-[13px] text-[var(--ink)] focus:border-[var(--blue)] focus:outline-none"
-          >
+      <div style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "12px 32px", position: "sticky", top: 60, zIndex: 10, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} style={selectStyle}>
             <option value="">全部大類</option>
-            {options.categories.map((c) => <option key={c} value={c}>{c}</option>)}
+            <option value="微整形">微整形</option>
+            <option value="雷射光療">雷射光療</option>
+            <option value="保養">保養</option>
+            <option value="手術">手術</option>
           </select>
-          <select
-            value={part}
-            onChange={(e) => setPart(e.target.value)}
-            className="rounded-[8px] border border-[var(--line)] bg-white px-3 py-2 text-[13px] text-[var(--ink)] focus:border-[var(--blue)] focus:outline-none"
-          >
+          <select value={part} onChange={(e) => setPart(e.target.value)} style={selectStyle}>
             <option value="">全部部位</option>
-            {options.parts.map((p) => <option key={p} value={p}>{p}</option>)}
+            <option value="臉部">臉部</option>
+            <option value="眼部">眼部</option>
+            <option value="鼻部">鼻部</option>
+            <option value="身體">身體</option>
           </select>
-          <select
-            value={effect}
-            onChange={(e) => setEffect(e.target.value)}
-            className="rounded-[8px] border border-[var(--line)] bg-white px-3 py-2 text-[13px] text-[var(--ink)] focus:border-[var(--blue)] focus:outline-none"
-          >
+          <select value={effect} onChange={(e) => setEffect(e.target.value)} style={selectStyle}>
             <option value="">全部效果</option>
-            {options.effects.map((e) => <option key={e} value={e}>{e}</option>)}
+            <option value="除皺">除皺</option>
+            <option value="美白">美白</option>
+            <option value="縮毛孔">縮毛孔</option>
+            <option value="拉提">拉提</option>
           </select>
-          <select
-            value={priceRange}
-            onChange={(e) => setPriceRange(e.target.value)}
-            className="rounded-[8px] border border-[var(--line)] bg-white px-3 py-2 text-[13px] text-[var(--ink)] focus:border-[var(--blue)] focus:outline-none"
-          >
-            {PRICE_RANGES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+          <select value={priceRange} onChange={(e) => setPriceRange(e.target.value)} style={selectStyle}>
+            <option value="">全部價格</option>
+            <option value="0-3000">$3,000以下</option>
+            <option value="3000-10000">$3,000–$10,000</option>
+            <option value="10000-999999">$10,000以上</option>
           </select>
-          {(category || part || effect || priceRange) && (
+          {hasFilters && (
             <button
-              onClick={() => { setCategory(""); setPart(""); setEffect(""); setPriceRange(""); }}
-              className="rounded-[8px] border border-[var(--line)] bg-white px-3 py-2 text-[13px] text-[var(--muted)] hover:border-red-300 hover:text-red-500"
+              onClick={clearFilters}
+              style={{ padding: "8px 14px", border: "1px solid #E2E8F0", borderRadius: 8, fontSize: 13, color: "#718096", background: "#fff", cursor: "pointer" }}
             >
               清除篩選
             </button>
@@ -128,67 +125,114 @@ export default function PromotionsPage() {
       </div>
 
       {/* Cards */}
-      <div className="mx-auto max-w-[1060px] px-4 py-6 md:px-8">
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 32px" }}>
         {loading ? (
-          <div className="py-20 text-center text-[var(--muted)]">載入中...</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ height: 320, background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10 }} />
+            ))}
+          </div>
         ) : items.length === 0 ? (
-          <div className="rounded-[14px] border border-[var(--line)] bg-white py-16 text-center text-[var(--muted)]">
-            目前沒有符合條件的優惠療程。
+          <div style={{ textAlign: "center", padding: "48px 0", color: "#718096" }}>
+            目前此分類尚無優惠，歡迎診所聯繫我們上架
+            <br />
+            <Link href="/partnership" style={{ color: "#2B6CB0", marginTop: 12, display: "inline-block", fontSize: 14 }}>
+              了解合作方案 →
+            </Link>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className={`flex flex-col rounded-[14px] border bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,.04)] transition-all hover:shadow-[0_4px_12px_rgba(0,0,0,.08)] ${item.is_partner ? "border-amber-300" : "border-[var(--line)]"}`}
-              >
-                {item.is_partner && (
-                  <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-                    ✦ 合作診所
-                  </span>
-                )}
-                {item.category && (
-                  <span className="mb-1 text-[11px] font-bold uppercase tracking-wider text-[var(--blue)]">
-                    {item.category}
-                  </span>
-                )}
-                <p className="mb-1 text-[15px] font-bold text-[var(--ink)]">{item.title}</p>
-                {item.price && <p className="text-[14px] font-semibold text-amber-700">{item.price}</p>}
-                {item.description && <p className="mt-1 text-[12px] leading-relaxed text-[var(--muted)]">{item.description}</p>}
-                {item.valid_until && <p className="mt-2 text-[11px] text-[var(--muted)]">有效期至 {item.valid_until}</p>}
-                <div className="mt-auto pt-3 border-t border-[var(--line)]">
-                  <Link href={`/clinics/${item.clinic_id}`} className="text-[13px] font-medium text-[var(--ink2)] hover:text-[var(--blue)]">
-                    {item.clinic_name}
-                    {item.city && <span className="text-[var(--muted)]"> · {item.city}</span>}
-                  </Link>
-                </div>
-                <a
-                  href={item.line_oa_url || "https://lin.ee/6sTCRzm"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 block w-full rounded-[8px] bg-[#06C755] py-2.5 text-center text-[13px] font-bold text-white shadow-[0_2px_6px_rgba(6,199,85,.25)] transition-opacity hover:opacity-90"
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            {items.map((item, idx) => {
+              const clinicName = item.clinic_name;
+              const treatmentName = item.treatment_name || item.title || "";
+              const desc = item.description || "";
+              const priceLabel = item.price_label || item.price || "";
+              const expiresAt = item.expires_at || item.valid_until || "";
+              const googleRating = item.clinic_google_rating;
+              const gradientBg = GRADIENT_BG[idx % GRADIENT_BG.length];
+
+              return (
+                <div
+                  key={item.id}
+                  style={{ border: "1px solid #FEEBC8", borderRadius: 10, overflow: "hidden", background: "#fff", display: "flex", flexDirection: "column" }}
                 >
-                  LINE 預約此療程
-                </a>
-              </div>
-            ))}
+                  {/* Image area */}
+                  <div style={{
+                    height: 160, position: "relative",
+                    background: item.image_url ? `url(${item.image_url}) center/cover` : gradientBg,
+                  }}>
+                    <span style={{
+                      position: "absolute", top: 12, left: 12,
+                      background: "#E53E3E", color: "#fff", fontSize: 11, fontWeight: 700,
+                      borderRadius: 4, padding: "3px 8px",
+                    }}>
+                      限時優惠
+                    </span>
+                    {item.treatment_category && (
+                      <span style={{
+                        position: "absolute", top: 12, right: 12,
+                        background: "rgba(255,255,255,.85)", color: "#4A5568", fontSize: 11, fontWeight: 600,
+                        borderRadius: 4, padding: "3px 8px",
+                      }}>
+                        {item.treatment_category || item.category}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Info area */}
+                  <div style={{ background: "#FFFAF0", padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column" }}>
+                    {/* Clinic name */}
+                    <div style={{ fontSize: 11, color: "#718096", marginBottom: 6 }}>🏥 {clinicName}</div>
+
+                    {/* Treatment name */}
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#7B341E", marginBottom: 4 }}>{treatmentName}</div>
+
+                    {/* Description */}
+                    {desc && (
+                      <div style={{ fontSize: 12, color: "#C05621", lineHeight: 1.5, marginBottom: 10 }}>{desc}</div>
+                    )}
+
+                    {/* Footer */}
+                    <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                      <div>
+                        {priceLabel && (
+                          <div style={{ fontSize: 18, fontWeight: 700, color: "#E53E3E" }}>{priceLabel}</div>
+                        )}
+                        {expiresAt && (
+                          <div style={{ fontSize: 10, color: "#A0AEC0" }}>截止 {expiresAt}</div>
+                        )}
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        {googleRating != null && (
+                          <div style={{ fontSize: 12, color: "#D69E2E", marginBottom: 6 }}>⭐ {googleRating.toFixed(1)}</div>
+                        )}
+                        <button
+                          onClick={() => window.open(`https://liff.line.me/${LIFF_ID}?clinic_id=${item.clinic_id}`)}
+                          style={{ background: "#38A169", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, padding: "6px 14px", cursor: "pointer" }}
+                        >
+                          立即預約
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Bottom CTA */}
-      <section className="border-t border-[var(--line)] bg-white px-4 py-10">
-        <div className="mx-auto max-w-[560px] rounded-[14px] border border-[var(--line)] bg-[var(--blue-xl)] p-8 text-center">
-          <p className="mb-1 text-[15px] font-bold text-[var(--ink)]">診所業者想上架優惠？</p>
-          <p className="mb-4 text-[13px] text-[var(--muted)]">加入合作計畫即可在此頁展示優惠療程</p>
-          <Link
-            href="/partnership"
-            className="inline-block rounded-[8px] bg-[var(--blue)] px-8 py-3 text-[14px] font-bold text-white shadow-[0_2px_8px_rgba(0,70,184,.2)] transition-colors hover:bg-[var(--blue2)]"
-          >
-            了解合作方案 →
-          </Link>
-        </div>
-      </section>
+      <div style={{ background: "#2B6CB0", padding: "28px 32px", textAlign: "center" }}>
+        <h3 style={{ color: "#fff", fontSize: 16, margin: "0 0 6px" }}>診所業者想上架優惠？</h3>
+        <p style={{ color: "#BEE3F8", fontSize: 12, margin: "0 0 16px" }}>加入合作計畫即可在此頁展示優惠療程</p>
+        <Link
+          href="/partnership"
+          style={{ display: "inline-block", background: "#fff", color: "#2B6CB0", borderRadius: 8, padding: "9px 24px", fontSize: 13, fontWeight: 600, textDecoration: "none" }}
+        >
+          了解合作方案 →
+        </Link>
+      </div>
     </div>
   );
 }
