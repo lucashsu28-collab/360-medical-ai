@@ -26,8 +26,8 @@ export default function PortalLoginPage() {
         setError(d.detail || "帳號或密碼錯誤");
         return;
       }
-      const { token, clinic_id } = await res.json();
-      localStorage.setItem("portal_token", token);
+      const { access_token, clinic_id } = await res.json();
+      localStorage.setItem("portal_token", access_token);
       localStorage.setItem("portal_clinic_id", clinic_id);
       router.replace(`/portal/${clinic_id}`);
     } catch {
