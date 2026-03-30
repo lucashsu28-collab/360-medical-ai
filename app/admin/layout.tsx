@@ -14,7 +14,8 @@ const PRIMARY_NAV = [
 ];
 
 const SYSTEM_NAV = [
-  { icon: "🤖", label: "爬蟲排程",      href: "/admin/scheduler" },
+  { icon: "🤖", label: "AI 顧問調校",   href: "/admin/ai-tuning" },
+  { icon: "🕷️", label: "爬蟲排程",      href: "/admin/scheduler" },
   { icon: "⚠️", label: "警告系統",      href: "/admin/alerts" },
   { icon: "📤", label: "資料匯出",      href: "/admin/export" },
   { icon: "⚙️", label: "評分規則",      href: "/admin/scoring" },

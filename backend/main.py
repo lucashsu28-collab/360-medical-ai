@@ -26,6 +26,7 @@ from routers.portal import router as portal_router
 from routers.admin_line import router as admin_line_router
 from routers.admin_cms import router as admin_cms_router
 from routers.appointments import router as appointments_router
+from routers.admin_ai_tuning import router as admin_ai_tuning_router
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
@@ -40,6 +41,7 @@ app.include_router(portal_router, prefix="/api")
 app.include_router(admin_line_router, prefix="/api")
 app.include_router(admin_cms_router, prefix="/api")
 app.include_router(appointments_router, prefix="/api")
+app.include_router(admin_ai_tuning_router, prefix="/api")
 
 from config import DATABASE_URL
 _db_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace("postgresql://", "postgresql+asyncpg://")
@@ -52,7 +54,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _allowed_origins if o.strip()],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

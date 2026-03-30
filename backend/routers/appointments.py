@@ -10,6 +10,7 @@ from sqlalchemy import select, update, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
+from services.email_service import send_appointment_notification
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
@@ -109,6 +110,34 @@ async def create_appointment(req: BookingRequest, db: AsyncSession = Depends(get
         await _push_line_message(req.user_line_id, msg)
         # 切換為人工客服模式
         await _set_human_mode(req.user_line_id, True, db)
+
+    # 發送 Email 通知給診所諮詢師
+    try:
+        email_row = await db.execute(
+            text("""
+                SELECT ca.email FROM clinic_accounts ca
+                WHERE ca.clinic_id = :cid AND ca.is_active = TRUE
+                LIMIT 1
+            """),
+            {"cid": req.clinic_id},
+        )
+        email_r = email_row.fetchone()
+        if email_r and email_r[0]:
+            await send_appointment_notification(
+                to_email=email_r[0],
+                clinic_name=clinic_name,
+                appointment={
+                    "patient_name": req.user_display_name,
+                    "user_phone": req.user_phone,
+                    "treatment_name": req.treatment_name,
+                    "preferred_date": req.preferred_date,
+                    "preferred_time": req.preferred_time,
+                    "note": req.note,
+                },
+            )
+    except Exception as e:
+        print(f"[email] send_appointment_notification failed: {e}")
+        # Email 失敗不影響預約流程
 
     return {"success": True, "appointment_id": appointment_id, "clinic_name": clinic_name}
 
