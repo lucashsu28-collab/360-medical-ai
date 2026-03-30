@@ -8,7 +8,7 @@ interface Review {
   relative_time: string;
 }
 
-export default function ClinicReviewsList({ clinicId }: { clinicId: string }) {
+export default function ClinicReviewsList({ clinicId, limit }: { clinicId: string; limit?: number }) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,9 +26,11 @@ export default function ClinicReviewsList({ clinicId }: { clinicId: string }) {
   );
   if (reviews.length === 0) return null;
 
+  const displayReviews = limit ? reviews.slice(0, limit) : reviews;
+
   return (
     <div className="mt-4 space-y-3">
-      {reviews.map((r, i) => (
+      {displayReviews.map((r, i) => (
         <div key={i} className="border-t border-[var(--line)] pt-3">
           <div className="flex items-center justify-between mb-1">
             <span className="font-medium text-sm text-[var(--ink)]">{r.author_name}</span>

@@ -6,9 +6,12 @@ import FogReport from "@/components/FogReport";
 import ClinicReviewsList from "@/components/ClinicReviewsList";
 import type { ScoreCardScores } from "@/components/ScoreCard";
 
-interface Doctor { name: string; title?: string; specialty?: string; }
-interface Promotion { title: string; price?: string; description?: string; valid_until?: string; }
-interface GalleryItem { url: string; caption?: string; }
+/* ── 型別 ─────────────────────────────────────────────────────────────────── */
+
+interface Doctor { id?: string; name: string; title?: string; specialty?: string; photo_url?: string; }
+interface PortalTreatment { id: number; name: string; description?: string; price_min?: number; price_max?: number; price_label?: string; }
+interface PortalPromotion { id: number; title: string; description?: string; price_label?: string; expires_at?: string | null; }
+interface GalleryItem { id?: string; url: string; caption?: string; type?: string; }
 
 interface ApiClinic {
   id: string;
@@ -22,19 +25,55 @@ interface ApiClinic {
   website?: string | null;
   cont_start?: string | null;
   is_partner?: boolean;
+  isPartner?: boolean;
   partner_since?: string | null;
   line_oa_url?: string | null;
   treatments?: string[];
   doctors?: Doctor[] | null;
-  promotions?: Promotion[] | null;
   gallery?: GalleryItem[] | null;
+  portal_treatments?: PortalTreatment[];
+  portal_promotions?: PortalPromotion[];
+  score_breakdown?: Record<string, number>;
+  legal_score?: number;
   [key: string]: unknown;
 }
+
+/* ── 靜態資料 ─────────────────────────────────────────────────────────────── */
+
+const TREATMENT_FILTERS = [
+  { href: "/clinics?specialty=微整形注射", label: "微整形注射", icon: "💉" },
+  { href: "/clinics?specialty=雷射光療",   label: "雷射光療",   icon: "✨" },
+  { href: "/clinics?specialty=外科手術",   label: "外科手術",   icon: "🔬" },
+  { href: "/clinics?specialty=皮膚管理",   label: "皮膚管理",   icon: "🌿" },
+  { href: "/clinics?specialty=抗老緊緻",   label: "抗老緊緻",   icon: "⚡" },
+  { href: "/clinics?specialty=除毛療程",   label: "除毛療程",   icon: "🪒" },
+  { href: "/clinics?specialty=痘疤修復",   label: "痘疤修復",   icon: "🌸" },
+  { href: "/clinics?specialty=體雕塑形",   label: "體雕塑形",   icon: "💪" },
+];
+
+const CITY_LIST = ["台北市", "新北市", "桃園市", "台中市", "台南市", "高雄市", "新竹市", "基隆市"];
+
+/* ── 工具函式 ─────────────────────────────────────────────────────────────── */
 
 function formatContStart(s: string | null | undefined): string {
   if (!s || s.length !== 8) return "—";
   return `${s.slice(0, 4)}/${s.slice(4, 6)}/${s.slice(6, 8)}`;
 }
+
+function formatPrice(t: PortalTreatment): string {
+  if (t.price_label) return t.price_label;
+  if (t.price_min && t.price_max) return `$${t.price_min.toLocaleString()} – $${t.price_max.toLocaleString()}`;
+  if (t.price_min) return `起 $${t.price_min.toLocaleString()}`;
+  return "洽詢";
+}
+
+function extractCity(address: string | undefined): string {
+  if (!address) return "";
+  const m = address.match(/^([^\s]{2,3}[市縣])/);
+  return m ? m[1] : "";
+}
+
+/* ── 霧化報告假內容 ───────────────────────────────────────────────────────── */
 
 function FakeFogContent({ clinicName }: { clinicName: string }) {
   return (
@@ -56,6 +95,8 @@ function FakeFogContent({ clinicName }: { clinicName: string }) {
   );
 }
 
+/* ── Metadata ─────────────────────────────────────────────────────────────── */
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -73,6 +114,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
+/* ── 頁面主體 ─────────────────────────────────────────────────────────────── */
+
 export default async function ClinicDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -81,27 +124,31 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
   const clinic = (await res.json()) as ApiClinic;
   if (!clinic?.id) notFound();
 
-  const isPartner = !!(clinic.is_partner || clinic.partner_since);
+  const isPartner = !!(clinic.is_partner || clinic.isPartner || clinic.partner_since);
   const lineOaUrl = clinic.line_oa_url || "https://lin.ee/6sTCRzm";
   const reviewCount = clinic.google_review_count ?? 0;
+  const city = extractCity(clinic.address);
 
-  const breakdown = clinic.score_breakdown as Record<string, number> | undefined;
+  const breakdown = clinic.score_breakdown;
   const scores: ScoreCardScores = {
     judicial: breakdown?.judicial ?? null,
-    google: breakdown?.google ?? null,
-    legal: breakdown?.legal ?? (clinic.legal_score as number) ?? null,
-    media: breakdown?.media ?? null,
-    social: breakdown?.social ?? null,
-    total: clinic.score ?? null,
+    google:   breakdown?.google   ?? null,
+    legal:    breakdown?.legal    ?? (clinic.legal_score as number) ?? null,
+    media:    breakdown?.media    ?? null,
+    social:   breakdown?.social   ?? null,
+    total:    clinic.score        ?? null,
   };
 
-  const tags = clinic.treatments?.length ? clinic.treatments : clinic.specialty ? [clinic.specialty] : [];
-  const doctors = clinic.doctors ?? [];
-  const promotions = clinic.promotions ?? [];
-  const gallery = clinic.gallery ?? [];
+  const treatmentTags = clinic.treatments?.length ? clinic.treatments : clinic.specialty ? [clinic.specialty] : [];
+  const doctors          = clinic.doctors          ?? [];
+  const gallery          = clinic.gallery          ?? [];
+  const portalTreatments = clinic.portal_treatments ?? [];
+  const portalPromotions = clinic.portal_promotions ?? [];
 
   return (
     <div style={{ background: "#FAFAF8", minHeight: "100vh", paddingBottom: isPartner ? 80 : 0 }}>
+
+      {/* Schema.org */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -115,7 +162,7 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
             aggregateRating: clinic.google_rating ? {
               "@type": "AggregateRating",
               ratingValue: clinic.google_rating,
-              reviewCount: clinic.google_review_count || 0,
+              reviewCount: reviewCount,
               bestRating: 5, worstRating: 1,
             } : undefined,
             medicalSpecialty: clinic.specialty || undefined,
@@ -123,9 +170,9 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
         }}
       />
 
-      {/* Partner Hero Banner */}
+      {/* ── 合作診所 Hero Banner ── */}
       {isPartner && (
-        <div style={{ background: "linear-gradient(to right, #FFFBEB, #FEF9C3)", borderBottom: "1px solid #F6E05E", padding: "14px 24px" }}>
+        <div style={{ background: "linear-gradient(to right,#FFFBEB,#FEF9C3)", borderBottom: "1px solid #F6E05E", padding: "14px 24px" }}>
           <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: "#D69E2E", background: "#FEF3C7", border: "1px solid #F6AD55", borderRadius: 99, padding: "2px 10px" }}>
@@ -146,22 +193,84 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
       )}
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 24px 48px" }}>
-        {/* Breadcrumb */}
+
+        {/* ── Breadcrumb ── */}
         <nav style={{ fontSize: 12, color: "#718096", marginBottom: 20 }}>
           <Link href="/" style={{ color: "#718096", textDecoration: "none" }}>首頁</Link>
           <span style={{ margin: "0 6px" }}>/</span>
-          <Link href="/clinics" style={{ color: "#718096", textDecoration: "none" }}>查診所</Link>
+          <Link href="/clinics" style={{ color: "#718096", textDecoration: "none" }}>全台診所資料館</Link>
+          {city && (
+            <>
+              <span style={{ margin: "0 6px" }}>/</span>
+              <Link href={`/clinics?city=${encodeURIComponent(city)}`} style={{ color: "#718096", textDecoration: "none" }}>{city}</Link>
+            </>
+          )}
           <span style={{ margin: "0 6px" }}>/</span>
           <span style={{ color: "#1A202C" }}>{clinic.name}</span>
         </nav>
 
-        {/* Two-column layout */}
-        <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+        {/* ── 三欄 Grid ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "190px 1fr 210px", gap: 20, alignItems: "flex-start" }}>
 
-          {/* Main content */}
-          <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* ════════════════ 左側篩選 Sidebar（190px）════════════════ */}
+          <aside style={{ position: "sticky", top: 76, display: "flex", flexDirection: "column", gap: 12 }}>
 
-            {/* Hero card */}
+            {/* 回列表 */}
+            <Link
+              href="/clinics"
+              style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, fontSize: 13, color: "#2B6CB0", fontWeight: 600, textDecoration: "none" }}
+            >
+              ← 全台診所資料館
+            </Link>
+
+            {/* 縣市篩選 */}
+            <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, overflow: "hidden" }}>
+              <div style={{ padding: "10px 12px", borderBottom: "1px solid #E2E8F0", fontSize: 12, fontWeight: 700, color: "#4A5568", letterSpacing: "0.5px" }}>
+                縣市篩選
+              </div>
+              <div style={{ padding: "6px 0" }}>
+                {CITY_LIST.map((c) => (
+                  <Link
+                    key={c}
+                    href={`/clinics?city=${encodeURIComponent(c)}`}
+                    style={{
+                      display: "block", padding: "6px 12px",
+                      fontSize: 13, textDecoration: "none",
+                      color: city === c ? "#2B6CB0" : "#4A5568",
+                      fontWeight: city === c ? 700 : 400,
+                      background: city === c ? "#EBF8FF" : "transparent",
+                    }}
+                  >
+                    {c}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* 療程分類 */}
+            <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, overflow: "hidden" }}>
+              <div style={{ padding: "10px 12px", borderBottom: "1px solid #E2E8F0", fontSize: 12, fontWeight: 700, color: "#4A5568", letterSpacing: "0.5px" }}>
+                療程分類
+              </div>
+              <div style={{ padding: "6px 0" }}>
+                {TREATMENT_FILTERS.map((t) => (
+                  <Link
+                    key={t.href}
+                    href={t.href}
+                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", fontSize: 12, color: "#4A5568", textDecoration: "none" }}
+                  >
+                    <span style={{ fontSize: 14 }}>{t.icon}</span>
+                    <span>{t.label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </aside>
+
+          {/* ════════════════ 主內容 ════════════════ */}
+          <main style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
+
+            {/* ── Hero 診所資訊卡 ── */}
             <div style={{
               background: "#fff",
               border: isPartner ? "1px solid #F6AD55" : "1px solid #E2E8F0",
@@ -177,14 +286,21 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
                 }}>
                   🏥
                 </div>
-                <div>
-                  <h1 style={{ fontSize: 22, fontWeight: 700, color: "#1A202C", margin: "0 0 4px" }}>{clinic.name}</h1>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, color: "#1A202C", margin: 0 }}>{clinic.name}</h1>
+                    {isPartner && (
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#D69E2E", background: "#FEF3C7", border: "1px solid #F6AD55", borderRadius: 99, padding: "2px 8px" }}>
+                        ✦ 合作診所
+                      </span>
+                    )}
+                  </div>
                   {clinic.specialty && <p style={{ fontSize: 13, color: "#718096", margin: 0 }}>{clinic.specialty}</p>}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <div style={{ fontSize: 13, color: "#4A5568" }}>📍 {clinic.address || "—"}</div>
-                <div style={{ fontSize: 13, color: "#4A5568" }}>📞 {clinic.phone || "—"}</div>
+                {clinic.address && <div style={{ fontSize: 13, color: "#4A5568" }}>📍 {clinic.address}</div>}
+                {clinic.phone && <div style={{ fontSize: 13, color: "#4A5568" }}>📞 {clinic.phone}</div>}
                 {clinic.cont_start && (
                   <div style={{ fontSize: 13, color: "#4A5568" }}>🏥 健保特約：{formatContStart(clinic.cont_start)}</div>
                 )}
@@ -196,22 +312,38 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
               </div>
             </div>
 
-            {/* Partner: 優惠方案 */}
-            {isPartner && promotions.length > 0 && (
+            {/* ── 療程項目（合作診所）── */}
+            {isPartner && portalTreatments.length > 0 && (
               <section>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>優惠方案</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-                  {promotions.map((p, i) => (
-                    <div key={i} style={{ background: "#FFFBEB", border: "1px solid #F6AD55", borderRadius: 10, padding: 16 }}>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", marginBottom: 4 }}>{p.title}</p>
-                      {p.price && <p style={{ fontSize: 14, fontWeight: 700, color: "#D69E2E", marginBottom: 4 }}>{p.price}</p>}
-                      {p.description && <p style={{ fontSize: 12, color: "#718096", marginBottom: 8 }}>{p.description}</p>}
-                      {p.valid_until && <p style={{ fontSize: 11, color: "#A0AEC0", marginBottom: 10 }}>有效期至 {p.valid_until}</p>}
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>療程項目</h2>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                  {portalTreatments.map((t) => (
+                    <div key={t.id} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16 }}>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", margin: "0 0 6px" }}>{t.name}</p>
+                      {t.description && <p style={{ fontSize: 12, color: "#718096", margin: "0 0 8px", lineHeight: 1.6 }}>{t.description}</p>}
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#2B6CB0" }}>{formatPrice(t)}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ── 限時優惠方案（合作診所）── */}
+            {isPartner && portalPromotions.length > 0 && (
+              <section>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>限時優惠方案</h2>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 12 }}>
+                  {portalPromotions.map((p) => (
+                    <div key={p.id} style={{ background: "#FFFBEB", border: "1px solid #F6AD55", borderRadius: 10, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", margin: 0 }}>{p.title}</p>
+                      {p.price_label && <p style={{ fontSize: 15, fontWeight: 700, color: "#D69E2E", margin: 0 }}>{p.price_label}</p>}
+                      {p.description && <p style={{ fontSize: 12, color: "#718096", margin: 0, lineHeight: 1.6 }}>{p.description}</p>}
+                      {p.expires_at && <p style={{ fontSize: 11, color: "#A0AEC0", margin: 0 }}>有效期至 {p.expires_at}</p>}
                       <a
                         href={lineOaUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ display: "inline-block", padding: "6px 14px", background: "#06C755", color: "#fff", borderRadius: 6, fontSize: 12, fontWeight: 700, textDecoration: "none" }}
+                        style={{ marginTop: 4, display: "inline-block", padding: "6px 14px", background: "#06C755", color: "#fff", borderRadius: 6, fontSize: 12, fontWeight: 700, textDecoration: "none", alignSelf: "flex-start" }}
                       >
                         預約此方案
                       </a>
@@ -221,16 +353,21 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
               </section>
             )}
 
-            {/* Partner: 醫師團隊 */}
+            {/* ── 醫師團隊（合作診所）── */}
             {isPartner && doctors.length > 0 && (
               <section>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>醫師團隊</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
                   {doctors.map((d, i) => (
-                    <div key={i} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", background: "#EBF8FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
-                        👨‍⚕️
-                      </div>
+                    <div key={d.id || i} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                      {d.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={d.photo_url} alt={d.name} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} loading="lazy" />
+                      ) : (
+                        <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", background: "#EBF8FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+                          👨‍⚕️
+                        </div>
+                      )}
                       <div>
                         <p style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", margin: "0 0 2px" }}>{d.name}</p>
                         {d.title && <p style={{ fontSize: 12, color: "#718096", margin: "0 0 2px" }}>{d.title}</p>}
@@ -242,23 +379,27 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
               </section>
             )}
 
-            {/* Partner: Gallery */}
+            {/* ── 相片專區（合作診所）── */}
             {isPartner && gallery.length > 0 && (
               <section>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>診所環境</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>相片專區</h2>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
                   {gallery.map((g, i) => (
-                    <div key={i} style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #E2E8F0" }}>
+                    <div key={g.id || i} style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #E2E8F0", aspectRatio: "1", position: "relative" }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={g.url} alt={g.caption || `診所照片 ${i + 1}`} style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} loading="lazy" />
-                      {g.caption && <p style={{ padding: "6px 8px", fontSize: 11, color: "#718096", margin: 0 }}>{g.caption}</p>}
+                      <img
+                        src={g.url}
+                        alt={g.caption || `診所照片 ${i + 1}`}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        loading="lazy"
+                      />
                     </div>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* 360 評分 */}
+            {/* ── 360 綜合評分 ── */}
             <section>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>360 綜合評分</h2>
               {clinic.google_rating != null && (
@@ -269,7 +410,7 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
               <ScoreCard scores={scores} showTotal={true} />
             </section>
 
-            {/* 霧化完整報告 */}
+            {/* ── 霧化完整報告 ── */}
             <section>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>完整報告（司法／申訴／負評彙整）</h2>
               <FogReport
@@ -280,7 +421,7 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
               </FogReport>
             </section>
 
-            {/* 消費者評論 */}
+            {/* ── 消費者評論 ── */}
             {clinic.google_rating != null && (
               <section style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 12, padding: 24 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 16 }}>消費者評論</h2>
@@ -303,19 +444,19 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
                     </a>
                   </div>
                 </div>
-                <ClinicReviewsList clinicId={clinic.id} />
+                <ClinicReviewsList clinicId={clinic.id} limit={isPartner ? 6 : 3} />
                 <p style={{ fontSize: 12, color: "#A0AEC0", borderTop: "1px solid #E2E8F0", paddingTop: 12, marginTop: 16 }}>
                   評論內容由 Google Maps 用戶提供，360醫療AI大調查不對評論內容負責。
                 </p>
               </section>
             )}
 
-            {/* Non-partner upgrade CTA */}
+            {/* ── 非合作診所升級 CTA ── */}
             {!isPartner && (
               <div style={{ background: "#EBF8FF", border: "1px dashed #2B6CB0", borderRadius: 12, padding: 24, textAlign: "center" }}>
                 <p style={{ fontSize: 15, fontWeight: 700, color: "#1A202C", marginBottom: 8 }}>想讓診所頁面更完整？</p>
                 <p style={{ fontSize: 13, color: "#718096", marginBottom: 20 }}>
-                  加入合作計畫，展示優惠方案、醫師團隊與診所環境，讓患者更了解您
+                  加入合作計畫，展示療程項目、優惠方案、醫師團隊與診所環境，讓患者更了解您
                 </p>
                 <Link
                   href="/partnership"
@@ -327,8 +468,8 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
             )}
           </main>
 
-          {/* Action Sidebar (210px) */}
-          <aside style={{ width: 210, flexShrink: 0, position: "sticky", top: 76 }}>
+          {/* ════════════════ 右側 Action Sidebar（210px）════════════════ */}
+          <aside style={{ position: "sticky", top: 76 }}>
             <div style={{
               background: "#fff",
               border: isPartner ? "1px solid #F6AD55" : "1px solid #E2E8F0",
@@ -349,12 +490,20 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
                 </div>
               )}
 
+              {/* Google 評分 */}
+              {clinic.google_rating != null && (
+                <div style={{ textAlign: "center", marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #E2E8F0" }}>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "#F6AD55" }}>★ {clinic.google_rating.toFixed(1)}</div>
+                  <div style={{ fontSize: 11, color: "#718096" }}>{reviewCount.toLocaleString("zh-TW")} 則評論</div>
+                </div>
+              )}
+
               {/* 療程標籤 */}
-              {tags.length > 0 && (
+              {treatmentTags.length > 0 && (
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#4A5568", marginBottom: 8 }}>療程項目</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#4A5568", marginBottom: 8 }}>療程標籤</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {tags.slice(0, 6).map((tag) => (
+                    {treatmentTags.slice(0, 6).map((tag) => (
                       <Link
                         key={tag}
                         href={`/promotions?q=${encodeURIComponent(tag)}`}
@@ -367,7 +516,7 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
                 </div>
               )}
 
-              {/* CTA button */}
+              {/* 主要 CTA */}
               <a
                 href={lineOaUrl}
                 target="_blank"
@@ -383,7 +532,7 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
                 {isPartner ? "立即預約諮詢" : "加 LINE 免費諮詢"}
               </a>
 
-              {/* Share */}
+              {/* Google Maps */}
               <div style={{ marginTop: 12, textAlign: "center" }}>
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clinic.name)}`}
@@ -396,10 +545,11 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
               </div>
             </div>
           </aside>
+
         </div>
       </div>
 
-      {/* Partner Fixed Bottom CTA */}
+      {/* ── 合作診所固定底部 CTA ── */}
       {isPartner && (
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: "#fff", borderTop: "1px solid #F6AD55", padding: "12px 24px", boxShadow: "0 -4px 16px rgba(0,0,0,.08)" }}>
           <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>

@@ -183,6 +183,39 @@ async def get_clinic(clinic_id: str):
         async with _SessionLocal() as session:
             r = await session.get(ClinicModel, clinic_id)
             if r:
+                from sqlalchemy import text as _t
+                # 取療程（title IS NULL → 由診所後台「療程管理」上傳）
+                treat_rows = await session.execute(
+                    _t("""
+                        SELECT id, treatment_name, description, price_min, price_max, price_label
+                        FROM promotions
+                        WHERE clinic_id = :cid AND title IS NULL
+                          AND treatment_name IS NOT NULL AND is_active = TRUE
+                        ORDER BY created_at DESC
+                    """),
+                    {"cid": clinic_id},
+                )
+                portal_treatments = [
+                    {"id": row[0], "name": row[1], "description": row[2],
+                     "price_min": row[3], "price_max": row[4], "price_label": row[5]}
+                    for row in treat_rows.fetchall()
+                ]
+                # 取優惠（title IS NOT NULL → 由診所後台「優惠管理」上傳）
+                promo_rows = await session.execute(
+                    _t("""
+                        SELECT id, title, description, price_label, expires_at
+                        FROM promotions
+                        WHERE clinic_id = :cid AND title IS NOT NULL AND is_active = TRUE
+                        ORDER BY created_at DESC
+                    """),
+                    {"cid": clinic_id},
+                )
+                portal_promotions = [
+                    {"id": row[0], "title": row[1], "description": row[2],
+                     "price_label": row[3],
+                     "expires_at": str(row[4]) if row[4] else None}
+                    for row in promo_rows.fetchall()
+                ]
                 return {
                     "id": r.id, "name": r.name, "address": r.address,
                     "phone": r.phone, "specialty": r.specialty,
@@ -204,6 +237,8 @@ async def get_clinic(clinic_id: str):
                     "doctors": r.doctors or [],
                     "promotions": r.promotions or [],
                     "gallery": r.gallery or [],
+                    "portal_treatments": portal_treatments,
+                    "portal_promotions": portal_promotions,
                 }
     except Exception:
         pass
