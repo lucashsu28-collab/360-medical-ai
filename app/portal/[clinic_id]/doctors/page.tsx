@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { getPortalToken } from "@/app/portal/utils";
 
 interface Doctor {
   id: number;
@@ -20,7 +21,7 @@ export default function PortalDoctorsPage() {
   const [form, setForm] = useState({ name: "", title: "", specialty: "" });
   const [saving, setSaving] = useState(false);
 
-  const token = () => localStorage.getItem("portal_token") || "";
+  const token = getPortalToken;
 
   function load() {
     fetch(`${API}/api/portal/${clinicId}/doctors`, { headers: { Authorization: `Bearer ${token()}` } })

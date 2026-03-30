@@ -1,5 +1,5 @@
 # 360醫療AI大調查 — 開發交接文件
-最後更新：2026-03-29
+最後更新：2026-03-30
 
 ## 一、專案基本資訊
 
@@ -86,6 +86,9 @@ gcloud run deploy medical-backend --source backend --region asia-east1 --allow-u
 | ✅ 5 | Admin LINE OA 數據儀表板 | /admin/line、SVG趨勢圖、熱門問題、診所轉換 |
 | ✅ 6 | Admin CMS 審核流程 | /admin/cms 重寫、合規警告標記、禁用詞管理 |
 | ✅ 7 | 預約客服系統 | /booking LIFF五步驟、human_mode靜默、/admin/appointments 管理 |
+| ✅ 8 | 前台視覺重設計 | 1-7頁面全視覺翻新 |
+| ✅ 9 | Admin後台視覺重設計 | Sidebar #1A202C + 七大模組 Dashboard/預約/LINE/CMS/排程/診所/合作診所 |
+| ✅ 10 | Admin bypass進入診所後台 | /admin/clinics「進入後台」、/admin/partners「進入後台」、portal紫色代理橫幅、bearer bypass auth |
 
 ## 八、⏳ P3 待開發（AIMS完成後）
 

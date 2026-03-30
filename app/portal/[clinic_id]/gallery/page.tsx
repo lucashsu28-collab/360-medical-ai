@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { getPortalToken } from "@/app/portal/utils";
 
 interface GalleryItem {
   id: number;
@@ -19,7 +20,7 @@ export default function PortalGalleryPage() {
   const [form, setForm] = useState({ url: "", caption: "" });
   const [saving, setSaving] = useState(false);
 
-  const token = () => localStorage.getItem("portal_token") || "";
+  const token = getPortalToken;
 
   function load() {
     fetch(`${API}/api/portal/${clinicId}/gallery`, { headers: { Authorization: `Bearer ${token()}` } })

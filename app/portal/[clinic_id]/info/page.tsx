@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { getPortalToken } from "@/app/portal/utils";
 
 interface ClinicInfo {
   name: string;
@@ -22,7 +23,7 @@ export default function PortalInfoPage() {
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("portal_token") || "";
+    const token = getPortalToken();
     fetch(`${API}/api/portal/${clinicId}/info`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((d) => setInfo({ name: d.name || "", address: d.address || "", phone: d.phone || "", website: d.website || "", specialty: d.specialty || "", line_oa_url: d.line_oa_url || "" }))
@@ -34,7 +35,7 @@ export default function PortalInfoPage() {
     e.preventDefault();
     setSaving(true);
     setMsg("");
-    const token = localStorage.getItem("portal_token") || "";
+    const token = getPortalToken();
     try {
       const res = await fetch(`${API}/api/portal/${clinicId}/info`, {
         method: "PUT",

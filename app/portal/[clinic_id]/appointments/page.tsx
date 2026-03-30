@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { getPortalToken } from "@/app/portal/utils";
 
 interface Appointment {
   id: number;
@@ -25,7 +26,7 @@ export default function PortalAppointmentsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("portal_token") || "";
+    const token = getPortalToken();
     fetch(`${API}/api/portal/${clinicId}/appointments`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((d) => setItems(Array.isArray(d) ? d : []))

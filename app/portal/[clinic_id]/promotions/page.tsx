@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { getPortalToken } from "@/app/portal/utils";
 
 interface Promotion {
   id: number;
@@ -28,7 +29,7 @@ export default function PortalPromotionsPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
-  const token = () => localStorage.getItem("portal_token") || "";
+  const token = getPortalToken;
 
   function load() {
     fetch(`${API}/api/portal/${clinicId}/promotions`, { headers: { Authorization: `Bearer ${token()}` } })

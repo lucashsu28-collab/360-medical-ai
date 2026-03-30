@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { getPortalToken } from "@/app/portal/utils";
 
 interface DashboardData {
   page_views_30d: number;
@@ -18,7 +19,7 @@ export default function PortalDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("portal_token") || "";
+    const token = getPortalToken();
     fetch(`${API}/api/portal/${clinicId}/dashboard`, {
       headers: { Authorization: `Bearer ${token}` },
     })
