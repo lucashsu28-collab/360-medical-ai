@@ -122,6 +122,18 @@ async def list_clinics(search: str = "", city: str = "", min_score: float = 0, l
             total = (await session.execute(count_q)).scalar_one()
 
             rows = (await session.execute(q.offset(offset).limit(limit))).scalars().all()
+
+            # 查詢哪些診所已有後台帳號（一次查完，避免 N+1）
+            clinic_ids = [r.id for r in rows]
+            has_account_set: set[str] = set()
+            if clinic_ids:
+                from sqlalchemy import text as _text
+                acc_rows = await session.execute(
+                    _text("SELECT clinic_id FROM clinic_accounts WHERE clinic_id = ANY(:ids)"),
+                    {"ids": clinic_ids},
+                )
+                has_account_set = {str(row[0]) for row in acc_rows.fetchall()}
+
             clinics = []
             for r in rows:
                 clinics.append({
@@ -139,6 +151,7 @@ async def list_clinics(search: str = "", city: str = "", min_score: float = 0, l
                     "website": r.website,
                     "cont_start": r.cont_start,
                     "treatments": r.treatments,
+                    "has_account": str(r.id) in has_account_set,
                 })
             return {"clinics": clinics, "total": total}
     except Exception as e:

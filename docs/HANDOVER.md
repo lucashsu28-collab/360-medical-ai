@@ -1,5 +1,5 @@
 # 360醫療AI大調查 — 開發交接文件
-最後更新：2026-03-30
+最後更新：2026-03-31
 
 ## 一、專案基本資訊
 
@@ -89,16 +89,26 @@ gcloud run deploy medical-backend --source backend --region asia-east1 --allow-u
 | ✅ 8 | 前台視覺重設計 | 1-7頁面全視覺翻新 |
 | ✅ 9 | Admin後台視覺重設計 | Sidebar #1A202C + 七大模組 Dashboard/預約/LINE/CMS/排程/診所/合作診所 |
 | ✅ 10 | Admin bypass進入診所後台 | /admin/clinics「進入後台」、/admin/partners「進入後台」、portal紫色代理橫幅、bearer bypass auth |
+| ✅ 11 | has_account欄位 | /api/clinics 回傳has_account，admin診所管理「進入後台」按鈕正確顯示 |
+
+## 待部署
+
+後端有以下未部署更新，需執行 gcloud deploy 才生效：
+- admin_ai_tuning.py（AI調校 API）
+- portal.py（admin bypass）
+- appointments.py（Email通知）
+- main.py（CORS PUT/DELETE、has_account欄位）
+- requirements.txt（fastapi-mail）
 
 ## 八、⏳ P3 待開發（AIMS完成後）
 
 | # | 項目 | 說明 |
 |---|------|------|
+| ✅ | Admin AI顧問調校介面 | 九大區塊，動態組裝 Gemini Prompt，已完成 |
+| ✅ | 診所Email通知 | 新預約時 HTML Email 通知診所，fastapi-mail，已完成 |
 | 1 | AIMS SSO橋接 | 診所後台與AIMS打通，單一登入 |
 | 2 | 醫美專欄/FAQ串接 | AIMS AI生成 → 推送醫美平台 → 審核上架 |
-| 3 | Admin AI顧問調校介面 | 語氣/引導邏輯/合規詞統一調控，A/B測試話術 |
-| 4 | 口碑監測串接 | AIMS口碑數據進醫美後台 |
-| 5 | 診所Email通知 | 新預約時Email通知診所諮詢師 |
+| 3 | 口碑監測串接 | AIMS口碑數據進醫美後台 |
 
 ## 九、⏳ P4 上線後
 
