@@ -51,24 +51,6 @@ export default function PartnershipPage() {
           <p style={{ fontSize: 15, color: "#4A5568", lineHeight: 1.8, marginBottom: 32 }}>
             若您希望讓診所的頁面更加精緻、豐富，讓有意願的消費者能看到更完整的診所樣貌，歡迎與我們聯繫洽詢。
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 32 }}>
-            {[
-              { icon: "🏥", title: "更完整的診所頁面", desc: "展示醫師團隊、診所環境 Gallery、優惠方案" },
-              { icon: "📊", title: "專屬數據看板", desc: "查看頁面瀏覽量、預約量、優惠點擊數" },
-              { icon: "🤖", title: "AI 智能導流", desc: "360 LINE AI 顧問主動推薦用戶至您的診所頁面" },
-              { icon: "🎯", title: "優惠療程曝光", desc: "優惠方案自動出現在「幫你找優惠療程」搜尋頁面" },
-            ].map((b) => (
-              <div key={b.title} style={{ display: "flex", gap: 14, background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: "14px 16px" }}>
-                <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 8, background: "#EBF8FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
-                  {b.icon}
-                </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", marginBottom: 2 }}>{b.title}</div>
-                  <div style={{ fontSize: 13, color: "#718096" }}>{b.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
           <p style={{ fontSize: 13, color: "#718096", fontStyle: "italic" }}>
             填寫右側表單，或直接加入我們的 LINE 官方帳號，將有專人為您說明。
           </p>
