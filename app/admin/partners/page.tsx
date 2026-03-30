@@ -21,6 +21,11 @@ function formatDate(s: string | null): string {
   return s.slice(0, 10);
 }
 
+function handleEnterPortal(clinicId: string) {
+  const adminToken = localStorage.getItem("admin_token") || "authenticated";
+  window.open(`/portal/${clinicId}?admin_bypass=${adminToken}`, "_blank");
+}
+
 export default function PartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,13 +97,19 @@ export default function PartnersPage() {
                     </span>
                   </td>
                   <td style={{ padding: "12px 14px" }}>
-                    <Link
-                      href={`/portal/${p.id}`}
-                      target="_blank"
-                      style={{ padding: "5px 14px", background: "#2B6CB0", color: "#fff", borderRadius: 7, fontSize: 12, fontWeight: 600, textDecoration: "none" }}
-                    >
-                      管理
-                    </Link>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => handleEnterPortal(p.id)}
+                        style={{ padding: "5px 14px", background: "#7C3AED", color: "#fff", border: "none", borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        進入後台 →
+                      </button>
+                      <button
+                        style={{ padding: "5px 14px", background: "#F1F5F9", color: "#64748B", border: "none", borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        暫停合作
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

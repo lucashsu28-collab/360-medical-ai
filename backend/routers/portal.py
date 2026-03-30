@@ -45,6 +45,12 @@ async def _auth(
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="需要登入")
     token = authorization.split(" ", 1)[1]
+
+    # Admin bypass: accept the admin password token directly
+    admin_token = os.getenv("ADMIN_PASSWORD", "authenticated")
+    if token == admin_token:
+        return clinic_id or ""
+
     token_clinic_id = _decode_token(token)
     if clinic_id and token_clinic_id != clinic_id:
         raise HTTPException(status_code=403, detail="無權限存取此診所")

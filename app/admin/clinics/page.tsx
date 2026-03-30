@@ -29,6 +29,7 @@ interface Clinic {
   score_breakdown?: ScoreBreakdown;
   dispute_count?: number;
   custom_note?: string;
+  has_account?: boolean;
 }
 
 function calcTotal(c: Clinic): number {
@@ -115,6 +116,11 @@ export default function AdminClinicsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEnterPortal = (clinicId: string) => {
+    const adminToken = localStorage.getItem("admin_token") || "authenticated";
+    window.open(`/portal/${clinicId}?admin_bypass=${adminToken}`, "_blank");
   };
 
   const createAccount = async () => {
@@ -246,10 +252,17 @@ export default function AdminClinicsPage() {
                         style={{ padding: "4px 10px", background: "#F0FDF4", color: "#16A34A", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
                         詳細
                       </button>
-                      <button onClick={() => { setAccountModal(c); setAccountForm({ email: "", password: "" }); setAccountMsg(""); }}
-                        style={{ padding: "4px 10px", background: "#FEF3C7", color: "#D97706", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
-                        建立帳號
-                      </button>
+                      {c.has_account ? (
+                        <button onClick={() => handleEnterPortal(c.id)}
+                          style={{ padding: "4px 10px", background: "#F5F3FF", color: "#7C3AED", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
+                          進入後台 →
+                        </button>
+                      ) : (
+                        <button onClick={() => { setAccountModal(c); setAccountForm({ email: "", password: "" }); setAccountMsg(""); }}
+                          style={{ padding: "4px 10px", background: "#FEF3C7", color: "#D97706", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
+                          建立帳號
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
