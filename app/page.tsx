@@ -51,9 +51,12 @@ export default function Home() {
             司法紀錄・合法登記・真實口碑<br />
             輸入診所名稱，立刻看到你不知道的事。
           </p>
-          <h1 style={{ fontSize: 46, fontWeight: 800, color: "#1A202C", letterSpacing: "0.04em", lineHeight: 1.15, margin: "0 0 32px" }}>
-            醫美大調查，<span style={{ color: "#2B6CB0" }}>美麗不踩雷</span>
+          <h1 style={{ fontSize: 40, fontWeight: 700, color: "#1A202C", letterSpacing: "2px", lineHeight: 1.2, margin: "0 0 10px" }}>
+            醫美 AI 大調查
           </h1>
+          <p style={{ fontSize: 22, fontWeight: 500, color: "#2B6CB0", letterSpacing: "4px", margin: "0 0 32px" }}>
+            美麗不踩雷
+          </p>
           <div style={{ maxWidth: 540, margin: "0 auto 36px" }}>
             <SearchBox />
           </div>
