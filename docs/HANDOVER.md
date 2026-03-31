@@ -1,5 +1,5 @@
 # 360醫療AI大調查 — 開發交接文件
-最後更新：2026-03-31
+最後更新：2026-04-01
 
 ## 一、專案基本資訊
 
@@ -14,7 +14,14 @@
 
 ## 二、部署指令
 
-gcloud run deploy medical-backend --source backend --region asia-east1 --allow-unauthenticated --project medical-ai-489522
+> ⚠️ `--source` 方式因 Artifact Registry 跨專案權限問題失敗（嘗試 push 到 aims-360），改用本機 Docker build：
+
+```powershell
+docker context use default
+docker build -t asia-east1-docker.pkg.dev/medical-ai-489522/cloud-run-source-deploy/medical-backend:latest backend/
+docker push asia-east1-docker.pkg.dev/medical-ai-489522/cloud-run-source-deploy/medical-backend:latest
+gcloud run deploy medical-backend --image asia-east1-docker.pkg.dev/medical-ai-489522/cloud-run-source-deploy/medical-backend:latest --region asia-east1 --allow-unauthenticated --project medical-ai-489522
+```
 
 ## 三、LINE 設定
 
@@ -90,25 +97,21 @@ gcloud run deploy medical-backend --source backend --region asia-east1 --allow-u
 | ✅ 9 | Admin後台視覺重設計 | Sidebar #1A202C + 七大模組 Dashboard/預約/LINE/CMS/排程/診所/合作診所 |
 | ✅ 10 | Admin bypass進入診所後台 | /admin/clinics「進入後台」、/admin/partners「進入後台」、portal紫色代理橫幅、bearer bypass auth |
 | ✅ 11 | has_account欄位 | /api/clinics 回傳has_account，admin診所管理「進入後台」按鈕正確顯示 |
+| ✅ 12 | 診所詳細頁三欄重構 | 190px篩選sidebar + 1fr主內容 + 210px action sidebar、合作診所四區塊(含empty state)、portal_treatments/portal_promotions串接 |
 
 ## 待部署
 
-後端有以下未部署更新，需執行 gcloud deploy 才生效：
-- admin_ai_tuning.py（AI調校 API）
-- portal.py（admin bypass）
-- appointments.py（Email通知）
-- main.py（CORS PUT/DELETE、has_account欄位）
-- requirements.txt（fastapi-mail）
+✅ 2026-04-01 已完整部署（revision: medical-backend-00093-zjg）
 
 ## 八、⏳ P3 待開發（AIMS完成後）
 
 | # | 項目 | 說明 |
 |---|------|------|
-| ✅ | Admin AI顧問調校介面 | 九大區塊，動態組裝 Gemini Prompt，已完成 |
+| ✅ | Admin AI顧問調校介面 | 九大區塊，動態組裝 Gemini Prompt + Redis cache，已完成 |
 | ✅ | 診所Email通知 | 新預約時 HTML Email 通知診所，fastapi-mail，已完成 |
-| 1 | AIMS SSO橋接 | 診所後台與AIMS打通，單一登入 |
-| 2 | 醫美專欄/FAQ串接 | AIMS AI生成 → 推送醫美平台 → 審核上架 |
-| 3 | 口碑監測串接 | AIMS口碑數據進醫美後台 |
+| ⏳ 1 | AIMS SSO橋接 | 診所後台與AIMS打通，單一登入 |
+| ⏳ 2 | 醫美專欄/FAQ串接 | AIMS AI生成 → 推送醫美平台 → 審核上架 |
+| ⏳ 3 | 口碑監測串接 | AIMS口碑數據進醫美後台 |
 
 ## 九、⏳ P4 上線後
 
