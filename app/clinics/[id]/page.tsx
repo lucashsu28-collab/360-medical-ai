@@ -313,89 +313,121 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
             </div>
 
             {/* ── 療程項目（合作診所）── */}
-            {isPartner && portalTreatments.length > 0 && (
+            {isPartner && (
               <section>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>療程項目</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-                  {portalTreatments.map((t) => (
-                    <div key={t.id} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16 }}>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", margin: "0 0 6px" }}>{t.name}</p>
-                      {t.description && <p style={{ fontSize: 12, color: "#718096", margin: "0 0 8px", lineHeight: 1.6 }}>{t.description}</p>}
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#2B6CB0" }}>{formatPrice(t)}</span>
-                    </div>
-                  ))}
-                </div>
+                {portalTreatments.length > 0 ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                    {portalTreatments.map((t) => (
+                      <div key={t.id} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16 }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", margin: "0 0 6px" }}>{t.name}</p>
+                        {t.description && <p style={{ fontSize: 12, color: "#718096", margin: "0 0 8px", lineHeight: 1.6 }}>{t.description}</p>}
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#2B6CB0" }}>{formatPrice(t)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ border: "1px dashed #CBD5E0", borderRadius: 10, padding: "28px 20px", textAlign: "center", color: "#A0AEC0" }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>💉</div>
+                    <p style={{ fontSize: 13, margin: 0 }}>尚未上傳療程項目</p>
+                    <p style={{ fontSize: 12, margin: "4px 0 0", color: "#CBD5E0" }}>請至診所後台 → 療程管理 新增</p>
+                  </div>
+                )}
               </section>
             )}
 
             {/* ── 限時優惠方案（合作診所）── */}
-            {isPartner && portalPromotions.length > 0 && (
+            {isPartner && (
               <section>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>限時優惠方案</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 12 }}>
-                  {portalPromotions.map((p) => (
-                    <div key={p.id} style={{ background: "#FFFBEB", border: "1px solid #F6AD55", borderRadius: 10, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", margin: 0 }}>{p.title}</p>
-                      {p.price_label && <p style={{ fontSize: 15, fontWeight: 700, color: "#D69E2E", margin: 0 }}>{p.price_label}</p>}
-                      {p.description && <p style={{ fontSize: 12, color: "#718096", margin: 0, lineHeight: 1.6 }}>{p.description}</p>}
-                      {p.expires_at && <p style={{ fontSize: 11, color: "#A0AEC0", margin: 0 }}>有效期至 {p.expires_at}</p>}
-                      <a
-                        href={lineOaUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ marginTop: 4, display: "inline-block", padding: "6px 14px", background: "#06C755", color: "#fff", borderRadius: 6, fontSize: 12, fontWeight: 700, textDecoration: "none", alignSelf: "flex-start" }}
-                      >
-                        預約此方案
-                      </a>
-                    </div>
-                  ))}
-                </div>
+                {portalPromotions.length > 0 ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 12 }}>
+                    {portalPromotions.map((p) => (
+                      <div key={p.id} style={{ background: "#FFFBEB", border: "1px solid #F6AD55", borderRadius: 10, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", margin: 0 }}>{p.title}</p>
+                        {p.price_label && <p style={{ fontSize: 15, fontWeight: 700, color: "#D69E2E", margin: 0 }}>{p.price_label}</p>}
+                        {p.description && <p style={{ fontSize: 12, color: "#718096", margin: 0, lineHeight: 1.6 }}>{p.description}</p>}
+                        {p.expires_at && <p style={{ fontSize: 11, color: "#A0AEC0", margin: 0 }}>有效期至 {p.expires_at}</p>}
+                        <a
+                          href={lineOaUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ marginTop: 4, display: "inline-block", padding: "6px 14px", background: "#06C755", color: "#fff", borderRadius: 6, fontSize: 12, fontWeight: 700, textDecoration: "none", alignSelf: "flex-start" }}
+                        >
+                          預約此方案
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ border: "1px dashed #F6AD55", borderRadius: 10, padding: "28px 20px", textAlign: "center", color: "#A0AEC0", background: "#FFFBEB" }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>🎁</div>
+                    <p style={{ fontSize: 13, margin: 0 }}>尚未上傳優惠方案</p>
+                    <p style={{ fontSize: 12, margin: "4px 0 0", color: "#F6AD55" }}>請至診所後台 → 優惠管理 新增</p>
+                  </div>
+                )}
               </section>
             )}
 
             {/* ── 醫師團隊（合作診所）── */}
-            {isPartner && doctors.length > 0 && (
+            {isPartner && (
               <section>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>醫師團隊</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-                  {doctors.map((d, i) => (
-                    <div key={d.id || i} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
-                      {d.photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={d.photo_url} alt={d.name} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} loading="lazy" />
-                      ) : (
-                        <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", background: "#EBF8FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
-                          👨‍⚕️
+                {doctors.length > 0 ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                    {doctors.map((d, i) => (
+                      <div key={d.id || i} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                        {d.photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={d.photo_url} alt={d.name} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} loading="lazy" />
+                        ) : (
+                          <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", background: "#EBF8FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+                            👨‍⚕️
+                          </div>
+                        )}
+                        <div>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", margin: "0 0 2px" }}>{d.name}</p>
+                          {d.title && <p style={{ fontSize: 12, color: "#718096", margin: "0 0 2px" }}>{d.title}</p>}
+                          {d.specialty && <p style={{ fontSize: 12, color: "#2B6CB0", margin: 0 }}>{d.specialty}</p>}
                         </div>
-                      )}
-                      <div>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", margin: "0 0 2px" }}>{d.name}</p>
-                        {d.title && <p style={{ fontSize: 12, color: "#718096", margin: "0 0 2px" }}>{d.title}</p>}
-                        {d.specialty && <p style={{ fontSize: 12, color: "#2B6CB0", margin: 0 }}>{d.specialty}</p>}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ border: "1px dashed #CBD5E0", borderRadius: 10, padding: "28px 20px", textAlign: "center", color: "#A0AEC0" }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>👨‍⚕️</div>
+                    <p style={{ fontSize: 13, margin: 0 }}>尚未上傳醫師資料</p>
+                    <p style={{ fontSize: 12, margin: "4px 0 0", color: "#CBD5E0" }}>請至診所後台 → 醫師管理 新增</p>
+                  </div>
+                )}
               </section>
             )}
 
             {/* ── 相片專區（合作診所）── */}
-            {isPartner && gallery.length > 0 && (
+            {isPartner && (
               <section>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 14 }}>相片專區</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-                  {gallery.map((g, i) => (
-                    <div key={g.id || i} style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #E2E8F0", aspectRatio: "1", position: "relative" }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={g.url}
-                        alt={g.caption || `診所照片 ${i + 1}`}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                        loading="lazy"
-                      />
-                    </div>
-                  ))}
-                </div>
+                {gallery.length > 0 ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                    {gallery.map((g, i) => (
+                      <div key={g.id || i} style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #E2E8F0", aspectRatio: "1", position: "relative" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={g.url}
+                          alt={g.caption || `診所照片 ${i + 1}`}
+                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          loading="lazy"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ border: "1px dashed #CBD5E0", borderRadius: 10, padding: "28px 20px", textAlign: "center", color: "#A0AEC0" }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>📸</div>
+                    <p style={{ fontSize: 13, margin: 0 }}>尚未上傳診所相片</p>
+                    <p style={{ fontSize: 12, margin: "4px 0 0", color: "#CBD5E0" }}>請至診所後台 → 相片管理 新增</p>
+                  </div>
+                )}
               </section>
             )}
 
