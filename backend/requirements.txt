@@ -20,3 +20,5 @@ aiosmtplib>=2.0,<3.0
 # P3-A 稽查違規爬蟲
 pdfplumber>=0.11.0
 rapidfuzz>=3.10.0
+# P3-D Admin 排程管理（呼叫 GCP Cloud Scheduler API）
+google-cloud-scheduler>=2.13.0

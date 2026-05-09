@@ -33,6 +33,7 @@ from routers.portal_penalties import router as portal_penalties_router
 from routers.admin_mentions import router as admin_mentions_router
 from routers.clinic_mentions import router as clinic_mentions_router
 from routers.clinic_trend import router as clinic_trend_router
+from routers.admin_schedulers import router as admin_schedulers_router
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
@@ -54,6 +55,7 @@ app.include_router(portal_penalties_router, prefix="/api")  # 診所後台：/ap
 app.include_router(admin_mentions_router)  # /api/admin/mentions
 app.include_router(clinic_mentions_router)  # 公開 /api/clinics/{id}/mentions
 app.include_router(clinic_trend_router)  # 公開 /api/clinics/{id}/reputation/trend
+app.include_router(admin_schedulers_router)  # /api/admin/schedulers
 
 from config import DATABASE_URL
 _db_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace("postgresql://", "postgresql+asyncpg://")
