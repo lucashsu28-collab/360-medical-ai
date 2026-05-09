@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:ma.mohw.gov.tw)",
+      "WebSearch"
+    ]
+  }
+}
