@@ -21,7 +21,7 @@ interface UnlockRecord {
 
 interface ClinicItem {
   id: string; name: string; google_rating?: number | null;
-  score_breakdown?: { judicial?: number; legal?: number; punishment?: number; news?: number; social?: number };
+  score_breakdown?: { judicial?: number; legal?: number; google?: number; penalty?: number; media?: number };
 }
 
 // Mock inquiry data

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 interface TrendPoint {
   date: string;
   news_score: number | null;
-  social_score: number | null;
   penalty_score: number | null;
 }
 
@@ -19,8 +18,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "";
 
 const SERIES_CONFIG = [
   { key: "news_score" as const, label: "📰 媒體口碑", color: "#3182CE" },
-  { key: "social_score" as const, label: "💬 社群口碑", color: "#7C3AED" },
-  { key: "penalty_score" as const, label: "⚖️ 稽查紀錄", color: "#ED8936" },
+  { key: "penalty_score" as const, label: "⚠️ 稽查違規", color: "#ED8936" },
 ];
 
 export default function ReputationTrendChart({ clinicId }: { clinicId: string }) {

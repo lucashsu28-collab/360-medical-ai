@@ -11,9 +11,8 @@ interface ScoreBreakdown {
   google?: number;
   judicial?: number;
   legal?: number;
-  punishment?: number;
-  news?: number;
-  social?: number;
+  penalty?: number;
+  media?: number;
 }
 
 interface Clinic {
@@ -38,9 +37,8 @@ function calcTotal(c: Clinic): number {
     (c.google_rating_score ?? sb.google ?? 0) +
     (c.judicial_score ?? sb.judicial ?? 0) +
     (c.legal_score ?? sb.legal ?? 0) +
-    (sb.punishment ?? 0) +
-    (sb.news ?? 0) +
-    (sb.social ?? 0)
+    (sb.penalty ?? 20) +
+    (sb.media ?? 20)
   );
 }
 
@@ -204,7 +202,7 @@ export default function AdminClinicsPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead style={{ background: "#F8FAFC" }}>
             <tr>
-              {["#","診所名稱","縣市","Google評分","司法案件","合法登記","新聞媒體","社群討論","總分","操作"].map((h) => (
+              {["#","診所名稱","縣市","Google評分","司法案件","合法登記","稽查違規","媒體口碑","總分","操作"].map((h) => (
                 <th key={h} style={{ padding: "12px 14px", textAlign: "left", color: "#64748B", fontWeight: 600, borderBottom: "1px solid #E2E8F0", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
@@ -235,8 +233,8 @@ export default function AdminClinicsPage() {
                   <td style={{ padding: "10px 14px" }}><ScoreTag score={googleScore} /></td>
                   <td style={{ padding: "10px 14px" }}><ScoreTag score={judicialScore} /></td>
                   <td style={{ padding: "10px 14px" }}><ScoreTag score={legalScore} /></td>
-                  <td style={{ padding: "10px 14px" }}><ScoreTag score={sb.news ?? null} /></td>
-                  <td style={{ padding: "10px 14px" }}><ScoreTag score={sb.social ?? null} /></td>
+                  <td style={{ padding: "10px 14px" }}><ScoreTag score={sb.penalty ?? null} /></td>
+                  <td style={{ padding: "10px 14px" }}><ScoreTag score={sb.media ?? null} /></td>
                   <td style={{ padding: "10px 14px" }}>
                     <span style={{ fontWeight: 700, color: tot >= 30 ? "#16A34A" : tot >= 20 ? "#D97706" : "#DC2626" }}>
                       {tot.toFixed(0)}分
@@ -313,9 +311,8 @@ export default function AdminClinicsPage() {
                 ["⭐ Google 評分", detail.google_rating_score ?? detail.score_breakdown?.google],
                 ["⚖️ 司法案件", detail.judicial_score ?? detail.score_breakdown?.judicial],
                 ["🏛️ 合法登記", detail.legal_score ?? detail.score_breakdown?.legal],
-                ["🚨 行政處分", detail.score_breakdown?.punishment],
-                ["📰 新聞媒體", detail.score_breakdown?.news],
-                ["💬 社群討論", detail.score_breakdown?.social],
+                ["⚠️ 稽查違規", detail.score_breakdown?.penalty],
+                ["📰 媒體口碑", detail.score_breakdown?.media],
               ] as [string, number | undefined][]).map(([label, score]) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #E2E8F0" }}>
                   <span style={{ fontSize: 13, color: "#475569" }}>{label}</span>

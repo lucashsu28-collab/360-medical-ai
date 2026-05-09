@@ -8,7 +8,7 @@ export interface ClinicScores {
   google: number;
   legal: number;
   media: number;
-  social: number;
+  penalty: number;
   total: number;
 }
 
@@ -46,8 +46,8 @@ const DIM_CONFIG = [
   { key: "judicial" as const, label: "司法", color: "var(--red)" },
   { key: "google" as const, label: "Google", color: "var(--blue)" },
   { key: "legal" as const, label: "合法", color: "var(--green)" },
+  { key: "penalty" as const, label: "稽查", color: "var(--red)" },
   { key: "media" as const, label: "媒體", color: "var(--amber)" },
-  { key: "social" as const, label: "社群", color: "var(--cyan)" },
 ] as const;
 
 const THUMB_GRADIENTS = [

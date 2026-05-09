@@ -23,18 +23,18 @@ const DIM_CONFIG = [
     color: "var(--green)",
   },
   {
-    key: "media" as const,
-    label: "新聞媒體",
-    desc: "媒體報導\nNLP 情緒分析",
-    icon: "📰",
-    color: "var(--amber)",
+    key: "penalty" as const,
+    label: "稽查違規",
+    desc: "政府公開資料\n媒體處分報導",
+    icon: "⚠️",
+    color: "var(--red)",
   },
   {
-    key: "social" as const,
-    label: "社群討論",
-    desc: "PTT / Dcard\n口碑聲量分析",
-    icon: "💬",
-    color: "var(--cyan)",
+    key: "media" as const,
+    label: "媒體口碑",
+    desc: "主流媒體報導\nGemini 情緒分析",
+    icon: "📰",
+    color: "var(--amber)",
   },
 ] as const;
 
