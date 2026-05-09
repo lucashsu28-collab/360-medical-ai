@@ -1,5 +1,5 @@
 # 360醫療AI大調查 — 開發交接文件
-最後更新：2026-05-10（P3-A/B/C/D-1 全部上線）
+最後更新：2026-05-10 v2（評鑑改五維度，社群口碑下線，每維度 20 分）
 
 ## 一、專案基本資訊
 
@@ -44,26 +44,23 @@ gcloud run deploy medical-backend --image asia-east1-docker.pkg.dev/medical-ai-4
 | judicial_results.json | 904筆（496家有案件） |
 | clinic_reviews | 13,600+則Google評論 |
 
-## 五、評鑑體系（2026-05-10 重新規劃，全面自建）
+## 五、評鑑體系（2026-05-10 v2，五維度每 20 分）
 
-診所六維度：
-| # | 維度 | 狀態 | 資料來源 |
-|---|------|------|---------|
-| 1 | 司法糾紛 | ✅ | 司法院裁判書 |
-| 2 | Google 評分 | ✅ | Google Places |
-| 3 | 合法登記 | ✅ | 衛福部 |
-| 4 | 稽查違規紀錄 | ⏳ P3-A | 衛福部 + 6 大縣市衛生局 + 公平會 |
-| 5 | 網路媒體口碑 | ⏳ P3-B | Google News + 醫美專業媒體 |
-| 6 | 社群口碑 | ⏳ P3-C | Dcard + PTT + Mobile01 |
+診所五維度：
+| # | 維度 | 滿分 | 狀態 | 資料來源 |
+|---|------|------|------|---------|
+| 1 | 司法糾紛 | 20 | ✅ | 司法院裁判書 |
+| 2 | Google 評分 | 20 | ✅ | Google Places |
+| 3 | 合法登記 | 20 | ✅ | 衛福部 |
+| 4 | 稽查違規紀錄 | 20 | ✅ P3-A | Google News + Gemini 提取（政府公開資料聚合） |
+| 5 | 媒體口碑 | 20 | ✅ P3-B | 主流媒體報導（A/B/C 級權威分級 + 業配辨識） |
 
-醫師五維度：
-| # | 維度 | 狀態 |
-|---|------|------|
-| 1 | 執照合法性 | ✅ |
-| 2 | 司法糾紛 | ✅ |
-| 3 | 稽查違規紀錄 | ⏳ P3-A |
-| 4 | 網路媒體口碑 | ⏳ P3-B |
-| 5 | 社群口碑 | ⏳ P3-C |
+**總分滿分 100**
+
+社群口碑 2026-05-10 下線（原因：客觀性問題，見 REPUTATION_SCORING.md v2.0）。
+後端爬蟲程式 `crawlers/social_mentions.py` 保留但不執行；Cloud Scheduler `social-mentions-update` 已刪除。
+
+醫師頁五維度：留待 P4 實作（依賴 doctors 表，目前用 mock data）
 
 評分規則完整說明：見 [docs/REPUTATION_SCORING.md](REPUTATION_SCORING.md)
 稽查紀錄顯示政策：見 [docs/PENALTY_DISPLAY_POLICY.md](PENALTY_DISPLAY_POLICY.md)
@@ -138,12 +135,12 @@ gcloud run deploy medical-backend --image asia-east1-docker.pkg.dev/medical-ai-4
 - 前台：診所頁 MentionsSection（第 5 維度，新聞）
 - Cloud Scheduler：news-mentions-update（每週日 04:00）
 
-### ✅ P3-C：社群口碑
-資料源最終確認：Dcard / Mobile01 反爬嚴格，採務實組合
-- crawlers/social_mentions.py：PTTRSSCrawler + SocialNewsMentionsCrawler
-- PTT 互動權重（推/噓/噓爆）
-- 前台：診所頁 MentionsSection（第 6 維度，社群）
-- Cloud Scheduler：social-mentions-update（每週日 05:00）
+### 🚫 P3-C：社群口碑（已下線 2026-05-10）
+原本實作後因「客觀性不足」（水軍/業配/反爬），合併到媒體口碑單一維度。
+- 程式碼保留：crawlers/social_mentions.py
+- 前台維度卡：移除
+- Cloud Scheduler：刪除
+- 後台介面：admin_mentions 強制 source_type=news
 
 ### ✅ P3-D-1：聲譽趨勢圖
 - routers/clinic_trend.py + components/ReputationTrendChart.tsx

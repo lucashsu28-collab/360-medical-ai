@@ -138,7 +138,7 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
     google:   breakdown?.google   ?? null,
     legal:    breakdown?.legal    ?? (clinic.legal_score as number) ?? null,
     media:    breakdown?.media    ?? null,
-    social:   breakdown?.social   ?? null,
+    penalty:  breakdown?.penalty  ?? null,
     total:    clinic.score        ?? null,
   };
 
@@ -448,11 +448,8 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
             {/* ── 稽查違規紀錄（第 4 維度）── */}
             <PenaltiesSection clinicId={clinic.id} />
 
-            {/* ── 網路媒體口碑（第 5 維度）── */}
-            <MentionsSection clinicId={clinic.id} sourceType="news" />
-
-            {/* ── 社群口碑（第 6 維度，P3-C 啟用後填入資料）── */}
-            <MentionsSection clinicId={clinic.id} sourceType="social" title="社群口碑" />
+            {/* ── 媒體口碑（第 5 維度，已合併「網路媒體 + 社群」為單一口碑維度）── */}
+            <MentionsSection clinicId={clinic.id} sourceType="news" title="媒體口碑" />
 
             {/* ── 聲譽趨勢圖（基於 reputation_scores 快照）── */}
             <ReputationTrendChart clinicId={clinic.id} />

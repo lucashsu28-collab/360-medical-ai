@@ -46,7 +46,6 @@ def _serialize(m: Mention, clinic_name: str | None = None) -> dict[str, Any]:
 async def list_mentions(
     status: str | None = None,
     sentiment: str | None = None,
-    source_type: str | None = None,
     clinic_id: str | None = None,
     is_advertorial: bool | None = None,
     limit: int = Query(50, le=500),
@@ -55,13 +54,11 @@ async def list_mentions(
     async with AsyncSessionLocal() as session:
         stmt = select(Mention, Clinic.name).join(
             Clinic, Mention.target_id == Clinic.id, isouter=True
-        )
+        ).where(Mention.source_type == "news")  # 只看新聞媒體；社群維度已下線
         if status:
             stmt = stmt.where(Mention.status == status)
         if sentiment:
             stmt = stmt.where(Mention.sentiment == sentiment)
-        if source_type:
-            stmt = stmt.where(Mention.source_type == source_type)
         if clinic_id:
             stmt = stmt.where(Mention.target_id == clinic_id)
         if is_advertorial is not None:
@@ -168,29 +165,14 @@ async def _run_news_mentions_background():
         traceback.print_exc()
 
 
-async def _run_social_mentions_background():
-    from crawlers.social_mentions import run_social_crawlers
-    try:
-        stats = await run_social_crawlers()
-        print(f"[admin trigger] social mentions crawlers done: {stats}")
-    except Exception as e:
-        print(f"[admin trigger] social mentions crawlers failed: {e}")
-        import traceback
-        traceback.print_exc()
-
-
 @router.post("/run-crawler")
 async def run_crawler(background_tasks: BackgroundTasks, source: str = "news"):
-    if source == "news":
-        background_tasks.add_task(_run_news_mentions_background)
-        msg = "新聞口碑爬蟲已啟動"
-    elif source == "social":
-        background_tasks.add_task(_run_social_mentions_background)
-        msg = "社群口碑爬蟲已啟動（PTT + Google News 社群類）"
-    else:
-        raise HTTPException(400, f"source '{source}' not supported (use 'news' or 'social')")
+    """觸發網路媒體口碑爬蟲（社群維度已下線）"""
+    if source != "news":
+        raise HTTPException(400, "僅支援 source=news（社群維度已下線）")
+    background_tasks.add_task(_run_news_mentions_background)
     return {
         "ok": True,
-        "message": f"{msg}，5-10 分鐘後可看結果",
-        "source": source,
+        "message": "新聞口碑爬蟲已啟動，5-10 分鐘後可看結果",
+        "source": "news",
     }

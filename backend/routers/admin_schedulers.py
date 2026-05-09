@@ -46,15 +46,9 @@ _JOB_DESCRIPTIONS: dict[str, dict] = {
     },
     "news-mentions-update": {
         "icon": "📰",
-        "name": "網路媒體口碑（P3-B）",
+        "name": "媒體口碑（第 5 維度）",
         "description": "Google News 8 組醫美關鍵字 + Gemini 情緒+業配判定",
         "category": "p3b",
-    },
-    "social-mentions-update": {
-        "icon": "💬",
-        "name": "社群口碑（P3-C）",
-        "description": "PTT MakeUp/BeautySalon RSS + Google News 社群類",
-        "category": "p3c",
     },
 }
 
