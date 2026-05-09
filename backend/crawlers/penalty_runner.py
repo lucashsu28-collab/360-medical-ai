@@ -10,13 +10,15 @@ from crawlers.penalty_news import GoogleNewsPenaltyCrawler
 
 
 async def run_all() -> dict:
-    """跑所有處分爬蟲，回傳每個來源的統計"""
+    """跑所有處分爬蟲，並重算 reputation_scores 快照"""
+    from services.reputation_recalc import recalc_penalty_scores
+
     results: dict[str, dict] = {}
 
     crawlers = [
         ("news", GoogleNewsPenaltyCrawler()),
-        # ("kaohsiung", KaohsiungPenaltyCrawler()),  # Step 2-C
-        # ("taichung", TaichungPenaltyCrawler()),    # Step 2-D
+        # ("kaohsiung", KaohsiungPenaltyCrawler()),  # 來源匿名，已取消
+        # ("taichung", TaichungPenaltyCrawler()),    # 來源匿名，已取消
     ]
 
     for code, crawler in crawlers:
@@ -28,6 +30,16 @@ async def run_all() -> dict:
         except Exception as e:
             results[code] = {"error": str(e)}
             print(f"[{code}] FAILED: {e}")
+
+    # 爬完後重算所有診所的 penalty_score 快照
+    print(f"\n=== Recalculating reputation_scores ===")
+    try:
+        recalc_stats = await recalc_penalty_scores()
+        results["reputation_recalc"] = recalc_stats
+        print(f"[reputation_recalc] {recalc_stats}")
+    except Exception as e:
+        results["reputation_recalc"] = {"error": str(e)}
+        print(f"[reputation_recalc] FAILED: {e}")
 
     return results
 

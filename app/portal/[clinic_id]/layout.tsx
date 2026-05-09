@@ -11,6 +11,7 @@ const NAV = [
   { icon: "👨‍⚕️", label: "醫師團隊", path: "/doctors" },
   { icon: "🖼️", label: "Gallery", path: "/gallery" },
   { icon: "📅", label: "預約列表", path: "/appointments" },
+  { icon: "⚖️", label: "稽查違規", path: "/penalties" },
 ];
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
