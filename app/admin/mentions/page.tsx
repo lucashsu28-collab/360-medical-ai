@@ -92,10 +92,11 @@ export default function MentionsPage() {
     loadList(); loadStats();
   }
 
-  async function runCrawler() {
-    if (!confirm("啟動口碑爬蟲？將消耗 Gemini API 額度（估 $5-15 USD）")) return;
+  async function runCrawler(source: "news" | "social") {
+    const label = source === "news" ? "新聞媒體" : "社群（PTT + Google News）";
+    if (!confirm(`啟動${label}口碑爬蟲？將消耗 Gemini API 額度（估 $5-15 USD）`)) return;
     setRunning(true);
-    const r = await fetch(`${API}/api/admin/mentions/run-crawler?source=news`, {
+    const r = await fetch(`${API}/api/admin/mentions/run-crawler?source=${source}`, {
       method: "POST", headers,
     });
     const d = await r.json();
@@ -112,15 +113,30 @@ export default function MentionsPage() {
         <Stat label="覆蓋診所" value={stats?.clinics_covered ?? "—"} color="#2B6CB0" />
       </div>
 
-      <div style={{ background: "#fff", padding: 16, borderRadius: 10, marginBottom: 12, border: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>網路媒體口碑爬蟲</div>
-          <div style={{ fontSize: 12, color: "#718096", marginTop: 2 }}>抓 Google News 8 組醫美關鍵字 + Gemini 提取 + 業配辨識</div>
+      <div style={{ background: "#fff", padding: 16, borderRadius: 10, marginBottom: 12, border: "1px solid #E2E8F0" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>觸發口碑爬蟲</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, border: "1px solid #E2E8F0", borderRadius: 8 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>📰 新聞媒體</div>
+              <div style={{ fontSize: 11, color: "#718096", marginTop: 2 }}>Google News 8 組醫美關鍵字</div>
+            </div>
+            <button onClick={() => runCrawler("news")} disabled={running}
+              style={{ padding: "8px 14px", background: running ? "#A0AEC0" : "#2B6CB0", color: "#fff", border: 0, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: running ? "not-allowed" : "pointer" }}>
+              {running ? "…" : "🕷️ 觸發"}
+            </button>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, border: "1px solid #E2E8F0", borderRadius: 8 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>💬 社群討論</div>
+              <div style={{ fontSize: 11, color: "#718096", marginTop: 2 }}>PTT MakeUp/BeautySalon + 社群類關鍵字</div>
+            </div>
+            <button onClick={() => runCrawler("social")} disabled={running}
+              style={{ padding: "8px 14px", background: running ? "#A0AEC0" : "#7C3AED", color: "#fff", border: 0, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: running ? "not-allowed" : "pointer" }}>
+              {running ? "…" : "🕷️ 觸發"}
+            </button>
+          </div>
         </div>
-        <button onClick={runCrawler} disabled={running}
-          style={{ padding: "10px 18px", background: running ? "#A0AEC0" : "#2B6CB0", color: "#fff", border: 0, borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: running ? "not-allowed" : "pointer" }}>
-          {running ? "啟動中…" : "🕷️ 觸發爬蟲"}
-        </button>
       </div>
 
       <div style={{ background: "#fff", padding: 12, borderRadius: 10, marginBottom: 12, border: "1px solid #E2E8F0", display: "flex", gap: 8, flexWrap: "wrap" }}>
