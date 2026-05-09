@@ -1,5 +1,5 @@
 # 360醫療AI大調查 — 開發交接文件
-最後更新：2026-04-01
+最後更新：2026-05-10
 
 ## 一、專案基本資訊
 
@@ -44,22 +44,29 @@ gcloud run deploy medical-backend --image asia-east1-docker.pkg.dev/medical-ai-4
 | judicial_results.json | 904筆（496家有案件） |
 | clinic_reviews | 13,600+則Google評論 |
 
-## 五、評鑑體系
+## 五、評鑑體系（2026-05-10 重新規劃，全面自建）
 
 診所六維度：
-- 司法糾紛 ✅
-- Google評分 ✅
-- 合法登記 ✅
-- 行政處分 ⏳ P4
-- 新聞媒體 ⏳ P3 AIMS串接
-- 社群討論 ⏳ P3 AIMS串接
+| # | 維度 | 狀態 | 資料來源 |
+|---|------|------|---------|
+| 1 | 司法糾紛 | ✅ | 司法院裁判書 |
+| 2 | Google 評分 | ✅ | Google Places |
+| 3 | 合法登記 | ✅ | 衛福部 |
+| 4 | 稽查違規紀錄 | ⏳ P3-A | 衛福部 + 6 大縣市衛生局 + 公平會 |
+| 5 | 網路媒體口碑 | ⏳ P3-B | Google News + 醫美專業媒體 |
+| 6 | 社群口碑 | ⏳ P3-C | Dcard + PTT + Mobile01 |
 
 醫師五維度：
-- 執照合法性 ✅
-- 司法糾紛 ✅
-- 行政處分 ⏳ P4
-- 新聞媒體 ⏳ P3 AIMS串接
-- 社群口碑 ⏳ P3 AIMS串接
+| # | 維度 | 狀態 |
+|---|------|------|
+| 1 | 執照合法性 | ✅ |
+| 2 | 司法糾紛 | ✅ |
+| 3 | 稽查違規紀錄 | ⏳ P3-A |
+| 4 | 網路媒體口碑 | ⏳ P3-B |
+| 5 | 社群口碑 | ⏳ P3-C |
+
+評分規則完整說明：見 [docs/REPUTATION_SCORING.md](REPUTATION_SCORING.md)
+稽查紀錄顯示政策：見 [docs/PENALTY_DISPLAY_POLICY.md](PENALTY_DISPLAY_POLICY.md)
 
 ## 六、✅ 已完成
 
@@ -103,24 +110,64 @@ gcloud run deploy medical-backend --image asia-east1-docker.pkg.dev/medical-ai-4
 
 ✅ 2026-04-01 已完整部署（revision: medical-backend-00093-zjg）
 
-## 八、⏳ P3 待開發（AIMS完成後）
+## 八、⏳ P3 開發中（自建口碑+稽查系統）
 
+### 已完成
 | # | 項目 | 說明 |
 |---|------|------|
-| ✅ | Admin AI顧問調校介面 | 九大區塊，動態組裝 Gemini Prompt + Redis cache，已完成 |
-| ✅ | 診所Email通知 | 新預約時 HTML Email 通知診所，fastapi-mail，已完成 |
-| ⏳ 1 | AIMS SSO橋接 | 診所後台與AIMS打通，單一登入 |
-| ⏳ 2 | 醫美專欄/FAQ串接 | AIMS AI生成 → 推送醫美平台 → 審核上架 |
-| ⏳ 3 | 口碑監測串接 | AIMS口碑數據進醫美後台 |
+| ✅ | Admin AI顧問調校介面 | 九大區塊，動態組裝 Gemini Prompt + Redis cache |
+| ✅ | 診所Email通知 | 新預約時 HTML Email 通知診所，fastapi-mail |
+
+### P3-A：稽查違規紀錄（5 天）
+資料來源：衛福部「醫事機構違規裁罰」 + 6 大縣市衛生局 + 公平會
+- DB Schema：admin_penalties、penalty_clinic_response
+- 爬蟲：mohw_penalties、city_health（北市/新北/桃/中/南/高）、ftc
+- 嚴重度自動分級（🔴 重大 / 🟡 中度 / 🟢 輕微）
+- Admin 後台：稽查紀錄管理 + 申訴審核
+- 前台：診所詳細頁第 4 維度卡（金額透明 + 罰名顯示 + 公告原連結）
+- 顯示策略：3 年完整 / 3-5 年摘要 / 5+ 年隱藏 / 重大永久顯示
+
+### P3-B：網路媒體口碑（5 天）
+資料來源：Google News + 蘋果/聯合/自由/中時/TVBS/鏡週刊 + 醫美時尚/姊妹淘
+- DB Schema：mentions、reputation_scores、monitor_keywords
+- 爬蟲：news_crawler（RSS + Custom Search API）
+- Gemini 情緒分析 + 業配辨識
+- 評分公式：60 + Σ(情緒 × 權威 × 業配 × 衰減 × 5)
+- 媒體權威度分級（A/B/C/D）
+- Admin 後台：提及列表 + 業配審核
+- 前台：診所詳細頁第 5 維度卡
+
+### P3-C：社群口碑（5 天）
+資料來源：Dcard 美容板/整形板 + PTT MakeUp/BeautySalon + Mobile01 美容時尚
+- 爬蟲：dcard_api、ptt_crawler、mobile01_crawler
+- 平台權重 + 互動權重（讚/留言/噓爆）
+- 業配辨識（部落格更嚴格）
+- 防作弊：低聲望帳號 ×0.5、短時爆量人工審核
+- 前台：診所詳細頁第 6 維度卡
+
+### P3-D：整合與透明化（3 天）
+- /admin/reputation 統一審核中心
+- 趨勢圖（30 天/90 天）
+- 醫師頁五維度整合
+- /rules/reputation 規則公開頁
+- /rules/penalty 稽查紀錄政策頁
+- 評分試算器（客服工具）
+- 診所申訴流程串接
+
+### P3-E：AIMS 整合（後續，不阻塞 A-D）
+| # | 項目 |
+|---|------|
+| ⏳ 1 | AIMS SSO 橋接 |
+| ⏳ 2 | 醫美專欄/FAQ AIMS 推送 |
 
 ## 九、⏳ P4 上線後
 
-- 衛福部行政處分爬蟲（來源待確認）
 - 診所↔醫師對應（改為診所自填）
 - 正式網域購買+綁定Vercel
 - 預約抽傭金額計算與對帳系統
 - 多醫療產業擴充
 - 付費解鎖/訂閱制
+- FB 社團 / IG / TikTok 口碑（API 限制需第三方或人工）
 
 ## 十、與AIMS串接（P3）
 

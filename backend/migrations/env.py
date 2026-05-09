@@ -6,10 +6,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # 引入 Base 與所有 model（不觸發 async engine）
 from models.base import Base
-from models.clinic import Clinic                    # noqa: F401
-from models.unlock_record import UnlockRecord       # noqa: F401
-from models.broadcast_record import BroadcastRecord # noqa: F401
-from models.crawler_status import CrawlerStatus     # noqa: F401
+from models.clinic import Clinic                                      # noqa: F401
+from models.unlock_record import UnlockRecord                         # noqa: F401
+from models.broadcast_record import BroadcastRecord                   # noqa: F401
+from models.crawler_status import CrawlerStatus                       # noqa: F401
+# P3-A: 稽查違規 + 口碑系統
+from models.admin_penalty import AdminPenalty                         # noqa: F401
+from models.penalty_clinic_response import PenaltyClinicResponse      # noqa: F401
+from models.mention import Mention                                    # noqa: F401
+from models.reputation_score import ReputationScore                   # noqa: F401
+from models.monitor_keyword import MonitorKeyword                     # noqa: F401
+from models.media_authority import MediaAuthority                     # noqa: F401
+from models.mention_appeal import MentionAppeal                       # noqa: F401
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
