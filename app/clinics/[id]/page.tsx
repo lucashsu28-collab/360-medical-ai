@@ -6,6 +6,7 @@ import FogReport from "@/components/FogReport";
 import ClinicReviewsList from "@/components/ClinicReviewsList";
 import PenaltiesSection from "@/components/PenaltiesSection";
 import MentionsSection from "@/components/MentionsSection";
+import ReputationTrendChart from "@/components/ReputationTrendChart";
 import type { ScoreCardScores } from "@/components/ScoreCard";
 
 /* ── 型別 ─────────────────────────────────────────────────────────────────── */
@@ -452,6 +453,9 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
 
             {/* ── 社群口碑（第 6 維度，P3-C 啟用後填入資料）── */}
             <MentionsSection clinicId={clinic.id} sourceType="social" title="社群口碑" />
+
+            {/* ── 聲譽趨勢圖（基於 reputation_scores 快照）── */}
+            <ReputationTrendChart clinicId={clinic.id} />
 
             {/* ── 霧化完整報告 ── */}
             <section>

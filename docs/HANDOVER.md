@@ -1,5 +1,5 @@
 # 360醫療AI大調查 — 開發交接文件
-最後更新：2026-05-10
+最後更新：2026-05-10（P3-A/B/C/D-1 全部上線）
 
 ## 一、專案基本資訊
 
@@ -110,64 +110,67 @@ gcloud run deploy medical-backend --image asia-east1-docker.pkg.dev/medical-ai-4
 
 ✅ 2026-04-01 已完整部署（revision: medical-backend-00093-zjg）
 
-## 八、⏳ P3 開發中（自建口碑+稽查系統）
+## 八、✅ P3 已完成（自建口碑+稽查系統）
 
-### 已完成
-| # | 項目 | 說明 |
-|---|------|------|
+### 共通基礎（已上線）
 | ✅ | Admin AI顧問調校介面 | 九大區塊，動態組裝 Gemini Prompt + Redis cache |
 | ✅ | 診所Email通知 | 新預約時 HTML Email 通知診所，fastapi-mail |
+| ✅ | 規則公開頁 | /rules/penalty + /rules/reputation |
 
-### P3-A：稽查違規紀錄（5 天）
-資料來源：衛福部「醫事機構違規裁罰」 + 6 大縣市衛生局 + 公平會
-- DB Schema：admin_penalties、penalty_clinic_response
-- 爬蟲：mohw_penalties、city_health（北市/新北/桃/中/南/高）、ftc
-- 嚴重度自動分級（🔴 重大 / 🟡 中度 / 🟢 輕微）
-- Admin 後台：稽查紀錄管理 + 申訴審核
-- 前台：診所詳細頁第 4 維度卡（金額透明 + 罰名顯示 + 公告原連結）
-- 顯示策略：3 年完整 / 3-5 年摘要 / 5+ 年隱藏 / 重大永久顯示
+### ✅ P3-A：稽查違規紀錄
+最終策略：放棄 PDF 解析 + 衛生局案例頁（皆匿名/結構不適），改用 Google News + Gemini 提取單軌
+- DB：admin_penalties、penalty_clinic_responses
+- 爬蟲：crawlers/penalty_news.py（Google News 7 組關鍵字）
+- 共用基底：crawlers/penalty_base.py
+- 服務：services/clinic_matcher.py（rapidfuzz）、penalty_severity.py、penalty_extractor.py
+- Admin：/admin/penalties 列表 + 觸發按鈕
+- 前台：診所頁 PenaltiesSection（3 年完整 / 3-5 年摘要 / 5+ 年隱藏 / 重大永久）
+- 診所後台：/portal/[id]/penalties 申訴入口
+- Cloud Scheduler：penalty-news-update（每週日 03:00）
 
-### P3-B：網路媒體口碑（5 天）
-資料來源：Google News + 蘋果/聯合/自由/中時/TVBS/鏡週刊 + 醫美時尚/姊妹淘
-- DB Schema：mentions、reputation_scores、monitor_keywords
-- 爬蟲：news_crawler（RSS + Custom Search API）
-- Gemini 情緒分析 + 業配辨識
-- 評分公式：60 + Σ(情緒 × 權威 × 業配 × 衰減 × 5)
-- 媒體權威度分級（A/B/C/D）
-- Admin 後台：提及列表 + 業配審核
-- 前台：診所詳細頁第 5 維度卡
+### ✅ P3-B：網路媒體口碑
+- DB：mentions、reputation_scores、media_authority（17 家預填）、mention_appeals
+- 爬蟲：crawlers/news_mentions.py（單次 Gemini call 同時提取機構名+情緒+業配）
+- 共用基底：crawlers/mention_base.py（含 pre_* fast-path）
+- 服務：services/media_authority.py、sentiment_analyzer.py、news_score.py
+- 評分公式：60 + Σ(情緒 × 權威 × 業配 × 衰減 × 5)，cap 0~100
+- Admin：/admin/mentions 列表 + 兩個觸發按鈕（news / social）
+- 前台：診所頁 MentionsSection（第 5 維度，新聞）
+- Cloud Scheduler：news-mentions-update（每週日 04:00）
 
-### P3-C：社群口碑（5 天）
-資料來源：Dcard 美容板/整形板 + PTT MakeUp/BeautySalon + Mobile01 美容時尚
-- 爬蟲：dcard_api、ptt_crawler、mobile01_crawler
-- 平台權重 + 互動權重（讚/留言/噓爆）
-- 業配辨識（部落格更嚴格）
-- 防作弊：低聲望帳號 ×0.5、短時爆量人工審核
-- 前台：診所詳細頁第 6 維度卡
+### ✅ P3-C：社群口碑
+資料源最終確認：Dcard / Mobile01 反爬嚴格，採務實組合
+- crawlers/social_mentions.py：PTTRSSCrawler + SocialNewsMentionsCrawler
+- PTT 互動權重（推/噓/噓爆）
+- 前台：診所頁 MentionsSection（第 6 維度，社群）
+- Cloud Scheduler：social-mentions-update（每週日 05:00）
 
-### P3-D：整合與透明化（3 天）
-- /admin/reputation 統一審核中心
-- 趨勢圖（30 天/90 天）
-- 醫師頁五維度整合
-- /rules/reputation 規則公開頁
-- /rules/penalty 稽查紀錄政策頁
-- 評分試算器（客服工具）
-- 診所申訴流程串接
+### ✅ P3-D-1：聲譽趨勢圖
+- routers/clinic_trend.py + components/ReputationTrendChart.tsx
+- 30/90/180 天三線圖（新聞/社群/稽查）
 
-### P3-E：AIMS 整合（後續，不阻塞 A-D）
-| # | 項目 |
-|---|------|
+### ⏳ P3-D 未完成項目（轉 P4）
+- D-2 醫師頁五維度整合（需先建 doctors 表，現用 mock data 不適合直接接）
+- D-3 評分試算器（客服工具，輔助價值低）
+- D-4 全平台 Top 10 dashboard（admin 內部工具）
+
+### ⏳ P3-E：AIMS 整合（看 AIMS 進度）
 | ⏳ 1 | AIMS SSO 橋接 |
 | ⏳ 2 | 醫美專欄/FAQ AIMS 推送 |
 
 ## 九、⏳ P4 上線後
 
-- 診所↔醫師對應（改為診所自填）
+- 診所↔醫師對應（改為診所自填）→ 建 doctors 表
+- 醫師頁五維度整合（依賴 doctors 表）
+- 評分試算器（客服工具）
+- 全平台 Top 10 正面/負面 dashboard
 - 正式網域購買+綁定Vercel
 - 預約抽傭金額計算與對帳系統
 - 多醫療產業擴充
 - 付費解鎖/訂閱制
 - FB 社團 / IG / TikTok 口碑（API 限制需第三方或人工）
+- Dcard / Mobile01 / 痞客邦直爬（需付費 API 或代理）
+- 衛生局新聞稿頁直爬（補充 Google News 沒收錄的）
 
 ## 十、與AIMS串接（P3）
 
