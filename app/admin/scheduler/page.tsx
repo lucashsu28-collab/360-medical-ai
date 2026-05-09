@@ -1,194 +1,281 @@
 "use client";
+import { useEffect, useState, useCallback } from "react";
 
-import { useEffect, useState } from "react";
+interface Scheduler {
+  id: string;
+  schedule: string;
+  time_zone: string;
+  state: string;
+  uri: string;
+  http_method: string;
+  description?: string;
+  last_attempt_time: string | null;
+  next_schedule_time: string | null;
+  // enriched
+  icon?: string;
+  name?: string;
+  category?: string;
+}
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-type CrawlerKey = "places" | "judicial" | "mohw";
+const API = process.env.NEXT_PUBLIC_API_URL || "";
 
-interface CrawlerStatus { last_run: string | null; status: "success" | "running" | "failed" | "unknown"; records_updated?: number; }
+const STATE_STYLE: Record<string, { color: string; bg: string; label: string }> = {
+  ENABLED: { color: "#2F855A", bg: "#F0FFF4", label: "✅ 啟用" },
+  PAUSED: { color: "#A0AEC0", bg: "#F7FAFC", label: "⏸ 已暫停" },
+  DISABLED: { color: "#E53E3E", bg: "#FFF5F5", label: "❌ 已停用" },
+  UPDATE_FAILED: { color: "#C05621", bg: "#FFFAF0", label: "⚠ 更新失敗" },
+};
 
-const TASKS = [
-  { key: "places" as CrawlerKey, icon: "⭐", name: "Google Places 評分更新", cycle: "每10天", live: true, desc: "更新全部 904 家診所的 Google 評分與評論數。每次約 TWD 450，執行時間 ~30 分鐘。" },
-  { key: "judicial" as CrawlerKey, icon: "⚖️", name: "司法院裁判書更新", cycle: "每30天", live: true, desc: "從司法院查詢 904 家診所的司法案件數。每日 6-12 點為維護時段，請避開。" },
-  { key: "mohw" as CrawlerKey, icon: "🏛️", name: "健保署診所資料同步", cycle: "每7天", live: true, desc: "更新衛福部健保署醫事機構登記資料，確保合法登記分數準確。" },
-  { key: "news" as unknown as CrawlerKey, icon: "📰", name: "新聞媒體監測", cycle: "每天", live: false, desc: "統計診所相關新聞媒體報導正負評傾向（第4維度，開發中）。" },
-  { key: "social" as unknown as CrawlerKey, icon: "💬", name: "社群口碑監測", cycle: "每天", live: false, desc: "分析 PTT、Dcard 等社群平台的診所討論情緒（第5維度，開發中）。" },
-];
+const CATEGORY_BADGE: Record<string, { color: string; bg: string; label: string }> = {
+  core: { color: "#2B6CB0", bg: "#EBF8FF", label: "核心" },
+  p3a: { color: "#C53030", bg: "#FFF5F5", label: "P3-A 稽查" },
+  p3b: { color: "#3182CE", bg: "#EBF8FF", label: "P3-B 媒體" },
+  p3c: { color: "#7C3AED", bg: "#F5F3FF", label: "P3-C 社群" },
+};
 
-const MOCK_LOGS = [
-  { time: "2026-03-29 14:32", task: "Google Places 評分更新", result: "success", duration: "28分鐘", records: 904 },
-  { time: "2026-03-25 09:15", task: "健保署診所資料同步", result: "success", duration: "5分鐘", records: 24321 },
-  { time: "2026-02-28 22:00", task: "司法院裁判書更新", result: "success", duration: "14分鐘", records: 904 },
-  { time: "2026-02-19 14:32", task: "Google Places 評分更新", result: "success", duration: "31分鐘", records: 904 },
+// 常用 cron 預設選項
+const CRON_PRESETS = [
+  { label: "每天 03:00", value: "0 3 * * *" },
+  { label: "每週日 03:00", value: "0 3 * * 0" },
+  { label: "每週日 04:00", value: "0 4 * * 0" },
+  { label: "每週日 05:00", value: "0 5 * * 0" },
+  { label: "每 10 天 03:00", value: "0 3 */10 * *" },
+  { label: "每月 1 號 04:00", value: "0 4 1 * *" },
+  { label: "每月 1 號 05:00", value: "0 5 1 * *" },
 ];
 
 export default function AdminSchedulerPage() {
-  const [statusMap, setStatusMap] = useState<Record<string, CrawlerStatus>>({
-    places: { last_run: null, status: "unknown" },
-    judicial: { last_run: null, status: "unknown" },
-    mohw: { last_run: null, status: "unknown" },
-  });
-  const [triggering, setTriggering] = useState<Record<string, boolean>>({});
-  const [triggerResult, setTriggerResult] = useState<Record<string, string>>({});
+  const [items, setItems] = useState<Scheduler[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [running, setRunning] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editSchedule, setEditSchedule] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/admin/stats`)
-      .then((r) => (r.ok ? r.json() : {}))
-      .then((data: Record<string, unknown>) => {
-        const cs = data.crawler_status as Record<CrawlerKey, CrawlerStatus> | undefined;
-        if (cs) setStatusMap((prev) => ({ ...prev, ...cs }));
+  const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") || "" : "";
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+  const load = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    fetch(`${API}/api/admin/schedulers`, { headers })
+      .then(async (r) => {
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          throw new Error(d.detail || `HTTP ${r.status}`);
+        }
+        return r.json();
       })
-      .catch(() => {});
-  }, []);
+      .then((d) => setItems(d.items || []))
+      .catch((e) => setError(e.message || "載入失敗"))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
-  const handleTrigger = async (key: string) => {
-    setTriggering((p) => ({ ...p, [key]: true }));
-    setTriggerResult((p) => ({ ...p, [key]: "" }));
+  useEffect(() => { load(); }, [load]);
+
+  async function runNow(id: string) {
+    if (!confirm(`確認立即執行「${id}」？\n（媒體 / 社群 爬蟲會花費 Gemini 額度）`)) return;
+    setRunning(id);
     try {
-      const res = await fetch(`${API_URL}/api/admin/trigger-crawl`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ crawler: key }),
-      });
-      if (res.ok) {
-        setTriggerResult((p) => ({ ...p, [key]: "已排程，爬蟲執行中（約需數分鐘）" }));
-        setStatusMap((p) => ({ ...p, [key]: { ...(p[key] || {}), status: "running" } }));
+      const r = await fetch(`${API}/api/admin/schedulers/${id}/run`, { method: "POST", headers });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        alert(d.detail || "觸發失敗");
       } else {
-        const d = await res.json().catch(() => ({}));
-        setTriggerResult((p) => ({ ...p, [key]: d.detail ?? "觸發失敗" }));
+        alert(`「${id}」已觸發，5-10 分鐘後查看結果`);
       }
-    } catch {
-      setTriggerResult((p) => ({ ...p, [key]: "網路錯誤，請稍後再試" }));
     } finally {
-      setTriggering((p) => ({ ...p, [key]: false }));
+      setRunning(null);
+      load();
     }
-  };
+  }
 
-  const handleTriggerAll = async () => {
-    for (const t of TASKS.filter((t) => t.live)) {
-      await handleTrigger(t.key as string);
+  async function togglePause(s: Scheduler) {
+    const action = s.state === "PAUSED" ? "resume" : "pause";
+    const r = await fetch(`${API}/api/admin/schedulers/${s.id}`, {
+      method: "PATCH", headers, body: JSON.stringify({ action }),
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      alert(d.detail || "操作失敗");
     }
-  };
+    load();
+  }
 
-  const formatTime = (t: string | null) => {
-    if (!t) return "尚未執行";
-    try { return new Date(t).toLocaleString("zh-TW", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }); }
-    catch { return t; }
-  };
+  function startEdit(s: Scheduler) {
+    setEditing(s.id);
+    setEditSchedule(s.schedule);
+  }
 
-  const getStatusStyle = (s: string) => ({
-    success: { bg: "#F0FFF4", color: "#38A169", label: "✅ 啟用" },
-    running: { bg: "#FFF5E6", color: "#ED8936", label: "⏳ 執行中" },
-    failed: { bg: "#FFF5F5", color: "#E53E3E", label: "❌ 失敗" },
-    unknown: { bg: "#F7FAFC", color: "#A0AEC0", label: "— 未執行" },
-  }[s] ?? { bg: "#F7FAFC", color: "#A0AEC0", label: s });
+  async function saveEdit() {
+    if (!editing) return;
+    if (!editSchedule.trim()) { alert("cron 不可為空"); return; }
+    setSavingEdit(true);
+    const r = await fetch(`${API}/api/admin/schedulers/${editing}`, {
+      method: "PATCH", headers, body: JSON.stringify({ schedule: editSchedule.trim() }),
+    });
+    setSavingEdit(false);
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      alert(d.detail || "更新失敗");
+      return;
+    }
+    setEditing(null);
+    load();
+  }
+
+  function formatTime(t: string | null): string {
+    if (!t) return "—";
+    try {
+      return new Date(t).toLocaleString("zh-TW", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+    } catch { return t; }
+  }
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-        <button
-          onClick={handleTriggerAll}
-          style={{ padding: "9px 22px", background: "#2B6CB0", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
-        >
-          立即執行全部
-        </button>
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ fontSize: 13, color: "#718096", margin: 0 }}>
+          管理 GCP Cloud Scheduler 排程任務。可調整 cron 表達式、暫停/恢復、立即觸發手動掃描。
+        </p>
       </div>
 
-      {/* Task list */}
-      <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, overflow: "hidden", marginBottom: 24 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead style={{ background: "#F7FAFC" }}>
-            <tr>
-              {["任務名稱", "排程週期", "上次執行", "結果", "下次執行", "狀態", "操作"].map((h) => (
-                <th key={h} style={{ padding: "11px 14px", textAlign: "left", color: "#718096", fontWeight: 600, borderBottom: "1px solid #E2E8F0", fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {TASKS.map((task) => {
-              const status = statusMap[task.key as string] || { last_run: null, status: "unknown" };
-              const ss = getStatusStyle(task.live ? status.status : "pending_dev");
-              const isTriggering = triggering[task.key as string];
-              const result = triggerResult[task.key as string];
-
-              return (
-                <tr key={task.key as string} style={{ borderBottom: "1px solid #F7FAFC" }}>
-                  <td style={{ padding: "13px 14px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 18 }}>{task.icon}</span>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1A202C" }}>{task.name}</div>
-                        <div style={{ fontSize: 11, color: "#A0AEC0", marginTop: 1 }}>{task.desc.slice(0, 40)}...</div>
-                      </div>
-                    </div>
-                    {result && (
-                      <div style={{ marginTop: 6, fontSize: 11, color: result.includes("失敗") || result.includes("錯誤") ? "#E53E3E" : "#38A169" }}>
-                        {result}
-                      </div>
-                    )}
-                  </td>
-                  <td style={{ padding: "13px 14px", color: "#4A5568" }}>{task.cycle}</td>
-                  <td style={{ padding: "13px 14px", color: "#718096", whiteSpace: "nowrap" }}>{formatTime(status.last_run)}</td>
-                  <td style={{ padding: "13px 14px" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, background: ss.bg, color: ss.color, borderRadius: 99, padding: "3px 10px" }}>
-                      {task.live ? ss.label : "⏳ 開發中"}
-                    </span>
-                  </td>
-                  <td style={{ padding: "13px 14px", color: "#718096", whiteSpace: "nowrap" }}>—</td>
-                  <td style={{ padding: "13px 14px" }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, background: task.live ? "#F0FFF4" : "#F7FAFC", color: task.live ? "#38A169" : "#A0AEC0", borderRadius: 99, padding: "3px 10px" }}>
-                      {task.live ? "啟用" : "未啟用"}
-                    </span>
-                  </td>
-                  <td style={{ padding: "13px 14px" }}>
-                    {task.live ? (
-                      <button
-                        onClick={() => handleTrigger(task.key as string)}
-                        disabled={isTriggering || status.status === "running"}
-                        style={{ padding: "5px 14px", background: isTriggering || status.status === "running" ? "#F7FAFC" : "#2B6CB0", color: isTriggering || status.status === "running" ? "#A0AEC0" : "#fff", border: "none", borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: isTriggering || status.status === "running" ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
-                      >
-                        {isTriggering || status.status === "running" ? "執行中..." : "立即執行"}
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: 12, color: "#A0AEC0" }}>設定</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Recent logs */}
-      <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid #E2E8F0", fontSize: 14, fontWeight: 700, color: "#1A202C" }}>
-          最近執行日誌
+      {loading ? (
+        <div style={{ padding: 40, textAlign: "center", color: "#A0AEC0" }}>載入中…</div>
+      ) : error ? (
+        <div style={{ padding: 24, background: "#FFF5F5", border: "1px solid #FEB2B2", borderRadius: 10, color: "#C53030" }}>
+          ⚠ {error}
+          <div style={{ marginTop: 10, fontSize: 12, color: "#742A2A" }}>
+            可能原因：Cloud Run service account 缺少 <code>roles/cloudscheduler.admin</code> 權限。
+            <br />
+            請執行：<br />
+            <code style={{ display: "block", marginTop: 6, padding: 8, background: "#FED7D7", borderRadius: 4, fontSize: 11 }}>
+              gcloud projects add-iam-policy-binding medical-ai-489522 \<br />
+              &nbsp;&nbsp;--member=serviceAccount:&lt;CLOUD_RUN_SA&gt; \<br />
+              &nbsp;&nbsp;--role=roles/cloudscheduler.admin
+            </code>
+          </div>
         </div>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead style={{ background: "#F7FAFC" }}>
-            <tr>
-              {["時間", "任務名稱", "執行結果", "耗時", "更新筆數"].map((h) => (
-                <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: "#718096", fontWeight: 600, borderBottom: "1px solid #E2E8F0", fontSize: 12 }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {MOCK_LOGS.map((log, i) => (
-              <tr key={i} style={{ borderBottom: "1px solid #F7FAFC" }}>
-                <td style={{ padding: "10px 14px", color: "#718096", whiteSpace: "nowrap" }}>{log.time}</td>
-                <td style={{ padding: "10px 14px", color: "#4A5568" }}>{log.task}</td>
-                <td style={{ padding: "10px 14px" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, background: "#F0FFF4", color: "#38A169", borderRadius: 99, padding: "2px 10px" }}>
-                    ✅ 成功
-                  </span>
-                </td>
-                <td style={{ padding: "10px 14px", color: "#4A5568" }}>{log.duration}</td>
-                <td style={{ padding: "10px 14px", fontWeight: 700, color: "#2B6CB0" }}>{log.records.toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+          {items.map((s) => {
+            const stateStyle = STATE_STYLE[s.state] || STATE_STYLE.DISABLED;
+            const catBadge = s.category ? CATEGORY_BADGE[s.category] : null;
+            const isRunning = running === s.id;
+            return (
+              <div key={s.id} style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10, padding: 18 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                  <div style={{ fontSize: 26 }}>{s.icon || "🔧"}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                      <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1A202C", margin: 0 }}>
+                        {s.name || s.id}
+                      </h3>
+                      {catBadge && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: catBadge.color, background: catBadge.bg, padding: "2px 8px", borderRadius: 4 }}>
+                          {catBadge.label}
+                        </span>
+                      )}
+                      <span style={{ fontSize: 11, fontWeight: 700, color: stateStyle.color, background: stateStyle.bg, padding: "2px 10px", borderRadius: 99 }}>
+                        {stateStyle.label}
+                      </span>
+                    </div>
+                    {s.description && (
+                      <p style={{ fontSize: 12, color: "#718096", margin: "0 0 10px", lineHeight: 1.5 }}>{s.description}</p>
+                    )}
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, fontSize: 12, marginBottom: 12 }}>
+                      <Info label="ID" value={<code style={{ fontSize: 11 }}>{s.id}</code>} />
+                      <Info label="Cron" value={
+                        editing === s.id ? (
+                          <input
+                            value={editSchedule}
+                            onChange={(e) => setEditSchedule(e.target.value)}
+                            style={{ width: "100%", padding: "4px 6px", fontSize: 12, border: "1px solid #2B6CB0", borderRadius: 4, fontFamily: "monospace" }}
+                          />
+                        ) : (
+                          <code style={{ fontSize: 12, color: "#1A202C", fontWeight: 600 }}>{s.schedule}</code>
+                        )
+                      } />
+                      <Info label="時區" value={s.time_zone} />
+                      <Info label="上次執行" value={formatTime(s.last_attempt_time)} />
+                      <Info label="下次執行" value={formatTime(s.next_schedule_time)} />
+                      <Info label="HTTP" value={`${s.http_method}`} />
+                    </div>
+
+                    {editing === s.id && (
+                      <div style={{ marginBottom: 10, padding: 10, background: "#F7FAFC", borderRadius: 6 }}>
+                        <div style={{ fontSize: 11, color: "#4A5568", marginBottom: 6 }}>常用排程預設：</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {CRON_PRESETS.map((p) => (
+                            <button key={p.value} onClick={() => setEditSchedule(p.value)}
+                              style={{ padding: "3px 8px", fontSize: 11, border: "1px solid #CBD5E0", borderRadius: 4, background: "#fff", cursor: "pointer" }}>
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <button onClick={() => runNow(s.id)} disabled={isRunning || s.state !== "ENABLED"}
+                        style={btn("#2B6CB0", isRunning || s.state !== "ENABLED")}>
+                        {isRunning ? "執行中…" : "🚀 立即執行"}
+                      </button>
+
+                      {editing === s.id ? (
+                        <>
+                          <button onClick={saveEdit} disabled={savingEdit} style={btn("#38A169", savingEdit)}>
+                            {savingEdit ? "儲存中…" : "💾 儲存 cron"}
+                          </button>
+                          <button onClick={() => setEditing(null)} style={btn("#A0AEC0")}>取消</button>
+                        </>
+                      ) : (
+                        <button onClick={() => startEdit(s)} style={btn("#7C3AED")}>✏️ 修改排程</button>
+                      )}
+
+                      <button onClick={() => togglePause(s)} style={btn(s.state === "PAUSED" ? "#38A169" : "#ED8936")}>
+                        {s.state === "PAUSED" ? "▶️ 恢復" : "⏸ 暫停"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Cron 速查 */}
+      <div style={{ marginTop: 24, padding: 16, background: "#F7FAFC", border: "1px solid #E2E8F0", borderRadius: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#1A202C", marginBottom: 8 }}>📘 Cron 表達式速查</div>
+        <div style={{ fontSize: 12, color: "#4A5568", lineHeight: 1.8, fontFamily: "monospace" }}>
+          <div><code>分 時 日 月 週</code>（週 0=週日，1-6=週一到週六）</div>
+          <div><code>0 3 * * *</code> → 每天 03:00</div>
+          <div><code>0 3 * * 0</code> → 每週日 03:00</div>
+          <div><code>0 3 */10 * *</code> → 每 10 天 03:00</div>
+          <div><code>0 4 1 * *</code> → 每月 1 號 04:00</div>
+          <div><code>*/30 * * * *</code> → 每 30 分鐘</div>
+        </div>
       </div>
     </div>
   );
+}
+
+function Info({ label, value }: { label: string; value: any }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, color: "#A0AEC0", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+      <div style={{ color: "#4A5568" }}>{value || "—"}</div>
+    </div>
+  );
+}
+
+function btn(color: string, disabled = false): React.CSSProperties {
+  return {
+    padding: "6px 14px", border: 0, borderRadius: 6, fontSize: 12, fontWeight: 600,
+    background: disabled ? "#CBD5E0" : color,
+    color: "#fff", cursor: disabled ? "not-allowed" : "pointer",
+  };
 }
