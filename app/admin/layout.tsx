@@ -12,6 +12,7 @@ const PRIMARY_NAV = [
   { icon: "💬", label: "LINE OA 數據",  href: "/admin/line" },
   { icon: "📋", label: "內容審核",      href: "/admin/cms" },
   { icon: "⚖️", label: "稽查違規",      href: "/admin/penalties" },
+  { icon: "📰", label: "媒體口碑",      href: "/admin/mentions" },
 ];
 
 const SYSTEM_NAV = [

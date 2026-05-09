@@ -5,6 +5,7 @@ import ScoreCard from "@/components/ScoreCard";
 import FogReport from "@/components/FogReport";
 import ClinicReviewsList from "@/components/ClinicReviewsList";
 import PenaltiesSection from "@/components/PenaltiesSection";
+import MentionsSection from "@/components/MentionsSection";
 import type { ScoreCardScores } from "@/components/ScoreCard";
 
 /* ── 型別 ─────────────────────────────────────────────────────────────────── */
@@ -445,6 +446,12 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
 
             {/* ── 稽查違規紀錄（第 4 維度）── */}
             <PenaltiesSection clinicId={clinic.id} />
+
+            {/* ── 網路媒體口碑（第 5 維度）── */}
+            <MentionsSection clinicId={clinic.id} sourceType="news" />
+
+            {/* ── 社群口碑（第 6 維度，P3-C 啟用後填入資料）── */}
+            <MentionsSection clinicId={clinic.id} sourceType="social" title="社群口碑" />
 
             {/* ── 霧化完整報告 ── */}
             <section>
