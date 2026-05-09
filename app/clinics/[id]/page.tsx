@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import ScoreCard from "@/components/ScoreCard";
 import FogReport from "@/components/FogReport";
 import ClinicReviewsList from "@/components/ClinicReviewsList";
+import PenaltiesSection from "@/components/PenaltiesSection";
 import type { ScoreCardScores } from "@/components/ScoreCard";
 
 /* ── 型別 ─────────────────────────────────────────────────────────────────── */
@@ -441,6 +442,9 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
               )}
               <ScoreCard scores={scores} showTotal={true} />
             </section>
+
+            {/* ── 稽查違規紀錄（第 4 維度）── */}
+            <PenaltiesSection clinicId={clinic.id} />
 
             {/* ── 霧化完整報告 ── */}
             <section>
