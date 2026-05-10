@@ -84,21 +84,23 @@ function NewsCard({ news: n }: { news: NewsItem }) {
         flexDirection: "column",
       }}
     >
-      {/* 縮圖（無 cover 時用品牌色漸層 + emoji + 標題首句作 fallback） */}
-      <div style={{ aspectRatio: "16/9", position: "relative", overflow: "hidden", background: n.cover_image ? c.bg : c.gradient }}>
+      {/* 縮圖（無 cover 時用米白底 + 大字標題報紙風） */}
+      <div style={{ aspectRatio: "16/9", position: "relative", overflow: "hidden", background: n.cover_image ? "#F1F5F9" : "#FFFBEB" }}>
         {n.cover_image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={n.cover_image} alt={n.title} loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16, color: "#fff", textAlign: "center" }}>
-            <div style={{ fontSize: 36, opacity: 0.85, marginBottom: 6, textShadow: "0 2px 6px rgba(0,0,0,.2)" }}>{c.emoji}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.4, textShadow: "0 1px 3px rgba(0,0,0,.25)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", maxWidth: "90%" }}>
-              {n.title.slice(0, 36)}
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "center", padding: "28px 16px 16px", textAlign: "left" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.5, color: "#1A202C", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+              {n.title}
+            </div>
+            <div style={{ fontSize: 10, color: "#94A3B8", marginTop: 8, letterSpacing: "0.05em" }}>
+              {n.source_name || "新聞"}
             </div>
           </div>
         )}
-        <div style={{ position: "absolute", top: 10, left: 10, padding: "3px 9px", background: n.cover_image ? c.color : "rgba(255,255,255,.95)", color: n.cover_image ? "#fff" : c.color, fontSize: 10, fontWeight: 700, borderRadius: 5 }}>
+        <div style={{ position: "absolute", top: 10, left: 10, padding: "3px 9px", background: c.color, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 5 }}>
           {c.label}
         </div>
       </div>
