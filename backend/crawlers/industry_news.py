@@ -49,6 +49,21 @@ QUERIES = [
 ]
 
 
+def _strip_html(text: str) -> str:
+    """剝除 HTML tag、unescape entities、合併空白"""
+    if not text:
+        return ""
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = (text
+            .replace("&nbsp;", " ")
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", '"')
+            .replace("&#39;", "'"))
+    return re.sub(r"\s+", " ", text).strip()
+
+
 _SUMMARIZE_PROMPT = """從下列醫美相關新聞，產出一份 JSON 物件：
 - summary: 用 80 字內中文摘要核心內容
 - keywords: 字串陣列（最多 5 個關鍵字，醫美相關）
@@ -63,14 +78,14 @@ _SUMMARIZE_PROMPT = """從下列醫美相關新聞，產出一份 JSON 物件：
 
 def summarize_news(title: str, description: str) -> dict:
     """Gemini 摘要 + 過濾無關"""
-    DEFAULT = {"summary": description[:80] if description else title[:80], "keywords": [], "skip": False}
+    clean_d = _strip_html(description or "")
+    DEFAULT = {"summary": (clean_d[:80] if clean_d else title[:80]), "keywords": [], "skip": False}
     if not GEMINI_API_KEY:
         return DEFAULT
     if not title:
         return DEFAULT
 
-    text_d = re.sub(r"<[^>]+>", " ", description or "")
-    text_d = re.sub(r"\s+", " ", text_d).strip()[:1000]
+    text_d = clean_d[:1000]
 
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
@@ -132,18 +147,34 @@ def parse_pub_date(s: str) -> datetime | None:
 async def _resolve_real_url(client: httpx.AsyncClient, gnews_url: str) -> str | None:
     """Google News RSS link 是中介頁，需要再 parse 一次拿實際媒體 URL"""
     if "news.google.com" not in gnews_url:
-        return gnews_url  # 已是直連
+        return gnews_url
     try:
-        resp = await client.get(gnews_url, timeout=8.0, follow_redirects=True)
-        # 1) data-n-au 屬性是 Google News 標準 redirect target
-        m = re.search(rb'data-n-au="(https?://[^"]+)"', resp.content[:80000])
+        resp = await client.get(gnews_url, timeout=10.0, follow_redirects=True, headers=_BROWSER_HEADERS)
+        body = resp.content[:200000]
+        # 1) data-n-au 屬性
+        m = re.search(rb'data-n-au="(https?://[^"]+)"', body)
         if m:
-            return m.group(1).decode("utf-8", errors="ignore")
-        # 2) <a> 帶 c-wiz 的真實外連
-        m = re.search(rb'<a [^>]*href="(https?://[^"]+)"[^>]*data-ved', resp.content[:80000])
+            u = m.group(1).decode("utf-8", errors="ignore")
+            if "news.google.com" not in u:
+                return u
+        # 2) c-wiz/ jslog block 內 article URL — Google News 把真實 URL 編在 data-n-au 或 c-wiz 屬性
+        m = re.search(rb'<c-wiz[^>]+data-p="[^"]*&quot;(https?://[^&]+)&quot;', body)
         if m:
-            return m.group(1).decode("utf-8", errors="ignore")
-        # 3) 最終 redirect URL
+            u = m.group(1).decode("utf-8", errors="ignore")
+            if "news.google.com" not in u:
+                return u
+        # 3) jsdata=" 內含 [\"https://....\",..." 格式
+        for m in re.finditer(rb'\\?"(https?://(?!news\.google\.com)[^"\\]+)\\?"', body):
+            u = m.group(1).decode("utf-8", errors="ignore")
+            # 過濾掉 google CDN / static
+            if any(skip in u for skip in [
+                "googleusercontent", "gstatic", "googleapis", "google-analytics",
+                "googletagmanager", "fonts.google", "www.google.com/log",
+            ]):
+                continue
+            if u.startswith("http") and len(u) > 30:
+                return u
+        # 4) 最終 redirect URL
         if resp.url and "news.google.com" not in str(resp.url):
             return str(resp.url)
     except Exception as e:
@@ -157,45 +188,41 @@ _BROWSER_HEADERS = {
 }
 
 
+# Google News default logo（每篇都是同一張，要過濾）
+_GNEWS_LOGO_ID = "J6_coFbogxhRI9iM864NL_liGXvsQp2AupsKei7z0cNNfDvGUmWUy20nuUhkREQyrpY4bEeIBuc"
+
+
 async def extract_cover(client: httpx.AsyncClient, url: str) -> str | None:
-    """抓封面：直接用 Google News 中介頁的 googleusercontent 文章縮圖（CDN 永久 + 100% 命中率）"""
+    """抓封面：先 resolve Google News redirect 到原文 → 抓 og:image（最穩，每篇不同）"""
     if not url:
         return None
 
-    if "news.google.com" in url:
-        try:
-            resp = await client.get(url, timeout=10.0, follow_redirects=True, headers=_BROWSER_HEADERS)
-            # Google News 文章縮圖：lh3.googleusercontent.com/XXX=s0-wNNN-rw 或 =sNNN
-            # 篩掉 favicon（=w16/24/32/48）
-            for m in re.finditer(rb'lh3\.googleusercontent\.com/[A-Za-z0-9_\-]+=([sw][0-9][^"\'\s<>]*)', resp.content):
-                full = m.group(0).decode("utf-8", errors="ignore")
-                size = m.group(1).decode("utf-8", errors="ignore")
-                # favicon 都是 =w16 / w24 / w32 / w48 這種小尺寸
-                if re.match(r'^w\d{1,2}$', size):
-                    continue
-                # 升級到 w800 取得清晰封面
-                bigger = re.sub(r'=s\d+-w\d+(-rw)?$', '=s0-w800-rw', full)
-                bigger = re.sub(r'=s\d+(-rw)?$', '=s0-w800-rw', bigger) if "=s0-w800" not in bigger else bigger
-                return f"https://{bigger}"
-        except Exception as e:
-            print(f"[industry_news] gnews thumb error: {e}")
-
-    # 備援：去原文 og:image
     real = await _resolve_real_url(client, url) if "news.google.com" in url else url
-    if not real:
+    if not real or "news.google.com" in real:
+        # resolve 失敗（仍是 google news URL）
         return None
+
     try:
-        resp = await client.get(real, timeout=8.0, follow_redirects=True, headers=_BROWSER_HEADERS)
+        resp = await client.get(real, timeout=10.0, follow_redirects=True, headers=_BROWSER_HEADERS)
         if resp.status_code != 200:
             return None
-        m = re.search(rb'<meta[^>]+property=["\']og:image(?::secure_url)?["\'][^>]+content=["\']([^"\']+)["\']', resp.content[:80000])
+        body = resp.content[:120000]
+        # og:image / og:image:secure_url
+        m = re.search(rb'<meta[^>]+property=["\']og:image(?::secure_url)?["\'][^>]+content=["\']([^"\']+)["\']', body)
+        if not m:
+            m = re.search(rb'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image', body)
         if m:
-            return m.group(1).decode("utf-8", errors="ignore")
-        m = re.search(rb'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']', resp.content[:80000])
+            cover = m.group(1).decode("utf-8", errors="ignore")
+            if _GNEWS_LOGO_ID not in cover:
+                return cover
+        # twitter:image
+        m = re.search(rb'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']', body)
         if m:
-            return m.group(1).decode("utf-8", errors="ignore")
+            cover = m.group(1).decode("utf-8", errors="ignore")
+            if _GNEWS_LOGO_ID not in cover:
+                return cover
     except Exception as e:
-        print(f"[industry_news] og:image fallback error: {e}")
+        print(f"[industry_news] og:image error: {e}")
     return None
 
 
