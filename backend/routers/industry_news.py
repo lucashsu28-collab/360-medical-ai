@@ -161,10 +161,40 @@ async def _backfill_covers_background():
 
 
 @admin_router.post("/backfill-covers")
-async def admin_backfill_covers(background_tasks: BackgroundTasks):
-    """補抓既有 0 cover 新聞的封面（背景跑）"""
-    background_tasks.add_task(_backfill_covers_background)
-    return {"ok": True, "message": "補抓封面已啟動（一次處理 60 筆，可重複觸發）"}
+async def admin_backfill_covers():
+    """補抓既有 0 cover 新聞的封面（同步：等做完才 return）
+
+    Cloud Run BackgroundTasks 不可靠（會被 instance scaling 殺），改同步。
+    一次處理 30 筆，每筆 1-2s，~60s 內完成。
+    """
+    import httpx
+    from crawlers.industry_news import extract_cover
+    from models.industry_news import IndustryNews
+
+    async with AsyncSessionLocal() as session, httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+        rows = (await session.execute(
+            select(IndustryNews).where(
+                IndustryNews.cover_image.is_(None),
+                IndustryNews.status == "active",
+            ).limit(30)
+        )).scalars().all()
+
+        ok = 0
+        failed = 0
+        for n in rows:
+            try:
+                cover = await extract_cover(client, n.source_url)
+                if cover:
+                    n.cover_image = cover
+                    ok += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                print(f"[backfill] row {n.id} error: {e}")
+                failed += 1
+        await session.commit()
+        return {"ok": True, "processed": len(rows), "got_cover": ok, "failed": failed,
+                "message": f"處理 {len(rows)} 筆 → 成功 {ok} 筆 → 失敗 {failed} 筆"}
 
 
 async def _backfill_summaries_background():
