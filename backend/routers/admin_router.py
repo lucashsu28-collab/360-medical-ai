@@ -397,6 +397,64 @@ async def sync_google_photos(batch_size: int = 30):
             "message": f"處理 {stats['processed']} 筆 → 抓到 {stats['got_photo']} 張照片"}
 
 
+@router.post("/clinics/sync-google-ratings")
+async def sync_google_ratings(batch_size: int = 30, force_all: bool = False):
+    """同步診所的 Google Places 評分 + 評論數 + place_id
+
+    參數：
+      batch_size：一次處理幾筆（預設 30）
+      force_all：True = 強制全部重抓（即使已有 rating），False = 只抓沒 rating 的
+    """
+    from datetime import datetime
+    from crawlers.google_places import get_clinic_places_info
+    from sqlalchemy import select
+    from database import AsyncSessionLocal
+    from models.clinic import Clinic
+    import asyncio as _asyncio
+
+    bs = min(batch_size, 50)
+
+    def _calc_rating_score(rating: float | None, reviews: int | None) -> int:
+        if not rating:
+            return 0
+        star = (15 if rating >= 4.5 else 12 if rating >= 4.0 else 9 if rating >= 3.5
+                else 6 if rating >= 3.0 else 3)
+        rev = (5 if (reviews or 0) >= 1000 else 4 if (reviews or 0) >= 500
+               else 3 if (reviews or 0) >= 100 else 2 if (reviews or 0) >= 1 else 0)
+        return star + rev
+
+    async with AsyncSessionLocal() as session:
+        if force_all:
+            stmt = select(Clinic).order_by(Clinic.id).limit(bs)
+            # force_all 用「最久沒更新」的優先
+            stmt = select(Clinic).limit(bs)
+        else:
+            stmt = select(Clinic).where(Clinic.google_rating.is_(None)).limit(bs)
+        rows = (await session.execute(stmt)).scalars().all()
+
+        ok = 0
+        not_found = 0
+        for c in rows:
+            try:
+                info = await get_clinic_places_info(c.name or "", c.address or "")
+                if info.get("found"):
+                    rating = info.get("rating")
+                    review_count = info.get("review_count")
+                    c.google_place_id = info.get("place_id") or c.google_place_id
+                    c.google_rating = rating
+                    c.google_review_count = review_count
+                    c.google_rating_score = _calc_rating_score(rating, review_count)
+                    ok += 1
+                else:
+                    not_found += 1
+            except Exception as e:
+                print(f"[sync_google_ratings] {c.id} error: {e}")
+            await _asyncio.sleep(0.3)
+        await session.commit()
+        return {"ok": True, "processed": len(rows), "got_rating": ok, "not_found": not_found,
+                "message": f"處理 {len(rows)} 筆 → 抓到評分 {ok} 筆"}
+
+
 @router.post("/trigger-crawl")
 async def trigger_crawl(request: Request, background_tasks: BackgroundTasks):
     body = await request.json()
