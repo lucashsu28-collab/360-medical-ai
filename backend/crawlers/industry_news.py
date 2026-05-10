@@ -50,10 +50,16 @@ QUERIES = [
 
 
 def _strip_html(text: str) -> str:
-    """剝除 HTML tag、unescape entities、合併空白"""
+    """剝除 HTML tag、unescape entities、合併空白；對未閉合 tag 也容錯"""
     if not text:
         return ""
+    # 1. 清完整 tag <xxx>
     text = re.sub(r"<[^>]+>", " ", text)
+    # 2. 容錯：清掉開放但沒閉合的 tag（如被截斷成 `<a href="...`）
+    text = re.sub(r"<[a-zA-Z/][^\s<>]*", " ", text)
+    # 3. 清掉殘留的 < 或 > 單字元
+    text = text.replace("<", " ").replace(">", " ")
+    # 4. unescape 常見 entities
     text = (text
             .replace("&nbsp;", " ")
             .replace("&amp;", "&")
