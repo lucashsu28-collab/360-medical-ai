@@ -90,13 +90,17 @@ async def health():
 
 def _calc_total_score(c: dict) -> float:
     """100-point 五維度: legal(20) + google(20) + judicial(20) + penalty(20) + media(20)
-    （社群口碑已下線，由 penalty 維度取代）"""
+
+    預設值哲學：
+      - penalty 預設 20：無公開違規紀錄 = 滿分（依 PENALTY_DISPLAY_POLICY.md）
+      - media 預設 12：無媒體曝光 = 中性 60 分基準（依 REPUTATION_SCORING.md，60/100 × 20 = 12）
+    """
     sb = c.get("score_breakdown", {}) or {}
     legal    = sb.get("legal",    0) or c.get("legal_score",    0) or 0
     google   = sb.get("google",   0) or c.get("google_rating_score", 0) or 0
     judicial = sb.get("judicial", 0) or c.get("judicial_score", 0) or 0
-    penalty  = sb.get("penalty",  20) if sb.get("penalty") is not None else 20  # 預設 20（無紀錄=滿分）
-    media    = sb.get("media",    20) if sb.get("media") is not None else 20    # 預設 20（無紀錄=滿分）
+    penalty  = sb.get("penalty",  20) if sb.get("penalty") is not None else 20  # 無紀錄=滿分
+    media    = sb.get("media",    12) if sb.get("media") is not None else 12    # 無曝光=基準分 60→12
     return legal + google + judicial + penalty + media
 
 
