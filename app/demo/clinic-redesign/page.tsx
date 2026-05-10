@@ -39,7 +39,7 @@ const MOCK = {
       desc: "適合斑點、痘疤、毛孔粗大、暗沉膚質，無修復期、效果立現",
       price: "原價 $12,000 · 限時 $8,800",
       badge: "🔥 招牌",
-      image: "https://images.unsplash.com/photo-1772831902679-3f41c106d7a2?w=1200&q=80",
+      image: "https://images.unsplash.com/photo-1559185590-879c66a55254?w=1200&q=80",
     },
     {
       title: "玻尿酸塑形",
@@ -47,38 +47,34 @@ const MOCK = {
       desc: "蘋果肌、淚溝、法令紋、唇形、鼻樑，恢復飽滿年輕的自己",
       price: "$8,000 / cc 起",
       badge: "✨ 熱門",
-      image: "https://images.unsplash.com/photo-1552693673-1bf958298935?w=1200&q=80",
+      image: "https://images.unsplash.com/photo-1643379855542-82c0c7483f3a?w=1200&q=80",
     },
   ],
-  // 主頁顧客前後對照（4 卡，示意圖；正式版改為診所後台上傳）
+  // 主頁顧客前後對照（4 卡）— 同一張亞洲女性面部，前後用 CSS 濾鏡製造效果差異
   beforeAfter: [
     {
       treatment: "皮秒雷射淨膚",
       duration: "療程後 4 週",
       note: "斑點淡化、膚色提亮",
-      before: "https://images.unsplash.com/photo-1606815013283-f5dcea587c38?w=600&q=80",
-      after: "https://images.unsplash.com/photo-1669040620696-9c9fbc9a3ba5?w=600&q=80",
+      face: "https://images.unsplash.com/photo-1526413232644-8a40f03cc03b?w=600&q=80",
     },
     {
       treatment: "玻尿酸塑形",
       duration: "療程後立即",
       note: "蘋果肌飽滿、法令紋撫平",
-      before: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80",
-      after: "https://images.unsplash.com/photo-1707544738456-a5f930510139?w=600&q=80",
+      face: "https://images.unsplash.com/photo-1567046318559-b29fcd7bf471?w=600&q=80",
     },
     {
       treatment: "童顏針抗老",
       duration: "療程後 8 週",
       note: "膠原增生、輪廓緊緻",
-      before: "https://images.unsplash.com/photo-1544717304-a2db4a7b16ee?w=600&q=80",
-      after: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=600&q=80",
+      face: "https://images.unsplash.com/photo-1645627590046-a957f2989f64?w=600&q=80",
     },
     {
       treatment: "音波拉提",
       duration: "療程後 12 週",
       note: "下顎線清晰、雙下巴改善",
-      before: "https://images.unsplash.com/photo-1713085085470-fba013d67e65?w=600&q=80",
-      after: "https://images.unsplash.com/photo-1772831902679-3f41c106d7a2?w=600&q=80",
+      face: "https://images.unsplash.com/photo-1616326431919-be810ad5dacd?w=600&q=80",
     },
   ],
   // Tab 客戶好評（更豐富的文字評價）
@@ -160,10 +156,10 @@ function PartnerView() {
     <div style={{ background: "#fff" }}>
       {/* ════════ 1. Hero 大圖區（500px，主視覺） ════════ */}
       <div style={{ position: "relative", height: 520, overflow: "hidden" }}>
-        {/* 真實主視覺照片 */}
+        {/* 真實主視覺照片（亞洲醫師療程場景） */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="https://images.unsplash.com/photo-1772831902679-3f41c106d7a2?w=1800&q=80"
+          src="https://images.unsplash.com/photo-1559185590-765cdc663325?w=1800&q=80"
           alt="診所主視覺"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
         />
@@ -336,18 +332,18 @@ function PartnerView() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
             {MOCK.beforeAfter.map((b, i) => (
               <div key={i} style={{ background: "#FFFBEB", borderRadius: 12, overflow: "hidden", border: "1px solid #FED7AA", boxShadow: "0 2px 8px rgba(245,158,11,.08)" }}>
-                {/* Before/After 並排 */}
+                {/* Before/After 並排（同一張臉，CSS 濾鏡模擬效果差異） */}
                 <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "#FED7AA" }}>
                   <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={b.before} alt="Before" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", filter: "saturate(.85)" }} />
-                    <div style={{ position: "absolute", top: 8, left: 8, padding: "3px 9px", background: "rgba(15,23,42,.78)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 4, letterSpacing: "0.05em" }}>
+                    <img src={b.face} alt="Before" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", filter: "saturate(.55) brightness(.82) contrast(.92) sepia(.18)" }} />
+                    <div style={{ position: "absolute", top: 8, left: 8, padding: "3px 9px", background: "rgba(15,23,42,.82)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 4, letterSpacing: "0.05em" }}>
                       BEFORE
                     </div>
                   </div>
                   <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={b.after} alt="After" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    <img src={b.face} alt="After" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", filter: "saturate(1.05) brightness(1.05) contrast(1.02)" }} />
                     <div style={{ position: "absolute", top: 8, left: 8, padding: "3px 9px", background: "#D97706", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 4, letterSpacing: "0.05em" }}>
                       AFTER
                     </div>
@@ -426,14 +422,14 @@ function PartnerView() {
           {tab === "gallery" && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
               {[
-                "photo-1772831902679-3f41c106d7a2",  // 雷射治療室
-                "photo-1778004930342-91a0353fc283",  // cosmetologist
-                "photo-1648775507324-b48dd3791fa5",  // 極簡室內
-                "photo-1606811971618-4486d14f3f99",  // 診所空間
-                "photo-1552693673-1bf958298935",     // 面部療程
-                "photo-1713085085470-fba013d67e65",  // facial peel
-                "photo-1512290923902-8a9f81dc236c",  // 美容治療
-                "photo-1544717304-a2db4a7b16ee",     // spa
+                "photo-1559185590-765cdc663325",     // 亞洲醫師療程
+                "photo-1559185590-879c66a55254",     // 亞洲治療室
+                "photo-1643379855542-82c0c7483f3a",  // 亞洲護膚特寫
+                "photo-1728727267814-792db55ce678",  // 亞洲微笑女性
+                "photo-1696710869375-0ef8272dfc97",  // 亞洲奢華肖像
+                "photo-1622189417056-1cbe4582c671",  // 亞洲面部
+                "photo-1526413232644-8a40f03cc03b",  // 亞洲簡約
+                "photo-1567046318559-b29fcd7bf471",  // 亞洲女性
               ].map((id, i) => (
                 <div key={i} style={{ aspectRatio: "1", borderRadius: 10, overflow: "hidden", background: "#FED7AA" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
