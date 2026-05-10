@@ -53,7 +53,7 @@ const SOURCE_LABEL: Record<string, string> = {
 export default function PenaltiesPage() {
   const [items, setItems] = useState<Penalty[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("pending");
+  const [statusFilter, setStatusFilter] = useState<string>("active");
   const [severityFilter, setSeverityFilter] = useState<string>("");
   const [sourceFilter, setSourceFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
