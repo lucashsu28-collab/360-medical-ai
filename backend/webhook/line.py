@@ -295,16 +295,18 @@ async def _handle_message(user_id: str, message: dict[str, Any]) -> None:
     # 記錄使用者訊息
     await _save_conversation(user_id, "user", text)
 
-    print(f"[FLOW] calling gemini, user_id={user_id}", flush=True)
+    print(f"[FLOW] calling LLM, user_id={user_id}", flush=True)
     try:
-        from ai.gemini import handle_message as gemini_handle_message
-        reply_text = gemini_handle_message(user_id, text)
+        # LINE 對話用 Claude Haiku 4.5（直接面對用戶，質感優先）
+        # 內建 fallback：沒 ANTHROPIC_API_KEY 或 Claude API 失敗時自動轉 Gemini
+        from ai.claude import handle_message as llm_handle_message
+        reply_text = llm_handle_message(user_id, text)
     except Exception as e:
         import traceback
         print(f"[ERROR] handle_message failed: {e}")
         print(traceback.format_exc())
         reply_text = "抱歉，剛剛出了一點狀況，請再試一次或稍後再問～"
-    print("[FLOW] gemini done, about to reply", flush=True)
+    print("[FLOW] LLM done, about to reply", flush=True)
 
     # 記錄 AI 回覆
     await _save_conversation(user_id, "assistant", reply_text)
