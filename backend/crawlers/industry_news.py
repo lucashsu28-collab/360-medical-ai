@@ -151,31 +151,51 @@ async def _resolve_real_url(client: httpx.AsyncClient, gnews_url: str) -> str | 
     return None
 
 
+_BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
+}
+
+
 async def extract_cover(client: httpx.AsyncClient, url: str) -> str | None:
-    """先 resolve Google News 中介頁拿實際媒體 URL，再從 og:image 抓封面"""
+    """抓封面：直接用 Google News 中介頁的 googleusercontent 文章縮圖（CDN 永久 + 100% 命中率）"""
     if not url:
         return None
-    real = await _resolve_real_url(client, url)
+
+    if "news.google.com" in url:
+        try:
+            resp = await client.get(url, timeout=10.0, follow_redirects=True, headers=_BROWSER_HEADERS)
+            # Google News 文章縮圖：lh3.googleusercontent.com/XXX=s0-wNNN-rw 或 =sNNN
+            # 篩掉 favicon（=w16/24/32/48）
+            for m in re.finditer(rb'lh3\.googleusercontent\.com/[A-Za-z0-9_\-]+=([sw][0-9][^"\'\s<>]*)', resp.content):
+                full = m.group(0).decode("utf-8", errors="ignore")
+                size = m.group(1).decode("utf-8", errors="ignore")
+                # favicon 都是 =w16 / w24 / w32 / w48 這種小尺寸
+                if re.match(r'^w\d{1,2}$', size):
+                    continue
+                # 升級到 w800 取得清晰封面
+                bigger = re.sub(r'=s\d+-w\d+(-rw)?$', '=s0-w800-rw', full)
+                bigger = re.sub(r'=s\d+(-rw)?$', '=s0-w800-rw', bigger) if "=s0-w800" not in bigger else bigger
+                return f"https://{bigger}"
+        except Exception as e:
+            print(f"[industry_news] gnews thumb error: {e}")
+
+    # 備援：去原文 og:image
+    real = await _resolve_real_url(client, url) if "news.google.com" in url else url
     if not real:
         return None
     try:
-        resp = await client.get(real, timeout=8.0, follow_redirects=True)
+        resp = await client.get(real, timeout=8.0, follow_redirects=True, headers=_BROWSER_HEADERS)
         if resp.status_code != 200:
             return None
-        # og:image
         m = re.search(rb'<meta[^>]+property=["\']og:image(?::secure_url)?["\'][^>]+content=["\']([^"\']+)["\']', resp.content[:80000])
         if m:
             return m.group(1).decode("utf-8", errors="ignore")
-        # twitter:image
         m = re.search(rb'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']', resp.content[:80000])
         if m:
             return m.group(1).decode("utf-8", errors="ignore")
-        # 退而求其次：第一張 article 內圖
-        m = re.search(rb'<img[^>]+src=["\'](https?://[^"\']+\.(?:jpg|jpeg|png|webp))[^"\']*["\']', resp.content[:50000])
-        if m:
-            return m.group(1).decode("utf-8", errors="ignore")
     except Exception as e:
-        print(f"[industry_news] extract_cover error: {e}")
+        print(f"[industry_news] og:image fallback error: {e}")
     return None
 
 

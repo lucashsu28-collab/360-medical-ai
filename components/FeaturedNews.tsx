@@ -27,7 +27,7 @@ export default function FeaturedNews() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API}/api/news?limit=6`)
+    fetch(`${API}/api/news?limit=8`)
       .then((r) => r.json())
       .then((d) => setItems(d.items || []))
       .catch(() => setItems([]))
@@ -54,8 +54,8 @@ export default function FeaturedNews() {
       {loading ? (
         <div style={{ padding: 40, textAlign: "center", color: "#A0AEC0", fontSize: 13 }}>載入中…</div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
-          {items.slice(0, 6).map((n) => (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          {items.slice(0, 8).map((n) => (
             <NewsCard key={n.id} news={n} />
           ))}
         </div>
@@ -103,18 +103,18 @@ function NewsCard({ news: n }: { news: NewsItem }) {
         </div>
       </div>
       {/* 文字 */}
-      <div style={{ padding: 16, flex: 1, display: "flex", flexDirection: "column" }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", margin: "0 0 6px", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+      <div style={{ padding: "12px 14px 14px", flex: 1, display: "flex", flexDirection: "column" }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: "#1A202C", margin: "0 0 5px", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {n.title}
         </h3>
         {n.summary && (
-          <p style={{ fontSize: 12, color: "#64748B", lineHeight: 1.6, margin: "0 0 10px", flex: 1, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          <p style={{ fontSize: 11, color: "#64748B", lineHeight: 1.55, margin: "0 0 8px", flex: 1, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {n.summary}
           </p>
         )}
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#94A3B8", paddingTop: 8, borderTop: "1px solid #F1F5F9" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#94A3B8", paddingTop: 6, borderTop: "1px solid #F1F5F9" }}>
           <span style={{ fontWeight: 600 }}>{n.source_name || "新聞"}</span>
-          <span>{n.published_at ? n.published_at.slice(0, 10) : "—"}</span>
+          <span>{n.published_at ? n.published_at.slice(5, 10) : "—"}</span>
         </div>
       </div>
       <style>{`

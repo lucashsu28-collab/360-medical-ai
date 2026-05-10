@@ -101,7 +101,7 @@ export default function NewsPage() {
             <p style={{ fontSize: 14, margin: 0 }}>暫無資料，爬蟲首次執行後將自動更新</p>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
             {items.map((n) => (
               <NewsCard key={n.id} news={n} />
             ))}
@@ -152,31 +152,27 @@ function NewsCard({ news: n }: { news: NewsItem }) {
       </div>
 
       {/* 內容 */}
-      <div style={{ padding: 18, flex: 1, display: "flex", flexDirection: "column" }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1A202C", margin: "0 0 8px", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+      <div style={{ padding: "12px 14px 14px", flex: 1, display: "flex", flexDirection: "column" }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: "#1A202C", margin: "0 0 5px", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {n.title}
         </h3>
         {n.summary && (
-          <p style={{ fontSize: 12, color: "#64748B", lineHeight: 1.7, margin: "0 0 12px", flex: 1, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          <p style={{ fontSize: 11, color: "#64748B", lineHeight: 1.55, margin: "0 0 8px", flex: 1, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {n.summary}
           </p>
         )}
-
-        {/* 關鍵字 */}
         {n.ai_keywords && n.ai_keywords.length > 0 && (
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
-            {n.ai_keywords.slice(0, 4).map((k, i) => (
-              <span key={i} style={{ fontSize: 10, color: "#64748B", background: "#F1F5F9", padding: "2px 7px", borderRadius: 99 }}>
+          <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 6 }}>
+            {n.ai_keywords.slice(0, 3).map((k, i) => (
+              <span key={i} style={{ fontSize: 9, color: "#64748B", background: "#F1F5F9", padding: "1px 6px", borderRadius: 99 }}>
                 {k}
               </span>
             ))}
           </div>
         )}
-
-        {/* footer */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 10, borderTop: "1px solid #F1F5F9", fontSize: 11, color: "#94A3B8" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 6, borderTop: "1px solid #F1F5F9", fontSize: 10, color: "#94A3B8" }}>
           <span style={{ fontWeight: 600 }}>{n.source_name || "新聞"}</span>
-          <span>{n.published_at ? n.published_at.slice(0, 10) : "—"}</span>
+          <span>{n.published_at ? n.published_at.slice(5, 10) : "—"}</span>
         </div>
       </div>
 
