@@ -165,3 +165,28 @@ async def admin_backfill_covers(background_tasks: BackgroundTasks):
     """補抓既有 0 cover 新聞的封面（背景跑）"""
     background_tasks.add_task(_backfill_covers_background)
     return {"ok": True, "message": "補抓封面已啟動（一次處理 60 筆，可重複觸發）"}
+
+
+@admin_router.get("/debug-cover")
+async def admin_debug_cover(url: str):
+    """Debug：對指定 URL 跑 extract_cover，回診斷資訊"""
+    import httpx, re
+    from crawlers.industry_news import extract_cover, _BROWSER_HEADERS
+
+    debug = {"input": url}
+    try:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+            cover = await extract_cover(client, url)
+            debug["cover_result"] = cover
+            # 額外抓一次原始 HTML 看 Cloud Run 環境拿到什麼
+            resp = await client.get(url, headers=_BROWSER_HEADERS)
+            debug["status"] = resp.status_code
+            debug["content_length"] = len(resp.content)
+            debug["final_url"] = str(resp.url)
+            # 找 lh3.googleusercontent.com 連結
+            matches = re.findall(rb'lh3\.googleusercontent\.com/[A-Za-z0-9_\-]+=(?:[sw][0-9][^"\'\s<>]*)', resp.content)
+            debug["gnews_thumb_count"] = len(matches)
+            debug["gnews_thumb_sample"] = [m.decode("utf-8", errors="ignore")[:120] for m in matches[:5]]
+    except Exception as e:
+        debug["error"] = str(e)
+    return debug
