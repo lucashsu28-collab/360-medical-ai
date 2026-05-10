@@ -187,6 +187,18 @@ export default function AdminClinicsPage() {
         >
           搜尋
         </button>
+        <button
+          onClick={async () => {
+            if (!confirm("同步 Google 商家照片？\n• 每次處理 30 筆診所\n• 約 60 秒等待\n• 估計成本 $0.7-1 USD/次\n• 可重複觸發直到全部完成")) return;
+            const r = await fetch(`${API_URL}/api/admin/clinics/sync-google-photos?batch_size=30`, { method: "POST" });
+            const d = await r.json();
+            alert(d.message || "完成");
+            fetchClinics();
+          }}
+          style={{ padding: "9px 16px", background: "#7C3AED", border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+        >
+          📷 同步 Google 照片
+        </button>
         {(query || city || minScore) && (
           <button
             onClick={() => { setSearch(""); setQuery(""); setCity(""); setMinScore(""); setPage(1); }}

@@ -18,6 +18,7 @@ interface ApiClinic {
   score?: number | null;
   google_rating?: number | null;
   google_review_count?: number | null;
+  google_photo_url?: string | null;
   specialty?: string;
   [key: string]: unknown;
 }
@@ -165,6 +166,7 @@ export default async function CityPage({
               specialty={clinic.specialty}
               google_rating={clinic.google_rating ?? undefined}
               review_count={clinic.google_review_count ?? undefined}
+              imageUrl={clinic.google_photo_url ?? null}
               variant="row"
             />
           ))}
