@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 
 interface ApiClinic {
   id: string;
@@ -138,24 +137,26 @@ function ClinicRow({ clinic }: { clinic: ApiClinic }) {
 }
 
 export default function ClinicsPage() {
-  const searchParams = useSearchParams();
-  const initialQ = searchParams?.get("q") ?? "";
-
   const [clinics, setClinics] = useState<ApiClinic[]>([]);
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState("");
   const [treatment, setTreatment] = useState("");
   const [minScore, setMinScore] = useState<number | null>(null);
   const [partnerOnly, setPartnerOnly] = useState(false);
-  const [q, setQ] = useState(initialQ);
+  const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
 
-  // URL ?q= 改變時同步輸入框（首頁帶 ?q=愛爾麗 進來）
+  // 讀 URL ?q=（首頁帶「愛爾麗」進來時用）
+  // 用 window.location 而非 useSearchParams，避免 Next.js prerender 需要 Suspense 包裝
   useEffect(() => {
-    const next = searchParams?.get("q") ?? "";
-    setQ(next);
-    setPage(1);
-  }, [searchParams]);
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    const next = sp.get("q") ?? "";
+    if (next) {
+      setQ(next);
+      setPage(1);
+    }
+  }, []);
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";

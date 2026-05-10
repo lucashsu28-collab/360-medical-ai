@@ -3,12 +3,22 @@ import { MetadataRoute } from "next";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const baseUrl = "https://360-medical-ai.vercel.app";
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const res = await fetch(`${API_URL}/api/clinics?limit=1000`, {
-    next: { revalidate: 86400 },
-  });
+// 不在 build 階段預生成（會 fetch 1567 家診所，超過 60s 超時）
+// 改成請求進來時動態生成，並快取 24h
+export const revalidate = 86400;
+export const dynamic = "force-dynamic";
 
-  const clinics = res.ok ? (await res.json()).clinics ?? [] : [];
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  let clinics: { id: string }[] = [];
+  try {
+    const res = await fetch(`${API_URL}/api/clinics?limit=1000`, {
+      next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(30000),
+    });
+    if (res.ok) clinics = (await res.json()).clinics ?? [];
+  } catch (e) {
+    console.warn("[sitemap] fetch clinics failed, fallback empty:", e);
+  }
 
   const clinicUrls = clinics.map((c: { id: string }) => ({
     url: `${baseUrl}/clinics/${c.id}`,
