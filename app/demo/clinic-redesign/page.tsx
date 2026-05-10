@@ -110,17 +110,51 @@ const MOCK = {
     { outlet: "美人圈", title: "皮秒雷射深度解析，醫師告訴你怎麼選", date: "2025-12-10", tier: "C" },
     { outlet: "Yahoo 新聞", title: "醫美廣告新規上路，業者該如何應對", date: "2025-11-05", tier: "B" },
   ],
+  // Tab 完整療程列表（正方形卡，每張一張對題的圖）
   treatments: [
-    { name: "皮秒雷射", price: "$8,800–$12,000", desc: "深層淨膚、淡斑除痘" },
-    { name: "玻尿酸", price: "$8,000/cc", desc: "微整形/法令紋/蘋果肌" },
-    { name: "肉毒桿菌", price: "$6,000/部位", desc: "除皺、瘦小臉" },
-    { name: "童顏針", price: "$25,000/瓶", desc: "膠原增生、抗老" },
-    { name: "電波拉皮", price: "$45,000/次", desc: "緊緻、輪廓提升" },
-    { name: "音波拉提", price: "$38,000/次", desc: "下顎線、雙下巴改善" },
+    { name: "皮秒雷射", price: "$8,800–$12,000", desc: "深層淨膚、淡斑除痘", image: "https://images.unsplash.com/photo-1713085085470-fba013d67e65?w=600&q=80" },
+    { name: "玻尿酸塑形", price: "$8,000 / cc", desc: "微整形 / 法令紋 / 蘋果肌", image: "https://images.unsplash.com/photo-1552693673-1bf958298935?w=600&q=80" },
+    { name: "肉毒桿菌", price: "$6,000 / 部位", desc: "除皺、瘦小臉、瘦肩", image: "https://images.unsplash.com/photo-1696710869375-0ef8272dfc97?w=600&q=80" },
+    { name: "童顏針", price: "$25,000 / 瓶", desc: "膠原增生、由內回春", image: "https://images.unsplash.com/photo-1622189417056-1cbe4582c671?w=600&q=80" },
+    { name: "電波拉皮", price: "$45,000 / 次", desc: "緊緻、輪廓提升", image: "https://images.unsplash.com/photo-1645627590046-a957f2989f64?w=600&q=80" },
+    { name: "音波拉提", price: "$38,000 / 次", desc: "下顎線、雙下巴改善", image: "https://images.unsplash.com/photo-1567046318559-b29fcd7bf471?w=600&q=80" },
+    { name: "飛梭雷射", price: "$15,000 / 次", desc: "痘疤、毛孔修復", image: "https://images.unsplash.com/photo-1728727267814-792db55ce678?w=600&q=80" },
+    { name: "美白導入", price: "$3,800 / 次", desc: "深層補水、提亮膚色", image: "https://images.unsplash.com/photo-1526413232644-8a40f03cc03b?w=600&q=80" },
   ],
-  promotions: [
-    { title: "週年慶限定組合", price: "$18,800（原價 $25,000）", expires: "2026-06-30" },
-    { title: "新客體驗", price: "$2,800（皮秒+保養）", expires: "2026-12-31" },
+  // Tab 院長推薦療程（醫師精選的療程方案，非優惠促銷）
+  doctorPicks: [
+    {
+      title: "緊緻抗老方案",
+      target: "適合：40+ / 輪廓鬆弛",
+      items: ["童顏針", "電波拉皮"],
+      doctorNote: "「以自體膠原增生為核心，搭配電波刺激深層緊緻，效果可維持 18 個月。」",
+      priceFrom: "$58,000 起",
+      image: "https://images.unsplash.com/photo-1645627590046-a957f2989f64?w=800&q=80",
+    },
+    {
+      title: "光透淨白方案",
+      target: "適合：膚色暗沉 / 斑點明顯",
+      items: ["皮秒雷射", "美白導入"],
+      doctorNote: "「皮秒打散黑色素 + 美白導入即時提亮，亞洲女性最常選的組合。」",
+      priceFrom: "$11,800 起",
+      image: "https://images.unsplash.com/photo-1713085085470-fba013d67e65?w=800&q=80",
+    },
+    {
+      title: "立體輪廓方案",
+      target: "適合：扁平臉 / 想要 V 線條",
+      items: ["玻尿酸塑形", "音波拉提"],
+      doctorNote: "「填補 + 拉提雙效，蘋果肌飽滿、下顎線清晰，自然不僵硬。」",
+      priceFrom: "$45,000 起",
+      image: "https://images.unsplash.com/photo-1552693673-1bf958298935?w=800&q=80",
+    },
+    {
+      title: "痘疤修復方案",
+      target: "適合：青春痘後遺症 / 凹疤",
+      items: ["飛梭雷射", "修護導入"],
+      doctorNote: "「分階段刺激皮膚再生，3-5 次明顯改善凹疤紋理。」",
+      priceFrom: "$15,800 起",
+      image: "https://images.unsplash.com/photo-1728727267814-792db55ce678?w=800&q=80",
+    },
   ],
   doctors: [
     { name: "吳欣儀 醫師", title: "院長｜醫學美容醫師", spec: "微整形、抗老" },
@@ -386,7 +420,7 @@ function PartnerView() {
           <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", display: "flex", gap: 0, overflowX: "auto" }}>
             {[
               { k: "treatment", label: "💉 完整療程列表" },
-              { k: "promo", label: "🎁 限時優惠" },
+              { k: "promo", label: "🩺 院長推薦療程" },
               { k: "doctor", label: "👨‍⚕️ 醫師團隊" },
               { k: "gallery", label: "📸 環境相片" },
               { k: "media", label: "📰 媒體報導" },
@@ -402,24 +436,50 @@ function PartnerView() {
 
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 48px" }}>
           {tab === "treatment" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
               {MOCK.treatments.map((t, i) => (
-                <div key={i} style={{ padding: 20, background: "#fff", border: "1px solid #FED7AA", borderRadius: 12, boxShadow: "0 2px 6px rgba(245,158,11,.06)" }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 6 }}>{t.name}</div>
-                  <div style={{ fontSize: 12, color: "#64748B", marginBottom: 10, lineHeight: 1.6, minHeight: 32 }}>{t.desc}</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#B45309" }}>{t.price}</div>
+                <div key={i} style={{ background: "#fff", border: "1px solid #FED7AA", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 6px rgba(245,158,11,.06)" }}>
+                  {/* 正方形圖區 */}
+                  <div style={{ aspectRatio: "1", overflow: "hidden", background: "#FED7AA" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={t.image} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  </div>
+                  {/* 文字區 */}
+                  <div style={{ padding: "14px 14px 16px" }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#1A202C", marginBottom: 4 }}>{t.name}</div>
+                    <div style={{ fontSize: 12, color: "#64748B", marginBottom: 10, lineHeight: 1.5, minHeight: 36 }}>{t.desc}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#B45309" }}>{t.price}</div>
+                  </div>
                 </div>
               ))}
             </div>
           )}
           {tab === "promo" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              {MOCK.promotions.map((p, i) => (
-                <div key={i} style={{ padding: 20, background: "linear-gradient(135deg, #FFFBEB 0%, #FFEDD5 100%)", border: "2px solid #F59E0B", borderRadius: 12 }}>
-                  <div style={{ display: "inline-block", padding: "3px 10px", background: "#B45309", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 4, marginBottom: 10 }}>限時</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 8 }}>{p.title}</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#B45309", marginBottom: 12 }}>{p.price}</div>
-                  <div style={{ fontSize: 12, color: "#92400E" }}>有效期至 {p.expires}</div>
+              {MOCK.doctorPicks.map((p, i) => (
+                <div key={i} style={{ background: "#fff", border: "1px solid #FED7AA", borderRadius: 14, overflow: "hidden", display: "flex", boxShadow: "0 2px 8px rgba(245,158,11,.08)" }}>
+                  {/* 左側圖 */}
+                  <div style={{ width: 160, flexShrink: 0, background: "#FED7AA" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.image} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  </div>
+                  {/* 右側內容 */}
+                  <div style={{ padding: "16px 18px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                    <div>
+                      <div style={{ display: "inline-block", padding: "3px 9px", background: "#1A202C", color: "#FBBF24", fontSize: 10, fontWeight: 700, borderRadius: 4, marginBottom: 8 }}>
+                        🩺 院長推薦
+                      </div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "#1A202C", marginBottom: 4 }}>{p.title}</div>
+                      <div style={{ fontSize: 11, color: "#92400E", marginBottom: 8, fontWeight: 600 }}>{p.target}</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
+                        {p.items.map((it, j) => (
+                          <span key={j} style={{ fontSize: 10, padding: "2px 8px", background: "#FFFBEB", color: "#B45309", border: "1px solid #FED7AA", borderRadius: 99, fontWeight: 600 }}>{it}</span>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#475569", lineHeight: 1.6, fontStyle: "italic" }}>{p.doctorNote}</div>
+                    </div>
+                    <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: "#B45309" }}>{p.priceFrom}</div>
+                  </div>
                 </div>
               ))}
             </div>
