@@ -19,6 +19,7 @@ from models.monitor_keyword import MonitorKeyword                     # noqa: F4
 from models.media_authority import MediaAuthority                     # noqa: F401
 from models.mention_appeal import MentionAppeal                       # noqa: F401
 from models.clinic_brand_page import ClinicBrandPage                  # noqa: F401
+from models.industry_news import IndustryNews                         # noqa: F401
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
