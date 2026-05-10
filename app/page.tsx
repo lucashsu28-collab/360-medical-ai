@@ -59,7 +59,7 @@ export default function Home() {
             美麗不踩雷
           </p>
           <div style={{ maxWidth: 540, margin: "0 auto 36px" }}>
-            <SearchBox />
+            <SearchBox searchPath="/clinics" placeholder="輸入診所名稱（例：愛爾麗）、醫師、或療程…" />
           </div>
           <div style={{ display: "flex", justifyContent: "center", gap: 32, flexWrap: "wrap" }}>
             {STATS.map((s) => (
