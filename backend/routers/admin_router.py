@@ -406,11 +406,15 @@ async def recalc_scores():
     from sqlalchemy import text as sql_text
     from database import AsyncSessionLocal
     async with AsyncSessionLocal() as session:
+        # 清理可能殘留的 temp tables
+        await session.execute(sql_text("DROP TABLE IF EXISTS _penalty_calc"))
+        await session.execute(sql_text("DROP TABLE IF EXISTS _media_calc"))
+
         # 1. 算出每家診所的 penalty 扣分（嚴重 -10、中度 -5、輕微 -2，最多扣到 0）
         await session.execute(sql_text("""
             CREATE TEMP TABLE _penalty_calc AS
             SELECT
-                clinic_id,
+                target_id AS clinic_id,
                 GREATEST(0, 20 - SUM(
                     CASE severity
                         WHEN 'severe' THEN 10
@@ -420,8 +424,8 @@ async def recalc_scores():
                     END
                 )) AS penalty_score
             FROM admin_penalties
-            WHERE status = 'active'
-            GROUP BY clinic_id
+            WHERE status = 'active' AND target_type = 'clinic'
+            GROUP BY target_id
         """))
 
         # 2. 算出每家診所的 media 加分（baseline 12，依 contribution 累加，cap 20）
