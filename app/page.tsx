@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SearchBox from "@/components/SearchBox";
+import FeaturedNews from "@/components/FeaturedNews";
 
 const LINE_CTA_URL = "https://lin.ee/6sTCRzm";
 
@@ -103,6 +104,9 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* ── 精選快訊（六格卡片，自動聚合） ── */}
+      <FeaturedNews />
 
       {/* ── About + Score ── */}
       <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 48px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
