@@ -129,23 +129,57 @@ def parse_pub_date(s: str) -> datetime | None:
         return None
 
 
-async def extract_cover(client: httpx.AsyncClient, url: str) -> str | None:
-    """從原文 og:image 抓封面（盡力而為，失敗回 None）"""
-    if not url:
-        return None
+async def _resolve_real_url(client: httpx.AsyncClient, gnews_url: str) -> str | None:
+    """Google News RSS link 是中介頁，需要再 parse 一次拿實際媒體 URL"""
+    if "news.google.com" not in gnews_url:
+        return gnews_url  # 已是直連
     try:
-        resp = await client.get(url, timeout=8.0, follow_redirects=True)
-        if resp.status_code != 200:
-            return None
-        m = re.search(rb'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', resp.content[:50000])
+        resp = await client.get(gnews_url, timeout=8.0, follow_redirects=True)
+        # 1) data-n-au 屬性是 Google News 標準 redirect target
+        m = re.search(rb'data-n-au="(https?://[^"]+)"', resp.content[:80000])
         if m:
             return m.group(1).decode("utf-8", errors="ignore")
-    except Exception:
-        return None
+        # 2) <a> 帶 c-wiz 的真實外連
+        m = re.search(rb'<a [^>]*href="(https?://[^"]+)"[^>]*data-ved', resp.content[:80000])
+        if m:
+            return m.group(1).decode("utf-8", errors="ignore")
+        # 3) 最終 redirect URL
+        if resp.url and "news.google.com" not in str(resp.url):
+            return str(resp.url)
+    except Exception as e:
+        print(f"[industry_news] resolve real url failed: {e}")
     return None
 
 
-async def run_industry_news_crawler(max_per_query: int = 15, fetch_cover: bool = False) -> dict:
+async def extract_cover(client: httpx.AsyncClient, url: str) -> str | None:
+    """先 resolve Google News 中介頁拿實際媒體 URL，再從 og:image 抓封面"""
+    if not url:
+        return None
+    real = await _resolve_real_url(client, url)
+    if not real:
+        return None
+    try:
+        resp = await client.get(real, timeout=8.0, follow_redirects=True)
+        if resp.status_code != 200:
+            return None
+        # og:image
+        m = re.search(rb'<meta[^>]+property=["\']og:image(?::secure_url)?["\'][^>]+content=["\']([^"\']+)["\']', resp.content[:80000])
+        if m:
+            return m.group(1).decode("utf-8", errors="ignore")
+        # twitter:image
+        m = re.search(rb'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']', resp.content[:80000])
+        if m:
+            return m.group(1).decode("utf-8", errors="ignore")
+        # 退而求其次：第一張 article 內圖
+        m = re.search(rb'<img[^>]+src=["\'](https?://[^"\']+\.(?:jpg|jpeg|png|webp))[^"\']*["\']', resp.content[:50000])
+        if m:
+            return m.group(1).decode("utf-8", errors="ignore")
+    except Exception as e:
+        print(f"[industry_news] extract_cover error: {e}")
+    return None
+
+
+async def run_industry_news_crawler(max_per_query: int = 15, fetch_cover: bool = True) -> dict:
     """跑全部 4 類關鍵字，寫入 industry_news"""
     stats = {"fetched": 0, "summarized": 0, "skipped": 0, "inserted": 0}
 
