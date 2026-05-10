@@ -167,6 +167,57 @@ async def admin_backfill_covers(background_tasks: BackgroundTasks):
     return {"ok": True, "message": "補抓封面已啟動（一次處理 60 筆，可重複觸發）"}
 
 
+async def _backfill_summaries_background():
+    """補修 summary 為 HTML 的記錄（含 <a > tag 的）"""
+    from crawlers.industry_news import summarize_news, _strip_html
+    from sqlalchemy import update
+    from models.industry_news import IndustryNews
+
+    async with AsyncSessionLocal() as session:
+        rows = (await session.execute(
+            select(IndustryNews).where(
+                IndustryNews.summary.like("%<%"),
+                IndustryNews.status == "active",
+            ).limit(100)
+        )).scalars().all()
+        print(f"[backfill_summaries] processing {len(rows)} rows with HTML summary")
+        ok = 0
+        for n in rows:
+            # 直接用 strip + 重跑 Gemini
+            result = summarize_news(n.title or "", n.summary or "")
+            n.summary = _strip_html(result.get("summary") or "")[:120]
+            if result.get("keywords"):
+                n.ai_keywords = result["keywords"]
+            ok += 1
+        await session.commit()
+        print(f"[backfill_summaries] done: {ok}/{len(rows)}")
+
+
+@admin_router.post("/backfill-summaries")
+async def admin_backfill_summaries(background_tasks: BackgroundTasks):
+    """重整含 HTML 的舊 summary（用 Gemini 重摘）"""
+    background_tasks.add_task(_backfill_summaries_background)
+    return {"ok": True, "message": "Summary 修整已啟動（一次處理 100 筆）"}
+
+
+@admin_router.post("/clear-bad-covers")
+async def admin_clear_bad_covers():
+    """清掉 Google News default logo 之類的假封面，讓下次 backfill 重抓"""
+    from sqlalchemy import update, text as sql_text
+    BAD_PATTERNS = [
+        "%J6_coFbogxhRI9iM864NL%",  # Google News logo
+    ]
+    async with AsyncSessionLocal() as session:
+        cleared = 0
+        for pat in BAD_PATTERNS:
+            result = await session.execute(sql_text(
+                "UPDATE industry_news SET cover_image = NULL WHERE cover_image LIKE :pat"
+            ), {"pat": pat})
+            cleared += result.rowcount or 0
+        await session.commit()
+        return {"ok": True, "cleared": cleared, "message": f"已清掉 {cleared} 筆假封面（Google News logo）"}
+
+
 @admin_router.get("/debug-cover")
 async def admin_debug_cover(url: str):
     """Debug：對指定 URL 跑 extract_cover，回診斷資訊"""
