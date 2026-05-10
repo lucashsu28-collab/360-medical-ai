@@ -399,20 +399,74 @@ async def sync_google_photos(batch_size: int = 30):
 
 @router.post("/clinics/recalc-scores")
 async def recalc_scores():
-    """重新計算所有診所的 score 欄位（用最新 rating/score 子欄位）"""
+    """重新計算所有診所的 score 欄位 + score_breakdown JSONB
+
+    五維度：legal(20) + google(0-20) + judicial(20) + penalty(20-default, 扣分依嚴重度) + media(12-baseline, 由 mentions 累計)
+    """
     from sqlalchemy import text as sql_text
     from database import AsyncSessionLocal
     async with AsyncSessionLocal() as session:
+        # 1. 算出每家診所的 penalty 扣分（嚴重 -10、中度 -5、輕微 -2，最多扣到 0）
+        await session.execute(sql_text("""
+            CREATE TEMP TABLE _penalty_calc AS
+            SELECT
+                clinic_id,
+                GREATEST(0, 20 - SUM(
+                    CASE severity
+                        WHEN 'severe' THEN 10
+                        WHEN 'medium' THEN 5
+                        WHEN 'minor' THEN 2
+                        ELSE 0
+                    END
+                )) AS penalty_score
+            FROM admin_penalties
+            WHERE status = 'active'
+            GROUP BY clinic_id
+        """))
+
+        # 2. 算出每家診所的 media 加分（baseline 12，依 contribution 累加，cap 20）
+        await session.execute(sql_text("""
+            CREATE TEMP TABLE _media_calc AS
+            SELECT
+                target_id AS clinic_id,
+                LEAST(20.0, GREATEST(0.0, 12.0 + COALESCE(SUM(contribution_score), 0)))::float AS media_score
+            FROM mentions
+            WHERE status = 'active' AND target_type = 'clinic'
+            GROUP BY target_id
+        """))
+
+        # 3. UPDATE clinic.score + score_breakdown（score_breakdown 為 JSON 型別，用 json_build_object）
         result = await session.execute(sql_text("""
-            UPDATE clinics SET score = (
-                COALESCE(legal_score, 0)
-                + COALESCE(google_rating_score, 0)
-                + COALESCE(judicial_score, 0)
-                + 20
-                + 12
-            )
+            UPDATE clinics c SET
+                score = (
+                    COALESCE(c.legal_score, 0)
+                    + COALESCE(c.google_rating_score, 0)
+                    + COALESCE(c.judicial_score, 0)
+                    + COALESCE(p.penalty_score, 20)
+                    + COALESCE(m.media_score, 12)
+                ),
+                score_breakdown = json_build_object(
+                    'legal',    COALESCE(c.legal_score, 0)::float,
+                    'google',   COALESCE(c.google_rating_score, 0)::float,
+                    'judicial', COALESCE(c.judicial_score, 0)::float,
+                    'penalty',  COALESCE(p.penalty_score, 20)::float,
+                    'media',    COALESCE(m.media_score, 12)::float
+                )
+            FROM clinics c2
+            LEFT JOIN _penalty_calc p ON p.clinic_id = c2.id
+            LEFT JOIN _media_calc   m ON m.clinic_id = c2.id
+            WHERE c.id = c2.id
         """))
         await session.commit()
+
+        # 清理 temp tables
+        try:
+            await session.execute(sql_text("DROP TABLE IF EXISTS _penalty_calc"))
+            await session.execute(sql_text("DROP TABLE IF EXISTS _media_calc"))
+            await session.commit()
+        except Exception:
+            pass
+
         return {"ok": True, "updated": result.rowcount}
 
 

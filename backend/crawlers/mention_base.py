@@ -120,6 +120,16 @@ class MentionCrawler(ABC):
                     if record_status == "active":
                         record_status = "pending"
 
+                # 正規化 sentiment 字串到 VARCHAR(10) 內（positive/neutral/negative）
+                # Gemini 可能回 "positive_strong"/"negative_strong"（15 字）→ 折回基礎類別
+                _raw_sent = (analysis.get("sentiment") or "neutral").strip().lower()
+                if _raw_sent in ("positive_strong", "positive"):
+                    analysis["sentiment"] = "positive"
+                elif _raw_sent in ("negative_strong", "negative"):
+                    analysis["sentiment"] = "negative"
+                else:
+                    analysis["sentiment"] = "neutral"
+
                 # 計算貢獻值
                 pub = r.get("published_at")
                 contribution = calc_mention_contribution({
@@ -159,9 +169,16 @@ class MentionCrawler(ABC):
                     )
                     .on_conflict_do_nothing(index_elements=["source_url"])
                 )
-                result = await session.execute(stmt)
-                if result.rowcount and result.rowcount > 0:
-                    stats["inserted"] += 1
+                # 用 SAVEPOINT 包單筆 insert：失敗只回滾這筆，不影響整批
+                try:
+                    async with session.begin_nested():
+                        result = await session.execute(stmt)
+                        if result.rowcount and result.rowcount > 0:
+                            stats["inserted"] += 1
+                except Exception as e:
+                    stats.setdefault("insert_errors", 0)
+                    stats["insert_errors"] += 1
+                    print(f"[{self.source_type}] insert failed for {r.get('source_url')}: {e}")
 
             await session.commit()
 
