@@ -70,10 +70,19 @@ class PenaltyCrawler(ABC):
                     continue
 
                 clinic_id, score = await match_clinic_with_score(session, clinic_name)
-                if not clinic_id:
+                if not clinic_id or score < 70:
                     stats["skipped"] += 1
                     continue
-                if score < 85:
+
+                # 防呆：前 2 字必須匹配，避免「光澤」誤配「拾光」這種同尾不同首
+                from models.clinic import Clinic
+                _matched = await session.get(Clinic, clinic_id)
+                _matched_name = (_matched.name if _matched else "") or ""
+                _ext_short = clinic_name.replace("醫美診所", "").replace("醫美", "").replace("整形外科", "").replace("診所", "").strip()
+                _mat_short = _matched_name.replace("醫美診所", "").replace("醫美", "").replace("整形外科", "").replace("診所", "").strip()
+                _prefix_ok = bool(_ext_short and _mat_short and _ext_short[:2] == _mat_short[:2])
+
+                if score < 85 or not _prefix_ok:
                     stats["low_confidence"] += 1
                     # 仍進 DB 但 status=pending 等人工確認
                     record_status = "pending"

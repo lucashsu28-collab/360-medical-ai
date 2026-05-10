@@ -82,11 +82,24 @@ class MentionCrawler(ABC):
 
                 clinic_id, score = await match_clinic_with_score(session, clinic_name)
                 # 提取出的診所名通常是「璞真醫美診所」這種完整名稱，可能跟 DB「璞真整形外科診所」差幾個字
-                # 降 threshold 到 75（rapidfuzz WRatio）能 cover 更多匹配
-                if not clinic_id or score < 60:
+                # threshold 設定（rapidfuzz WRatio 0-100）：
+                #   < 70：跳過（風險太高，例：「光澤」vs「拾光」）
+                #   70-85：低信心，status=pending 等人工審核
+                #   ≥ 85：高信心，status=active
+                # 額外防呆：高信心時，前 2 字必須匹配（防「光澤醫美」誤配「拾光醫美」這種同尾不同首）
+                if not clinic_id or score < 70:
                     stats["skipped"] += 1
                     continue
-                if score < 75:
+
+                # 取得配對到的診所名做前 2 字檢查
+                from models.clinic import Clinic
+                _matched = await session.get(Clinic, clinic_id)
+                _matched_name = (_matched.name if _matched else "") or ""
+                _ext_short = clinic_name.replace("醫美診所", "").replace("醫美", "").replace("整形外科", "").replace("診所", "").strip()
+                _mat_short = _matched_name.replace("醫美診所", "").replace("醫美", "").replace("整形外科", "").replace("診所", "").strip()
+                _prefix_ok = bool(_ext_short and _mat_short and _ext_short[:2] == _mat_short[:2])
+
+                if score < 85 or not _prefix_ok:
                     stats["low_confidence"] += 1
                     record_status = "pending"
                 else:
