@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import ScoreCard from "@/components/ScoreCard";
+
+// 評分常變動，強制每次請求都打 API（不用 ISR 快取）
+export const dynamic = "force-dynamic";
 import FogReport from "@/components/FogReport";
 import ClinicReviewsList from "@/components/ClinicReviewsList";
 import PenaltiesSection from "@/components/PenaltiesSection";
@@ -105,7 +108,7 @@ function FakeFogContent({ clinicName }: { clinicName: string }) {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const res = await fetch(`${apiUrl}/api/clinics/${id}`, { next: { revalidate: 60 } });
+  const res = await fetch(`${apiUrl}/api/clinics/${id}`, { cache: "no-store" });
   if (!res.ok) return { title: "診所不存在" };
   const clinic = (await res.json()) as ApiClinic;
   return {
@@ -124,7 +127,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function ClinicDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const res = await fetch(`${apiUrl}/api/clinics/${id}`, { next: { revalidate: 60 } });
+  const res = await fetch(`${apiUrl}/api/clinics/${id}`, { cache: "no-store" });
   if (!res.ok) notFound();
   const clinic = (await res.json()) as ApiClinic;
   if (!clinic?.id) notFound();

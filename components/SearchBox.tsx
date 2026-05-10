@@ -68,6 +68,8 @@ export default function SearchBox({
   return (
     <div className={`relative z-10 ${styles.wrap}`}>
       <form
+        action={searchPath || undefined}
+        method="get"
         onSubmit={handleSubmit}
         className={`flex items-center overflow-hidden rounded-xl border-2 border-[var(--line2)] bg-white transition-[border-color,box-shadow] duration-200 ${styles.box}`}
         role="search"
