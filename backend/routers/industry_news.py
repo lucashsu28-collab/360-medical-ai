@@ -197,10 +197,10 @@ async def admin_backfill_covers():
                 "message": f"處理 {len(rows)} 筆 → 成功 {ok} 筆 → 失敗 {failed} 筆"}
 
 
-async def _backfill_summaries_background():
-    """補修 summary 為 HTML 的記錄（含 <a > tag 的）"""
+@admin_router.post("/backfill-summaries")
+async def admin_backfill_summaries():
+    """同步：重整含 HTML 的舊 summary（一次處理 30 筆，~60s）"""
     from crawlers.industry_news import summarize_news, _strip_html
-    from sqlalchemy import update
     from models.industry_news import IndustryNews
 
     async with AsyncSessionLocal() as session:
@@ -208,26 +208,22 @@ async def _backfill_summaries_background():
             select(IndustryNews).where(
                 IndustryNews.summary.like("%<%"),
                 IndustryNews.status == "active",
-            ).limit(100)
+            ).limit(30)
         )).scalars().all()
-        print(f"[backfill_summaries] processing {len(rows)} rows with HTML summary")
+
         ok = 0
         for n in rows:
-            # 直接用 strip + 重跑 Gemini
-            result = summarize_news(n.title or "", n.summary or "")
-            n.summary = _strip_html(result.get("summary") or "")[:120]
-            if result.get("keywords"):
-                n.ai_keywords = result["keywords"]
-            ok += 1
+            try:
+                result = summarize_news(n.title or "", n.summary or "")
+                n.summary = _strip_html(result.get("summary") or "")[:120]
+                if result.get("keywords"):
+                    n.ai_keywords = result["keywords"]
+                ok += 1
+            except Exception as e:
+                print(f"[summary backfill] {n.id} error: {e}")
         await session.commit()
-        print(f"[backfill_summaries] done: {ok}/{len(rows)}")
-
-
-@admin_router.post("/backfill-summaries")
-async def admin_backfill_summaries(background_tasks: BackgroundTasks):
-    """重整含 HTML 的舊 summary（用 Gemini 重摘）"""
-    background_tasks.add_task(_backfill_summaries_background)
-    return {"ok": True, "message": "Summary 修整已啟動（一次處理 100 筆）"}
+        return {"ok": True, "processed": len(rows), "fixed": ok,
+                "message": f"處理 {len(rows)} 筆 → 修好 {ok} 筆（重跑 Gemini）"}
 
 
 @admin_router.post("/clear-bad-covers")
