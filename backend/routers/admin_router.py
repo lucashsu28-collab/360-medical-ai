@@ -424,16 +424,26 @@ async def sync_google_ratings(batch_size: int = 30, force_all: bool = False):
         return star + rev
 
     async with AsyncSessionLocal() as session:
+        # 確保有 google_rating_synced_at 欄位（首次跑時動態加）
+        from sqlalchemy import text as sql_text
+        await session.execute(sql_text(
+            "ALTER TABLE clinics ADD COLUMN IF NOT EXISTS google_rating_synced_at TIMESTAMP"
+        ))
+        await session.commit()
+
         if force_all:
-            stmt = select(Clinic).order_by(Clinic.id).limit(bs)
-            # force_all 用「最久沒更新」的優先
-            stmt = select(Clinic).limit(bs)
+            # 最久沒同步（含從未同步）的優先
+            stmt = select(Clinic).order_by(
+                Clinic.google_rating_synced_at.asc().nullsfirst(),
+                Clinic.id.asc(),
+            ).limit(bs)
         else:
-            stmt = select(Clinic).where(Clinic.google_rating.is_(None)).limit(bs)
+            stmt = select(Clinic).where(Clinic.google_rating.is_(None)).order_by(Clinic.id.asc()).limit(bs)
         rows = (await session.execute(stmt)).scalars().all()
 
         ok = 0
         not_found = 0
+        now = datetime.utcnow()
         for c in rows:
             try:
                 info = await get_clinic_places_info(c.name or "", c.address or "")
@@ -449,6 +459,10 @@ async def sync_google_ratings(batch_size: int = 30, force_all: bool = False):
                     not_found += 1
             except Exception as e:
                 print(f"[sync_google_ratings] {c.id} error: {e}")
+            # 不論成功與否都標記已同步，避免下次重複跑
+            await session.execute(sql_text(
+                "UPDATE clinics SET google_rating_synced_at = :t WHERE id = :id"
+            ), {"t": now, "id": c.id})
             await _asyncio.sleep(0.3)
         await session.commit()
         return {"ok": True, "processed": len(rows), "got_rating": ok, "not_found": not_found,
