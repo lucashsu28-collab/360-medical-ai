@@ -6,7 +6,7 @@ import logging
 import os
 
 import httpx
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, JSONResponse
 
@@ -112,7 +112,12 @@ def _clean_search(s: str) -> str:
 
 
 @app.get("/api/clinics")
-async def list_clinics(search: str = "", city: str = "", min_score: float = 0, limit: int = 20, offset: int = 0):
+async def list_clinics(
+    response: Response,
+    search: str = "", city: str = "", min_score: float = 0, limit: int = 20, offset: int = 0,
+):
+    # 評分常重算，禁用瀏覽器快取，避免 Lucas 看到舊分數
+    response.headers["Cache-Control"] = "no-store, max-age=0"
     limit = min(limit, 9999)  # cap at 9999
     try:
         from sqlalchemy import or_, text as sa_text
@@ -203,7 +208,8 @@ async def api_get_doctor_detail(doc_seq: str):
 
 
 @app.get("/api/clinics/{clinic_id}")
-async def get_clinic(clinic_id: str):
+async def get_clinic(clinic_id: str, response: Response):
+    response.headers["Cache-Control"] = "no-store, max-age=0"
     try:
         async with _SessionLocal() as session:
             r = await session.get(ClinicModel, clinic_id)
