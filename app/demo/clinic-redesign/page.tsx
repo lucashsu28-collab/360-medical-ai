@@ -39,7 +39,7 @@ const MOCK = {
       desc: "適合斑點、痘疤、毛孔粗大、暗沉膚質，無修復期、效果立現",
       price: "原價 $12,000 · 限時 $8,800",
       badge: "🔥 招牌",
-      image: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=1200&q=80",
+      image: "https://images.unsplash.com/photo-1772831902679-3f41c106d7a2?w=1200&q=80",
     },
     {
       title: "玻尿酸塑形",
@@ -47,38 +47,38 @@ const MOCK = {
       desc: "蘋果肌、淚溝、法令紋、唇形、鼻樑，恢復飽滿年輕的自己",
       price: "$8,000 / cc 起",
       badge: "✨ 熱門",
-      image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=1200&q=80",
+      image: "https://images.unsplash.com/photo-1552693673-1bf958298935?w=1200&q=80",
     },
   ],
-  // 主頁顧客前後對照（4 卡）
+  // 主頁顧客前後對照（4 卡，示意圖；正式版改為診所後台上傳）
   beforeAfter: [
     {
       treatment: "皮秒雷射淨膚",
       duration: "療程後 4 週",
       note: "斑點淡化、膚色提亮",
-      before: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80",
-      after: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80",
+      before: "https://images.unsplash.com/photo-1606815013283-f5dcea587c38?w=600&q=80",
+      after: "https://images.unsplash.com/photo-1669040620696-9c9fbc9a3ba5?w=600&q=80",
     },
     {
       treatment: "玻尿酸塑形",
       duration: "療程後立即",
       note: "蘋果肌飽滿、法令紋撫平",
-      before: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&q=80",
-      after: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&q=80",
+      before: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80",
+      after: "https://images.unsplash.com/photo-1707544738456-a5f930510139?w=600&q=80",
     },
     {
       treatment: "童顏針抗老",
       duration: "療程後 8 週",
       note: "膠原增生、輪廓緊緻",
-      before: "https://images.unsplash.com/photo-1571772996211-2f02c9727629?w=600&q=80",
+      before: "https://images.unsplash.com/photo-1544717304-a2db4a7b16ee?w=600&q=80",
       after: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=600&q=80",
     },
     {
       treatment: "音波拉提",
       duration: "療程後 12 週",
       note: "下顎線清晰、雙下巴改善",
-      before: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=600&q=80",
-      after: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=600&q=80",
+      before: "https://images.unsplash.com/photo-1713085085470-fba013d67e65?w=600&q=80",
+      after: "https://images.unsplash.com/photo-1772831902679-3f41c106d7a2?w=600&q=80",
     },
   ],
   // Tab 客戶好評（更豐富的文字評價）
@@ -163,7 +163,7 @@ function PartnerView() {
         {/* 真實主視覺照片 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1800&q=80"
+          src="https://images.unsplash.com/photo-1772831902679-3f41c106d7a2?w=1800&q=80"
           alt="診所主視覺"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
         />
@@ -305,7 +305,7 @@ function PartnerView() {
           <div style={{ aspectRatio: "1", borderRadius: 20, overflow: "hidden", boxShadow: "0 12px 40px rgba(245,158,11,.3)", position: "relative" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=800&q=80"
+              src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80"
               alt={MOCK.director.name}
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
             />
@@ -426,14 +426,14 @@ function PartnerView() {
           {tab === "gallery" && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
               {[
-                "photo-1606811971618-4486d14f3f99",  // clinic interior
-                "photo-1571019614242-c5c5dee9f50b",  // skincare procedure
-                "photo-1559757148-5c350d0d3c56",      // cosmetic
-                "photo-1556228720-195a672e8a03",      // cosmetics
-                "photo-1571772996211-2f02c9727629",   // beauty
-                "photo-1559839734-2b71ea197ec2",      // doctor
-                "photo-1576091160550-2173dba999ef",   // facial
-                "photo-1581595220892-b0739db3ba8c",   // laser
+                "photo-1772831902679-3f41c106d7a2",  // 雷射治療室
+                "photo-1778004930342-91a0353fc283",  // cosmetologist
+                "photo-1648775507324-b48dd3791fa5",  // 極簡室內
+                "photo-1606811971618-4486d14f3f99",  // 診所空間
+                "photo-1552693673-1bf958298935",     // 面部療程
+                "photo-1713085085470-fba013d67e65",  // facial peel
+                "photo-1512290923902-8a9f81dc236c",  // 美容治療
+                "photo-1544717304-a2db4a7b16ee",     // spa
               ].map((id, i) => (
                 <div key={i} style={{ aspectRatio: "1", borderRadius: 10, overflow: "hidden", background: "#FED7AA" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
