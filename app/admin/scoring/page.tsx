@@ -225,9 +225,34 @@ export default function ScoringPage() {
             <RuleRow label="4 件以上" value={rules.judicial["4plus_cases"]} onChange={(v) => setJudicial("4plus_cases", v)} />
           </SectionCard>
 
-          {/* 維度四、五：建置中 */}
-          <PendingCard title="品牌監測（滿分 20 分）" icon="📰" />
-          <PendingCard title="其他維度（滿分 20 分）" icon="💬" />
+          {/* 維度四：稽查違規 */}
+          <SectionCard title="稽查違規（滿分 20 分）" icon="🚨">
+            <p style={{ fontSize: 12, color: "#64748B", marginBottom: 12 }}>
+              資料來源：Google News 聚合各縣市衛生局處分新聞 + Gemini AI 提取。每週日自動更新。
+            </p>
+            <RuleRow label="近 3 年無公開違規紀錄" value={20} onChange={() => {}} />
+            <RuleRow label="輕微違規（廣告/標示）每筆扣分" value={-3} onChange={() => {}} />
+            <RuleRow label="中度違規（罰 ≥ NT$10 萬）每筆扣分" value={-10} onChange={() => {}} />
+            <RuleRow label="重大違規（停業/廢止/致死致傷）每筆扣分" value={-25} onChange={() => {}} />
+            <p style={{ fontSize: 11, color: "#94A3B8", marginTop: 10, lineHeight: 1.6 }}>
+              ※ 規則目前由後端 main.py 寫死，UI 編輯尚未串接。如需調整請改 backend/services/penalty_score.py。
+            </p>
+          </SectionCard>
+
+          {/* 維度五：媒體口碑 */}
+          <SectionCard title="媒體口碑（滿分 20 分・基準 12 分）" icon="📰">
+            <p style={{ fontSize: 12, color: "#64748B", marginBottom: 12 }}>
+              資料來源：主流媒體報導（Google News）+ Gemini 情緒分析 + 業配辨識。每週日自動更新。
+            </p>
+            <RuleRow label="基準分（無顯著正/負面報導）" value={12} onChange={() => {}} />
+            <RuleRow label="強正面（名醫專訪、得獎）每篇加分" value={5} onChange={() => {}} />
+            <RuleRow label="正面（一般推薦報導）每篇加分" value={2.5} onChange={() => {}} />
+            <RuleRow label="負面報導每篇扣分" value={-2.5} onChange={() => {}} />
+            <RuleRow label="強負面（醫療事故、訴訟敗訴）每篇扣分" value={-5} onChange={() => {}} />
+            <p style={{ fontSize: 11, color: "#94A3B8", marginTop: 10, lineHeight: 1.6 }}>
+              ※ 業配內容自動降權 ×0.3。社群匿名討論不納入評分（防水軍/黑公關）。
+            </p>
+          </SectionCard>
 
           {/* 儲存區 */}
           <div style={{ background: "#fff", borderRadius: 12, padding: "16px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>

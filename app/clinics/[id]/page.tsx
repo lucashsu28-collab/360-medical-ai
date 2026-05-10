@@ -94,7 +94,7 @@ function FakeFogContent({ clinicName }: { clinicName: string }) {
       </p>
       <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", marginBottom: 8 }}>完整報告內容</h3>
       <p style={{ fontSize: 13, color: "#718096", lineHeight: 1.7 }}>
-        含判決書案號、申訴案進度、媒體報導摘要、社群討論情緒分析等，解鎖後可下載 PDF。
+        含判決書案號、稽查違規明細、媒體口碑情緒分析、業配辨識結果等，解鎖後可下載 PDF。
       </p>
     </div>
   );

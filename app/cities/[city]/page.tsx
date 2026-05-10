@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   const cityName = decodeURIComponent(city);
   return {
     title: `${cityName}醫美診所推薦｜360醫療AI大調查`,
-    description: `${cityName}醫美診所完整評鑑，含Google評分、司法案件、合法登記等六維度分析。找${cityName}最值得信賴的醫美診所。`,
+    description: `${cityName}醫美診所完整評鑑，含合法登記、Google評分、司法糾紛、稽查違規、媒體口碑五維度分析。找${cityName}最值得信賴的醫美診所。`,
   };
 }
 
@@ -119,7 +119,7 @@ export default async function CityPage({
 
         <div className="mb-6">
           <h1 className="text-2xl font-black text-[var(--ink)] mb-2">{cityName}醫美診所推薦</h1>
-          <p className="text-[var(--muted)] text-sm">共 {clinics.length} 家診所｜六維度AI評鑑分析</p>
+          <p className="text-[var(--muted)] text-sm">共 {clinics.length} 家診所｜五維度AI評鑑分析</p>
         </div>
 
         {/* 篩選列 */}

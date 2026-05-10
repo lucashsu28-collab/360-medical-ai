@@ -76,6 +76,37 @@ async def list_mentions(
         }
 
 
+@router.get("/raw-count")
+async def get_raw_count():
+    """Debug 用：不過濾 source_type 的全表計數"""
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(text("""
+            SELECT
+                COUNT(*) AS total,
+                COUNT(DISTINCT source_type) AS source_types,
+                MIN(crawled_at) AS earliest,
+                MAX(crawled_at) AS latest
+            FROM mentions
+        """))
+        row = result.first()
+        breakdown = await session.execute(text("""
+            SELECT source_type, status, COUNT(*) AS cnt
+            FROM mentions
+            GROUP BY source_type, status
+            ORDER BY cnt DESC
+        """))
+        return {
+            "total": row[0] or 0,
+            "source_types": row[1] or 0,
+            "earliest": row[2].isoformat() if row[2] else None,
+            "latest": row[3].isoformat() if row[3] else None,
+            "breakdown": [
+                {"source_type": r[0], "status": r[1], "count": r[2]}
+                for r in breakdown.all()
+            ],
+        }
+
+
 @router.get("/stats")
 async def get_stats():
     async with AsyncSessionLocal() as session:

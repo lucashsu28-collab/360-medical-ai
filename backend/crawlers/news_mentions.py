@@ -207,7 +207,15 @@ class NewsMentionsCrawler(MentionCrawler):
             url = f"{base_url}#mention-{idx}" if idx > 0 else base_url
             if not url:
                 continue
-            sentiment = e.get("sentiment", "neutral")
+            raw_sentiment = (e.get("sentiment") or "neutral").strip().lower()
+            # Mention.sentiment 為 VARCHAR(10)，"positive_strong"/"negative_strong" 會超長
+            # 把 _strong 折回基礎類別，強度由 sentiment_score 表示
+            if raw_sentiment in ("positive_strong", "positive"):
+                sentiment = "positive"
+            elif raw_sentiment in ("negative_strong", "negative"):
+                sentiment = "negative"
+            else:
+                sentiment = "neutral"
             sentiment_score = float(e.get("sentiment_score") or 0)
             records.append({
                 "source_type": "news",

@@ -31,6 +31,22 @@ const SOURCES = [
     tagColor: "#a86800",
     tagBg: "#fff3e0",
   },
+  {
+    icon: "🚨",
+    title: "政府稽查違規公告",
+    desc: "聚合各縣市衛生局、公平會處分公告與主流媒體採訪報導，依嚴重度分輕中重三級扣分，重大違規（停業、廢止、致死致傷）永久顯示。",
+    tag: "政府公開資料",
+    tagColor: "#c53030",
+    tagBg: "#fff5f5",
+  },
+  {
+    icon: "📰",
+    title: "主流媒體口碑",
+    desc: "Google News 聚合蘋果、聯合、自由、中時、TVBS、ETtoday 等主流媒體報導，AI 自動辨識業配內容降權處理。社群匿名討論不納入評分。",
+    tag: "AI 情緒分析",
+    tagColor: "#ed8936",
+    tagBg: "#fffaf0",
+  },
 ] as const;
 
 const VALUES = [
@@ -90,7 +106,7 @@ export default function AboutPage() {
             </p>
             <p>
               <strong className="text-[var(--ink)]">我們的目標，就是打破這種資訊不對稱。</strong>
-              透過自動化爬蟲與AI分析，將衛福部、Google、司法院的公開資料整合成一套統一的評分系統，讓每一個人在5秒內就能查到一家診所的客觀概況。
+              透過自動化爬蟲與AI分析，將衛福部、Google、司法院、政府稽查公告、主流媒體報導等公開資料整合成一套統一的五維度評分系統，讓每一個人在5秒內就能查到一家診所的客觀概況。
             </p>
           </div>
         </div>
