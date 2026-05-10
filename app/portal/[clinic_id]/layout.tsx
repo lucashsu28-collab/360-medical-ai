@@ -6,6 +6,7 @@ import Link from "next/link";
 const NAV = [
   { icon: "📊", label: "數據看板", path: "" },
   { icon: "🏥", label: "基本資料", path: "/info" },
+  { icon: "✦", label: "品牌頁面", path: "/brand" },
   { icon: "💆", label: "療程項目", path: "/treatments" },
   { icon: "🎁", label: "優惠方案", path: "/promotions" },
   { icon: "👨‍⚕️", label: "醫師團隊", path: "/doctors" },

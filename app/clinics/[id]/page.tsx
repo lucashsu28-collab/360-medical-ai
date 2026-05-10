@@ -7,6 +7,7 @@ import ClinicReviewsList from "@/components/ClinicReviewsList";
 import PenaltiesSection from "@/components/PenaltiesSection";
 import MentionsSection from "@/components/MentionsSection";
 import ReputationTrendChart from "@/components/ReputationTrendChart";
+import PartnerBrandView, { type BrandPageData } from "@/components/PartnerBrandView";
 import type { ScoreCardScores } from "@/components/ScoreCard";
 
 /* ── 型別 ─────────────────────────────────────────────────────────────────── */
@@ -32,6 +33,7 @@ interface ApiClinic {
   partner_since?: string | null;
   line_oa_url?: string | null;
   treatments?: string[];
+  brand_page?: BrandPageData | null;
   doctors?: Doctor[] | null;
   gallery?: GalleryItem[] | null;
   portal_treatments?: PortalTreatment[];
@@ -129,6 +131,31 @@ export default async function ClinicDetailPage({ params }: { params: Promise<{ i
 
   const isPartner = !!(clinic.is_partner || clinic.isPartner || clinic.partner_since);
   const lineOaUrl = clinic.line_oa_url || "https://lin.ee/6sTCRzm";
+
+  // 合作診所且已設定品牌頁 → 走新版「品牌主頁」設計（mockup 套版）
+  const hasBrandPage = isPartner && clinic.brand_page && (
+    clinic.brand_page.hero_image_url ||
+    clinic.brand_page.slogan ||
+    (clinic.brand_page.features?.length ?? 0) > 0 ||
+    (clinic.brand_page.signature_treatments?.length ?? 0) > 0
+  );
+  if (hasBrandPage && clinic.brand_page) {
+    return (
+      <PartnerBrandView
+        clinic={{
+          id: clinic.id,
+          name: clinic.name,
+          address: clinic.address,
+          phone: clinic.phone,
+          score: clinic.score ?? null,
+          google_rating: clinic.google_rating ?? null,
+          google_review_count: clinic.google_review_count ?? null,
+          line_oa_url: clinic.line_oa_url ?? null,
+        }}
+        brand={clinic.brand_page}
+      />
+    );
+  }
   const reviewCount = clinic.google_review_count ?? 0;
   const city = extractCity(clinic.address);
 
