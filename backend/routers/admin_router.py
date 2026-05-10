@@ -397,6 +397,25 @@ async def sync_google_photos(batch_size: int = 30):
             "message": f"處理 {stats['processed']} 筆 → 抓到 {stats['got_photo']} 張照片"}
 
 
+@router.post("/clinics/recalc-scores")
+async def recalc_scores():
+    """重新計算所有診所的 score 欄位（用最新 rating/score 子欄位）"""
+    from sqlalchemy import text as sql_text
+    from database import AsyncSessionLocal
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(sql_text("""
+            UPDATE clinics SET score = (
+                COALESCE(legal_score, 0)
+                + COALESCE(google_rating_score, 0)
+                + COALESCE(judicial_score, 0)
+                + 20
+                + 12
+            )
+        """))
+        await session.commit()
+        return {"ok": True, "updated": result.rowcount}
+
+
 @router.post("/clinics/sync-google-ratings")
 async def sync_google_ratings(batch_size: int = 30, force_all: bool = False):
     """同步診所的 Google Places 評分 + 評論數 + place_id
