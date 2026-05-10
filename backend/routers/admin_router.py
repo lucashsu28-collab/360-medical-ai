@@ -424,17 +424,11 @@ async def sync_google_ratings(batch_size: int = 30, force_all: bool = False):
         return star + rev
 
     async with AsyncSessionLocal() as session:
-        # 確保有 google_rating_synced_at 欄位（首次跑時動態加）
         from sqlalchemy import text as sql_text
-        await session.execute(sql_text(
-            "ALTER TABLE clinics ADD COLUMN IF NOT EXISTS google_rating_synced_at TIMESTAMP"
-        ))
-        await session.commit()
-
         if force_all:
-            # 最久沒同步（含從未同步）的優先
+            # 最久沒同步（含從未同步）的優先 — 用 raw SQL 處理 NULLS FIRST
             stmt = select(Clinic).order_by(
-                Clinic.google_rating_synced_at.asc().nullsfirst(),
+                sql_text("google_rating_synced_at ASC NULLS FIRST"),
                 Clinic.id.asc(),
             ).limit(bs)
         else:

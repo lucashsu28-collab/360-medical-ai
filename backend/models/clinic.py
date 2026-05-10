@@ -22,6 +22,7 @@ class Clinic(Base):
     google_place_id: Mapped[str | None] = mapped_column(String(200))
     google_photo_url: Mapped[str | None] = mapped_column(Text)
     google_photo_synced_at: Mapped[datetime | None] = mapped_column(DateTime)
+    google_rating_synced_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # 評分
     score: Mapped[float | None] = mapped_column(Float)
