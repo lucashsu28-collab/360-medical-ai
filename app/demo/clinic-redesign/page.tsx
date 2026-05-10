@@ -50,10 +50,53 @@ const MOCK = {
       image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=1200&q=80",
     },
   ],
+  // 主頁顧客前後對照（4 卡）
+  beforeAfter: [
+    {
+      treatment: "皮秒雷射淨膚",
+      duration: "療程後 4 週",
+      note: "斑點淡化、膚色提亮",
+      before: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80",
+      after: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80",
+    },
+    {
+      treatment: "玻尿酸塑形",
+      duration: "療程後立即",
+      note: "蘋果肌飽滿、法令紋撫平",
+      before: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&q=80",
+      after: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&q=80",
+    },
+    {
+      treatment: "童顏針抗老",
+      duration: "療程後 8 週",
+      note: "膠原增生、輪廓緊緻",
+      before: "https://images.unsplash.com/photo-1571772996211-2f02c9727629?w=600&q=80",
+      after: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=600&q=80",
+    },
+    {
+      treatment: "音波拉提",
+      duration: "療程後 12 週",
+      note: "下顎線清晰、雙下巴改善",
+      before: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=600&q=80",
+      after: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=600&q=80",
+    },
+  ],
+  // Tab 客戶好評（更豐富的文字評價）
   testimonials: [
-    { name: "Lily", initial: "L", text: "醫師很細心會聽你的需求，做完皮秒整個人發光！", rating: 5 },
-    { name: "Anna", initial: "A", text: "第一次打玻尿酸很緊張，吳醫師講解很清楚，效果超自然。", rating: 5 },
-    { name: "Chris", initial: "C", text: "服務環境都很棒，已經介紹給好幾個朋友來。", rating: 5 },
+    { name: "Lily", initial: "L", text: "醫師很細心會聽你的需求，做完皮秒整個人發光！", rating: 5, treatment: "皮秒雷射" },
+    { name: "Anna", initial: "A", text: "第一次打玻尿酸很緊張，吳醫師講解很清楚，效果超自然。", rating: 5, treatment: "玻尿酸塑形" },
+    { name: "Chris", initial: "C", text: "服務環境都很棒，已經介紹給好幾個朋友來。", rating: 5, treatment: "肉毒桿菌" },
+    { name: "May", initial: "M", text: "童顏針的效果出乎意料！朋友都問我是不是回春了。", rating: 5, treatment: "童顏針" },
+    { name: "Doris", initial: "D", text: "從諮詢到術後追蹤都很到位，是我看過最專業的醫美診所。", rating: 5, treatment: "電波拉皮" },
+    { name: "Eric", initial: "E", text: "男生來打皮秒去痘疤，醫師完全沒有差別待遇，很尊重。", rating: 5, treatment: "皮秒雷射" },
+  ],
+  // Tab 媒體報導
+  mediaReports: [
+    { outlet: "ETtoday", title: "信義區醫美推薦：晶緻醫美吳欣儀醫師專訪", date: "2026-03-15", tier: "B" },
+    { outlet: "TVBS 健康 2.0", title: "醫美風潮回歸自然，名醫談微整新趨勢", date: "2026-02-08", tier: "A" },
+    { outlet: "自由時報", title: "醫美評比：360 AI 認證 9 分以上診所名單", date: "2026-01-22", tier: "A" },
+    { outlet: "美人圈", title: "皮秒雷射深度解析，醫師告訴你怎麼選", date: "2025-12-10", tier: "C" },
+    { outlet: "Yahoo 新聞", title: "醫美廣告新規上路，業者該如何應對", date: "2025-11-05", tier: "B" },
   ],
   treatments: [
     { name: "皮秒雷射", price: "$8,800–$12,000", desc: "深層淨膚、淡斑除痘" },
@@ -111,7 +154,7 @@ export default function DesignPreviewPage() {
 // 合作診所版：診所小網站首頁
 // ════════════════════════════════════════
 function PartnerView() {
-  const [tab, setTab] = useState<"treatment" | "promo" | "doctor" | "gallery">("treatment");
+  const [tab, setTab] = useState<"treatment" | "promo" | "doctor" | "gallery" | "media" | "reviews">("treatment");
 
   return (
     <div style={{ background: "#fff" }}>
@@ -282,23 +325,39 @@ function PartnerView() {
         </div>
       </div>
 
-      {/* ════════ 5. 客戶見證 ════════ */}
+      {/* ════════ 5. 顧客前後對照（Before/After 4 卡） ════════ */}
       <div style={{ padding: "60px 24px", background: "#fff" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <div style={{ fontSize: 12, color: "#D97706", letterSpacing: "0.2em", marginBottom: 8, fontWeight: 600 }}>TESTIMONIALS</div>
-            <h2 style={{ fontSize: 32, fontWeight: 800, color: "#1A202C", margin: 0, letterSpacing: "-0.01em" }}>顧客真實見證</h2>
+            <div style={{ fontSize: 12, color: "#D97706", letterSpacing: "0.2em", marginBottom: 8, fontWeight: 600 }}>BEFORE / AFTER</div>
+            <h2 style={{ fontSize: 32, fontWeight: 800, color: "#1A202C", margin: 0, letterSpacing: "-0.01em" }}>顧客前後對照</h2>
+            <p style={{ fontSize: 13, color: "#94A3B8", marginTop: 10 }}>＊ 案例經顧客同意公開，個人差異效果不同</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
-            {MOCK.testimonials.map((t, i) => (
-              <div key={i} style={{ padding: 26, background: "#FFFBEB", borderRadius: 14, border: "1px solid #FED7AA" }}>
-                <div style={{ fontSize: 24, marginBottom: 12, color: "#F59E0B" }}>{"★".repeat(t.rating)}</div>
-                <div style={{ fontSize: 14, color: "#475569", lineHeight: 1.8, marginBottom: 16, minHeight: 60 }}>
-                  &ldquo;{t.text}&rdquo;
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+            {MOCK.beforeAfter.map((b, i) => (
+              <div key={i} style={{ background: "#FFFBEB", borderRadius: 12, overflow: "hidden", border: "1px solid #FED7AA", boxShadow: "0 2px 8px rgba(245,158,11,.08)" }}>
+                {/* Before/After 並排 */}
+                <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "#FED7AA" }}>
+                  <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={b.before} alt="Before" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", filter: "saturate(.85)" }} />
+                    <div style={{ position: "absolute", top: 8, left: 8, padding: "3px 9px", background: "rgba(15,23,42,.78)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 4, letterSpacing: "0.05em" }}>
+                      BEFORE
+                    </div>
+                  </div>
+                  <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={b.after} alt="After" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    <div style={{ position: "absolute", top: 8, left: 8, padding: "3px 9px", background: "#D97706", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 4, letterSpacing: "0.05em" }}>
+                      AFTER
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#FBBF24", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 }}>{t.initial}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1A202C" }}>{t.name}</div>
+                {/* 文字資訊 */}
+                <div style={{ padding: "14px 14px 16px" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", marginBottom: 4 }}>{b.treatment}</div>
+                  <div style={{ fontSize: 11, color: "#92400E", marginBottom: 8, fontWeight: 600 }}>{b.duration}</div>
+                  <div style={{ fontSize: 12, color: "#64748B", lineHeight: 1.6 }}>{b.note}</div>
                 </div>
               </div>
             ))}
@@ -309,12 +368,14 @@ function PartnerView() {
       {/* ════════ 6. Tab 詳細資料區 ════════ */}
       <div style={{ background: "#F8FAFC", borderTop: "1px solid #E2E8F0" }}>
         <div style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", position: "sticky", top: 60, zIndex: 50 }}>
-          <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", display: "flex", gap: 0 }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", display: "flex", gap: 0, overflowX: "auto" }}>
             {[
               { k: "treatment", label: "💉 完整療程列表" },
               { k: "promo", label: "🎁 限時優惠" },
               { k: "doctor", label: "👨‍⚕️ 醫師團隊" },
               { k: "gallery", label: "📸 環境相片" },
+              { k: "media", label: "📰 媒體報導" },
+              { k: "reviews", label: "💬 客戶好評" },
             ].map((t) => (
               <button key={t.k} onClick={() => setTab(t.k as any)}
                 style={{ padding: "16px 22px", border: 0, background: "transparent", fontSize: 14, fontWeight: 600, cursor: "pointer", color: tab === t.k ? "#B45309" : "#64748B", borderBottom: tab === t.k ? "3px solid #F59E0B" : "3px solid transparent", marginBottom: -1 }}>
@@ -381,6 +442,52 @@ function PartnerView() {
                     alt={`診所環境 ${i + 1}`}
                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   />
+                </div>
+              ))}
+            </div>
+          )}
+          {tab === "media" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {MOCK.mediaReports.map((m, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", background: "#fff", borderRadius: 10, border: "1px solid #E2E8F0" }}>
+                  <div style={{ flexShrink: 0, width: 60, padding: "6px 0", textAlign: "center", background: m.tier === "A" ? "#FEF3C7" : m.tier === "B" ? "#DBEAFE" : "#F3E8FF", color: m.tier === "A" ? "#92400E" : m.tier === "B" ? "#1E40AF" : "#6B21A8", borderRadius: 6, fontSize: 11, fontWeight: 700 }}>
+                    {m.tier} 級
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", marginBottom: 3 }}>{m.title}</div>
+                    <div style={{ fontSize: 12, color: "#64748B" }}>
+                      <span style={{ color: "#B45309", fontWeight: 600 }}>{m.outlet}</span>
+                      <span style={{ margin: "0 8px", color: "#CBD5E0" }}>·</span>
+                      {m.date}
+                    </div>
+                  </div>
+                  <button style={{ flexShrink: 0, padding: "6px 14px", background: "#F1F5F9", color: "#475569", border: 0, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    閱讀全文 →
+                  </button>
+                </div>
+              ))}
+              <div style={{ marginTop: 8, padding: 12, background: "#FFFBEB", borderRadius: 6, fontSize: 11, color: "#92400E", lineHeight: 1.6 }}>
+                ⓘ 媒體權威分級依 360 AI 評分規則：A 級主流（蘋果、聯合、TVBS 等）/ B 級網路（ETtoday、Yahoo 等）/ C 級醫美專業
+              </div>
+            </div>
+          )}
+          {tab === "reviews" && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+              {MOCK.testimonials.map((t, i) => (
+                <div key={i} style={{ padding: 22, background: "#FFFBEB", borderRadius: 12, border: "1px solid #FED7AA" }}>
+                  <div style={{ fontSize: 18, color: "#F59E0B", marginBottom: 10 }}>{"★".repeat(t.rating)}</div>
+                  <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.8, marginBottom: 14, minHeight: 56 }}>
+                    &ldquo;{t.text}&rdquo;
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px dashed #FED7AA" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#FBBF24", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13 }}>{t.initial}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#1A202C" }}>{t.name}</div>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#92400E", padding: "3px 8px", background: "#FEF3C7", borderRadius: 4, fontWeight: 600 }}>
+                      {t.treatment}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
