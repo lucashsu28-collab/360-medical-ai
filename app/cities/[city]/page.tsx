@@ -2,6 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import ClinicCard from "@/components/ClinicCard";
 
+// 評分常變動，不用 ISR 快取
+export const dynamic = "force-dynamic";
+
 const CITY_LIST = ["臺北市","新北市","桃園市","臺中市","臺南市","高雄市","基隆市","新竹市","嘉義市","新竹縣","苗栗縣","彰化縣","南投縣","雲林縣","嘉義縣","屏東縣","宜蘭縣","花蓮縣","臺東縣","澎湖縣","金門縣","連江縣"];
 
 const TREATMENT_TYPES: Record<string, string[]> = {
@@ -47,7 +50,7 @@ export default async function CityPage({
   const { type, sort } = await searchParams;
   const cityName = decodeURIComponent(city);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const res = await fetch(`${apiUrl}/api/clinics?city=${encodeURIComponent(cityName)}&limit=9999`, { next: { revalidate: 60 } });
+  const res = await fetch(`${apiUrl}/api/clinics?city=${encodeURIComponent(cityName)}&limit=9999`, { cache: "no-store" });
   const data = await res.json();
   let clinics: ApiClinic[] = data.clinics ?? [];
 
