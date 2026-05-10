@@ -156,22 +156,22 @@ export default async function DoctorDetailPage({
           )}
         </section>
 
-        {/* 執照狀態、糾紛紀錄 */}
+        {/* 醫師五維度評鑑 */}
         <section className="mb-8 rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,.04)]">
           <h2 className="mb-4 text-[16px] font-bold text-[var(--ink)]">
-            執照與糾紛摘要
+            醫師五維度評鑑
           </h2>
           <ul className="space-y-3 text-[13px] text-[var(--ink2)]">
             <li className="flex items-center gap-2">
               {doctor.licenseValid ? (
                 <>
                   <span className="text-green-600">✅</span>
-                  <span>執照狀態：有效（衛福部醫事查詢系統）</span>
+                  <span><b>執照合法性：</b>有效（衛福部醫事查詢系統）</span>
                 </>
               ) : (
                 <>
                   <span className="text-[var(--amber)]">⚠️</span>
-                  <span>執照狀態：待查證</span>
+                  <span><b>執照合法性：</b>待查證</span>
                 </>
               )}
             </li>
@@ -179,19 +179,29 @@ export default async function DoctorDetailPage({
               {hasDispute ? (
                 <>
                   <span className="text-[var(--amber)]">⚠️</span>
-                  <span>
-                    糾紛紀錄：{doctor.disputeCount} 件（詳見下方完整報告，加 LINE 解鎖）
-                  </span>
+                  <span><b>司法糾紛：</b>{doctor.disputeCount} 件（詳見下方完整報告）</span>
                 </>
               ) : (
                 <>
                   <span className="text-green-600">✅</span>
-                  <span>糾紛紀錄：無司法／申訴紀錄</span>
+                  <span><b>司法糾紛：</b>無紀錄</span>
                 </>
               )}
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[var(--muted)]">📅</span>
+              <span className="text-green-600">✅</span>
+              <span><b>合法登記：</b>{doctor.clinicName}（執業地）</span>
+            </li>
+            <li className="flex items-center gap-2 text-[var(--muted)]">
+              <span>⚠️</span>
+              <span><b>稽查違規：</b>資料準備中</span>
+            </li>
+            <li className="flex items-center gap-2 text-[var(--muted)]">
+              <span>📰</span>
+              <span><b>媒體口碑：</b>資料準備中</span>
+            </li>
+            <li className="flex items-center gap-2 mt-2 pt-2 border-t border-[var(--line)] text-[12px] text-[var(--muted)]">
+              <span>📅</span>
               <span>執業年資：{doctor.yearsOfPractice} 年</span>
             </li>
           </ul>
