@@ -5,7 +5,7 @@ import FeaturedNews from "@/components/FeaturedNews";
 const LINE_CTA_URL = "https://lin.ee/6sTCRzm";
 
 const STATS = [
-  { value: "904家", label: "診所" },
+  { value: "1,567家", label: "診所" },
   { value: "13,600+", label: "則評論" },
   { value: "5維度", label: "AI評鑑" },
   { value: "24,321筆", label: "健保署資料" },
@@ -33,8 +33,8 @@ const SCORE_DIMS = [
   { label: "司法糾紛",  color: "#E53E3E" },
   { label: "Google評分", color: "#2B6CB0" },
   { label: "合法登記",  color: "#38A169" },
-  { label: "新聞媒體",  color: "#ED8936" },
-  { label: "社群討論",  color: "#805AD5" },
+  { label: "稽查違規",  color: "#C53030" },
+  { label: "媒體口碑",  color: "#ED8936" },
 ];
 
 const FAQ_PILLS = [
