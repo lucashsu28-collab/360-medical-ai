@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { href: "/cities", label: "各縣市" },
   { href: "/blog", label: "醫美專欄" },
   { href: "/faq", label: "常見問題" },
-  { href: "/promotions", label: "幫你找優惠療程" },
+  { href: "/news", label: "醫美快訊" },
   { href: "/clinic-update", label: "診所更新資料" },
 ] as const;
 

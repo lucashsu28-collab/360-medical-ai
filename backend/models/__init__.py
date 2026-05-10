@@ -17,6 +17,7 @@ from models.monitor_keyword import MonitorKeyword
 from models.media_authority import MediaAuthority
 from models.mention_appeal import MentionAppeal
 from models.clinic_brand_page import ClinicBrandPage
+from models.industry_news import IndustryNews
 
 __all__ = [
     "Base",
@@ -35,4 +36,5 @@ __all__ = [
     "MediaAuthority",
     "MentionAppeal",
     "ClinicBrandPage",
+    "IndustryNews",
 ]

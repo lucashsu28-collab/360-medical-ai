@@ -13,6 +13,7 @@ const PRIMARY_NAV = [
   { icon: "📋", label: "內容審核",      href: "/admin/cms" },
   { icon: "⚖️", label: "稽查違規",      href: "/admin/penalties" },
   { icon: "📰", label: "媒體口碑",      href: "/admin/mentions" },
+  { icon: "🗞️", label: "醫美快訊",      href: "/admin/news" },
 ];
 
 const SYSTEM_NAV = [
