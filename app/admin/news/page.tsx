@@ -83,6 +83,14 @@ export default function AdminNewsPage() {
     setRunning(false);
   }
 
+  async function backfillCovers() {
+    setRunning(true);
+    const r = await fetch(`${API}/api/admin/news/backfill-covers`, { method: "POST", headers });
+    const d = await r.json();
+    alert(d.message || "已啟動");
+    setRunning(false);
+  }
+
   return (
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 16 }}>
@@ -98,10 +106,16 @@ export default function AdminNewsPage() {
           <div style={{ fontSize: 14, fontWeight: 600 }}>🗞️ 醫美快訊爬蟲</div>
           <div style={{ fontSize: 12, color: "#718096", marginTop: 2 }}>Google News 10 組關鍵字 × 4 類（國內/韓國/國際/技術），Gemini 摘要 + 過濾無關</div>
         </div>
-        <button onClick={runCrawler} disabled={running}
-          style={{ padding: "10px 18px", background: running ? "#A0AEC0" : "#2B6CB0", color: "#fff", border: 0, borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: running ? "not-allowed" : "pointer" }}>
-          {running ? "啟動中…" : "🕷️ 觸發爬蟲"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={backfillCovers} disabled={running}
+            style={{ padding: "10px 16px", background: running ? "#A0AEC0" : "#7C3AED", color: "#fff", border: 0, borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: running ? "not-allowed" : "pointer" }}>
+            🖼️ 補抓封面
+          </button>
+          <button onClick={runCrawler} disabled={running}
+            style={{ padding: "10px 18px", background: running ? "#A0AEC0" : "#2B6CB0", color: "#fff", border: 0, borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: running ? "not-allowed" : "pointer" }}>
+            {running ? "啟動中…" : "🕷️ 觸發爬蟲"}
+          </button>
+        </div>
       </div>
 
       <div style={{ background: "#fff", padding: 12, borderRadius: 10, marginBottom: 12, border: "1px solid #E2E8F0", display: "flex", gap: 8, flexWrap: "wrap" }}>

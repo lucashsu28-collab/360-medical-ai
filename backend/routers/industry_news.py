@@ -133,3 +133,35 @@ async def _run_news_background():
 async def admin_run_crawler(background_tasks: BackgroundTasks):
     background_tasks.add_task(_run_news_background)
     return {"ok": True, "message": "醫美快訊爬蟲已啟動，5-10 分鐘後可看結果"}
+
+
+async def _backfill_covers_background():
+    """補抓既有資料中 cover_image 為 NULL 的封面"""
+    import httpx
+    from crawlers.industry_news import extract_cover
+    from sqlalchemy import update
+    from models.industry_news import IndustryNews
+
+    async with AsyncSessionLocal() as session, httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+        rows = (await session.execute(
+            select(IndustryNews).where(
+                IndustryNews.cover_image.is_(None),
+                IndustryNews.status == "active",
+            ).limit(60)
+        )).scalars().all()
+        print(f"[backfill_covers] processing {len(rows)} rows")
+        ok = 0
+        for n in rows:
+            cover = await extract_cover(client, n.source_url)
+            if cover:
+                n.cover_image = cover
+                ok += 1
+        await session.commit()
+        print(f"[backfill_covers] backfilled {ok}/{len(rows)}")
+
+
+@admin_router.post("/backfill-covers")
+async def admin_backfill_covers(background_tasks: BackgroundTasks):
+    """補抓既有 0 cover 新聞的封面（背景跑）"""
+    background_tasks.add_task(_backfill_covers_background)
+    return {"ok": True, "message": "補抓封面已啟動（一次處理 60 筆，可重複觸發）"}

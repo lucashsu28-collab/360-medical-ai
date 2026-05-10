@@ -15,11 +15,11 @@ interface NewsItem {
 
 const API = process.env.NEXT_PUBLIC_API_URL || "";
 
-const CAT: Record<string, { label: string; color: string; bg: string }> = {
-  domestic: { label: "🇹🇼 國內", color: "#C53030", bg: "#FFF5F5" },
-  korea: { label: "🇰🇷 韓國", color: "#7C3AED", bg: "#F5F3FF" },
-  international: { label: "🌐 國際", color: "#0E7490", bg: "#ECFEFF" },
-  tech: { label: "🔬 技術", color: "#D97706", bg: "#FFFBEB" },
+const CAT: Record<string, { label: string; color: string; bg: string; emoji: string; gradient: string }> = {
+  domestic:      { label: "🇹🇼 國內", color: "#C53030", bg: "#FFF5F5", emoji: "🏥", gradient: "linear-gradient(135deg, #FCA5A5 0%, #F87171 50%, #DC2626 100%)" },
+  korea:         { label: "🇰🇷 韓國", color: "#7C3AED", bg: "#F5F3FF", emoji: "✨", gradient: "linear-gradient(135deg, #C4B5FD 0%, #A78BFA 50%, #7C3AED 100%)" },
+  international: { label: "🌐 國際", color: "#0E7490", bg: "#ECFEFF", emoji: "🌐", gradient: "linear-gradient(135deg, #67E8F9 0%, #22D3EE 50%, #0E7490 100%)" },
+  tech:          { label: "🔬 技術", color: "#D97706", bg: "#FFFBEB", emoji: "🔬", gradient: "linear-gradient(135deg, #FDE68A 0%, #FBBF24 50%, #D97706 100%)" },
 };
 
 export default function FeaturedNews() {
@@ -84,18 +84,21 @@ function NewsCard({ news: n }: { news: NewsItem }) {
         flexDirection: "column",
       }}
     >
-      {/* 縮圖 */}
-      <div style={{ aspectRatio: "16/9", background: c.bg, position: "relative", overflow: "hidden" }}>
+      {/* 縮圖（無 cover 時用品牌色漸層 + emoji + 標題首句作 fallback） */}
+      <div style={{ aspectRatio: "16/9", position: "relative", overflow: "hidden", background: n.cover_image ? c.bg : c.gradient }}>
         {n.cover_image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={n.cover_image} alt={n.title} loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, opacity: 0.32 }}>
-            📰
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16, color: "#fff", textAlign: "center" }}>
+            <div style={{ fontSize: 36, opacity: 0.85, marginBottom: 6, textShadow: "0 2px 6px rgba(0,0,0,.2)" }}>{c.emoji}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.4, textShadow: "0 1px 3px rgba(0,0,0,.25)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", maxWidth: "90%" }}>
+              {n.title.slice(0, 36)}
+            </div>
           </div>
         )}
-        <div style={{ position: "absolute", top: 10, left: 10, padding: "3px 9px", background: c.color, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 5 }}>
+        <div style={{ position: "absolute", top: 10, left: 10, padding: "3px 9px", background: n.cover_image ? c.color : "rgba(255,255,255,.95)", color: n.cover_image ? "#fff" : c.color, fontSize: 10, fontWeight: 700, borderRadius: 5 }}>
           {c.label}
         </div>
       </div>
