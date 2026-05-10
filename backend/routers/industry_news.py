@@ -221,23 +221,39 @@ async def admin_clear_bad_covers():
 @admin_router.get("/debug-cover")
 async def admin_debug_cover(url: str):
     """Debug：對指定 URL 跑 extract_cover，回診斷資訊"""
-    import httpx, re
-    from crawlers.industry_news import extract_cover, _BROWSER_HEADERS
+    import httpx
+    from crawlers.industry_news import extract_cover, _resolve_real_url, _BROWSER_HEADERS
 
     debug = {"input": url}
     try:
+        # Step 1: googlenewsdecoder
+        try:
+            from googlenewsdecoder import gnewsdecoder
+            import asyncio
+            r = await asyncio.to_thread(gnewsdecoder, url, interval=0)
+            debug["decoder_status"] = r.get("status") if r else None
+            debug["decoder_url"] = r.get("decoded_url") if r else None
+            debug["decoder_message"] = r.get("message") if r else None
+        except Exception as e:
+            debug["decoder_error"] = str(e)
+
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+            real = await _resolve_real_url(client, url)
+            debug["resolved_url"] = real
+
             cover = await extract_cover(client, url)
             debug["cover_result"] = cover
-            # 額外抓一次原始 HTML 看 Cloud Run 環境拿到什麼
-            resp = await client.get(url, headers=_BROWSER_HEADERS)
-            debug["status"] = resp.status_code
-            debug["content_length"] = len(resp.content)
-            debug["final_url"] = str(resp.url)
-            # 找 lh3.googleusercontent.com 連結
-            matches = re.findall(rb'lh3\.googleusercontent\.com/[A-Za-z0-9_\-]+=(?:[sw][0-9][^"\'\s<>]*)', resp.content)
-            debug["gnews_thumb_count"] = len(matches)
-            debug["gnews_thumb_sample"] = [m.decode("utf-8", errors="ignore")[:120] for m in matches[:5]]
+
+            # 如果 resolved，去抓 og:image 看會不會有
+            if real and real != url:
+                import re
+                resp = await client.get(real, timeout=10.0, headers=_BROWSER_HEADERS)
+                debug["article_status"] = resp.status_code
+                debug["article_url_final"] = str(resp.url)
+                m = re.search(rb'<meta[^>]+property=["\']og:image[^"\']*["\'][^>]+content=["\']([^"\']+)', resp.content[:120000])
+                debug["og_image_match"] = m.group(1).decode("utf-8", errors="ignore") if m else None
     except Exception as e:
+        import traceback
         debug["error"] = str(e)
+        debug["trace"] = traceback.format_exc()[:500]
     return debug
