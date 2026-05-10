@@ -23,13 +23,13 @@ _JOB_DESCRIPTIONS: dict[str, dict] = {
     "places-update": {
         "icon": "⭐",
         "name": "Google Places 評分更新",
-        "description": "更新全部 904 家診所的 Google 評分與評論數",
+        "description": "更新全部 1,567 家診所的 Google 評分與評論數",
         "category": "core",
     },
     "judicial-update": {
         "icon": "⚖️",
         "name": "司法院裁判書更新",
-        "description": "查詢 904 家診所的司法案件數",
+        "description": "查詢 1,567 家診所的司法案件數",
         "category": "core",
     },
     "mohw-update": {
@@ -40,8 +40,8 @@ _JOB_DESCRIPTIONS: dict[str, dict] = {
     },
     "penalty-news-update": {
         "icon": "⚠️",
-        "name": "稽查違規新聞抓取（P3-A）",
-        "description": "Google News 7 組關鍵字 + Gemini 提取處分資料",
+        "name": "稽查違規新聞抓取（第 4 維度）",
+        "description": "從新聞媒體聚合處分報導（衛生局/公平會發布、媒體跟進），Gemini 提取診所名+罰款+法條。台灣無集中化醫事處分 API，新聞為唯一具名來源。",
         "category": "p3a",
     },
     "news-mentions-update": {
