@@ -36,7 +36,7 @@ const MOCK = {
     {
       title: "皮秒雷射",
       tagline: "一次淨膚到底",
-      desc: "適合斑點、痘疤、毛孔粗大、暗沉膚質，無修復期、效果立現",
+      desc: "斑點淡化、痘疤修復、毛孔細緻，無修復期",
       price: "原價 $12,000 · 限時 $8,800",
       badge: "🔥 招牌",
       image: "https://images.unsplash.com/photo-1559185590-879c66a55254?w=1200&q=80",
@@ -44,10 +44,26 @@ const MOCK = {
     {
       title: "玻尿酸塑形",
       tagline: "自然立體輪廓",
-      desc: "蘋果肌、淚溝、法令紋、唇形、鼻樑，恢復飽滿年輕的自己",
+      desc: "蘋果肌 / 淚溝 / 法令紋 / 唇形 / 鼻樑",
       price: "$8,000 / cc 起",
       badge: "✨ 熱門",
       image: "https://images.unsplash.com/photo-1643379855542-82c0c7483f3a?w=1200&q=80",
+    },
+    {
+      title: "童顏針抗老",
+      tagline: "膠原增生，由內而外回春",
+      desc: "促進自體膠原蛋白增生，效果可維持 18-24 個月",
+      price: "$25,000 / 瓶",
+      badge: "💎 精選",
+      image: "https://images.unsplash.com/photo-1552693673-1bf958298935?w=1200&q=80",
+    },
+    {
+      title: "音波拉提",
+      tagline: "下顎線清晰、雙下巴改善",
+      desc: "非侵入式拉提，刺激深層膠原，無修復期立刻見效",
+      price: "$38,000 / 次",
+      badge: "⭐ 精選",
+      image: "https://images.unsplash.com/photo-1772831902679-3f41c106d7a2?w=1200&q=80",
     },
   ],
   // 主頁顧客前後對照（4 卡）— 同一張亞洲女性面部，前後用 CSS 濾鏡製造效果差異
@@ -261,35 +277,38 @@ function PartnerView() {
         </div>
       </div>
 
-      {/* ════════ 3. 招牌療程廣告 Banner ════════ */}
+      {/* ════════ 3. 熱門精選療程（2 欄 4 卡） ════════ */}
       <div style={{ padding: "60px 24px", background: "#fff" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <div style={{ fontSize: 12, color: "#D97706", letterSpacing: "0.2em", marginBottom: 8, fontWeight: 600 }}>SIGNATURE TREATMENTS</div>
-            <h2 style={{ fontSize: 32, fontWeight: 800, color: "#1A202C", margin: 0, letterSpacing: "-0.01em" }}>本院招牌療程</h2>
+            <div style={{ fontSize: 12, color: "#D97706", letterSpacing: "0.2em", marginBottom: 8, fontWeight: 600 }}>POPULAR TREATMENTS</div>
+            <h2 style={{ fontSize: 32, fontWeight: 800, color: "#1A202C", margin: 0, letterSpacing: "-0.01em" }}>熱門精選療程</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-            {MOCK.signatureTreatments.map((t, i) => (
-              <div key={i} style={{ position: "relative", borderRadius: 18, overflow: "hidden", aspectRatio: "16/10", background: "#1A202C" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={t.image} alt={t.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                <div style={{ position: "absolute", top: 16, right: 16, padding: "5px 14px", background: "rgba(255,255,255,.95)", color: i === 0 ? "#B45309" : "#991B1B", borderRadius: 99, fontSize: 11, fontWeight: 700, zIndex: 2 }}>
-                  {t.badge}
-                </div>
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 20%, rgba(0,0,0,.7) 100%)" }} />
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 28, color: "#fff" }}>
-                  <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 6, letterSpacing: "0.1em" }}>{t.tagline}</div>
-                  <h3 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 10px", textShadow: "0 2px 8px rgba(0,0,0,.3)" }}>{t.title}</h3>
-                  <div style={{ fontSize: 13, opacity: 0.92, marginBottom: 14, lineHeight: 1.6 }}>{t.desc}</div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontSize: 18, fontWeight: 700 }}>{t.price}</div>
-                    <button style={{ padding: "8px 18px", background: "#fff", color: "#1A202C", border: 0, borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                      了解更多 →
-                    </button>
+            {MOCK.signatureTreatments.map((t, i) => {
+              const accentColors = ["#B45309", "#991B1B", "#7E22CE", "#0E7490"];
+              return (
+                <div key={i} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "4/3", background: "#1A202C" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={t.image} alt={t.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ position: "absolute", top: 14, right: 14, padding: "4px 12px", background: "rgba(255,255,255,.95)", color: accentColors[i % 4], borderRadius: 99, fontSize: 11, fontWeight: 700, zIndex: 2 }}>
+                    {t.badge}
+                  </div>
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 25%, rgba(0,0,0,.78) 100%)" }} />
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 22, color: "#fff" }}>
+                    <div style={{ fontSize: 12, opacity: 0.88, marginBottom: 4, letterSpacing: "0.05em" }}>{t.tagline}</div>
+                    <h3 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px", textShadow: "0 2px 8px rgba(0,0,0,.3)" }}>{t.title}</h3>
+                    <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 12, lineHeight: 1.6 }}>{t.desc}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ fontSize: 15, fontWeight: 700 }}>{t.price}</div>
+                      <button style={{ padding: "6px 14px", background: "#fff", color: "#1A202C", border: 0, borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        了解更多 →
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
