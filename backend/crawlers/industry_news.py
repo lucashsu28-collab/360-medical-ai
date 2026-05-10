@@ -145,40 +145,17 @@ def parse_pub_date(s: str) -> datetime | None:
 
 
 async def _resolve_real_url(client: httpx.AsyncClient, gnews_url: str) -> str | None:
-    """Google News RSS link 是中介頁，需要再 parse 一次拿實際媒體 URL"""
+    """用 googlenewsdecoder 套件解 Google News URL → 真實媒體 article URL"""
     if "news.google.com" not in gnews_url:
         return gnews_url
     try:
-        resp = await client.get(gnews_url, timeout=10.0, follow_redirects=True, headers=_BROWSER_HEADERS)
-        body = resp.content[:200000]
-        # 1) data-n-au 屬性
-        m = re.search(rb'data-n-au="(https?://[^"]+)"', body)
-        if m:
-            u = m.group(1).decode("utf-8", errors="ignore")
-            if "news.google.com" not in u:
-                return u
-        # 2) c-wiz/ jslog block 內 article URL — Google News 把真實 URL 編在 data-n-au 或 c-wiz 屬性
-        m = re.search(rb'<c-wiz[^>]+data-p="[^"]*&quot;(https?://[^&]+)&quot;', body)
-        if m:
-            u = m.group(1).decode("utf-8", errors="ignore")
-            if "news.google.com" not in u:
-                return u
-        # 3) jsdata=" 內含 [\"https://....\",..." 格式
-        for m in re.finditer(rb'\\?"(https?://(?!news\.google\.com)[^"\\]+)\\?"', body):
-            u = m.group(1).decode("utf-8", errors="ignore")
-            # 過濾掉 google CDN / static
-            if any(skip in u for skip in [
-                "googleusercontent", "gstatic", "googleapis", "google-analytics",
-                "googletagmanager", "fonts.google", "www.google.com/log",
-            ]):
-                continue
-            if u.startswith("http") and len(u) > 30:
-                return u
-        # 4) 最終 redirect URL
-        if resp.url and "news.google.com" not in str(resp.url):
-            return str(resp.url)
+        from googlenewsdecoder import gnewsdecoder
+        # interval=0 不 sleep（套件預設 sleep 避免被 Google ban，但我們批次處理本身已有 1s sleep）
+        result = await asyncio.to_thread(gnewsdecoder, gnews_url, interval=0)
+        if result and result.get("status") and result.get("decoded_url"):
+            return result["decoded_url"]
     except Exception as e:
-        print(f"[industry_news] resolve real url failed: {e}")
+        print(f"[industry_news] googlenewsdecoder failed: {e}")
     return None
 
 
