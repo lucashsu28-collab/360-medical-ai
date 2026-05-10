@@ -410,6 +410,31 @@ async def recalc_scores():
         await session.execute(sql_text("DROP TABLE IF EXISTS _penalty_calc"))
         await session.execute(sql_text("DROP TABLE IF EXISTS _media_calc"))
 
+        # 0. 用嚴格公式重算 google_rating_score（直接用既有 rating + review_count，不重 fetch Google）
+        #    星等 max 13、評論 max 5、實務上 max ~17（需 ★4.9+ 且 ≥2000 評論）
+        await session.execute(sql_text("""
+            UPDATE clinics SET google_rating_score = (
+                CASE
+                    WHEN google_rating IS NULL THEN 0
+                    WHEN google_rating >= 4.9 THEN 13
+                    WHEN google_rating >= 4.7 THEN 11
+                    WHEN google_rating >= 4.5 THEN 9
+                    WHEN google_rating >= 4.0 THEN 6
+                    WHEN google_rating >= 3.5 THEN 3
+                    ELSE 0
+                END
+                +
+                CASE
+                    WHEN COALESCE(google_review_count, 0) >= 5000 THEN 5
+                    WHEN COALESCE(google_review_count, 0) >= 2000 THEN 4
+                    WHEN COALESCE(google_review_count, 0) >= 1000 THEN 3
+                    WHEN COALESCE(google_review_count, 0) >= 500  THEN 2
+                    WHEN COALESCE(google_review_count, 0) >= 100  THEN 1
+                    ELSE 0
+                END
+            )
+        """))
+
         # 1. 算出每家診所的 penalty 扣分（嚴重 -10、中度 -5、輕微 -2，最多扣到 0）
         await session.execute(sql_text("""
             CREATE TEMP TABLE _penalty_calc AS
@@ -492,12 +517,30 @@ async def sync_google_ratings(batch_size: int = 30, force_all: bool = False):
     bs = min(batch_size, 50)
 
     def _calc_rating_score(rating: float | None, reviews: int | None) -> int:
+        """Google 評分 0-20 (實務上達不到 20，需 ★4.9+ 且 ≥5000 評論才滿分)
+
+        星等 (max 13)：4.9+ → 13 / 4.7-4.8 → 11 / 4.5-4.6 → 9 / 4.0-4.4 → 6 /
+                       3.5-3.9 → 3 / <3.5 → 0
+        評論數 (max 5)：≥5000 → 5 / ≥2000 → 4 / ≥1000 → 3 / ≥500 → 2 /
+                       ≥100 → 1 / <100 → 0
+
+        理由：避免「分數通膨」，醫美診所 ★4.5+ 是業界平均，不該等於滿分。
+        """
         if not rating:
             return 0
-        star = (15 if rating >= 4.5 else 12 if rating >= 4.0 else 9 if rating >= 3.5
-                else 6 if rating >= 3.0 else 3)
-        rev = (5 if (reviews or 0) >= 1000 else 4 if (reviews or 0) >= 500
-               else 3 if (reviews or 0) >= 100 else 2 if (reviews or 0) >= 1 else 0)
+        if rating >= 4.9:   star = 13
+        elif rating >= 4.7: star = 11
+        elif rating >= 4.5: star = 9
+        elif rating >= 4.0: star = 6
+        elif rating >= 3.5: star = 3
+        else:               star = 0
+        rc = reviews or 0
+        if rc >= 5000:   rev = 5
+        elif rc >= 2000: rev = 4
+        elif rc >= 1000: rev = 3
+        elif rc >= 500:  rev = 2
+        elif rc >= 100:  rev = 1
+        else:            rev = 0
         return star + rev
 
     async with AsyncSessionLocal() as session:

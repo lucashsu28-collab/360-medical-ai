@@ -201,19 +201,24 @@ export default function ScoringPage() {
           </SectionCard>
 
           {/* 維度二：Google 評分 */}
-          <SectionCard title="Google 評分（滿分 20 分）" icon="⭐">
-            <p style={{ fontSize: 12, color: "#64748B", marginBottom: 12, fontWeight: 600 }}>星等（滿分 15 分）</p>
-            <RuleRow label="4.5 星以上" value={rules.google_stars["4.5+"]} onChange={(v) => setStars("4.5+", v)} />
-            <RuleRow label="4.0 ～ 4.4 星" value={rules.google_stars["4.0-4.4"]} onChange={(v) => setStars("4.0-4.4", v)} />
-            <RuleRow label="3.5 ～ 3.9 星" value={rules.google_stars["3.5-3.9"]} onChange={(v) => setStars("3.5-3.9", v)} />
-            <RuleRow label="3.0 ～ 3.4 星" value={rules.google_stars["3.0-3.4"]} onChange={(v) => setStars("3.0-3.4", v)} />
-            <RuleRow label="3.0 星以下" value={rules.google_stars.below_3_0} onChange={(v) => setStars("below_3_0", v)} />
-            <p style={{ fontSize: 12, color: "#64748B", margin: "16px 0 12px", fontWeight: 600 }}>評論數量（滿分 5 分）</p>
-            <RuleRow label="1,000 則以上" value={rules.google_reviews["1000+"]} onChange={(v) => setReviews("1000+", v)} />
-            <RuleRow label="500 ～ 999 則" value={rules.google_reviews["500-999"]} onChange={(v) => setReviews("500-999", v)} />
-            <RuleRow label="100 ～ 499 則" value={rules.google_reviews["100-499"]} onChange={(v) => setReviews("100-499", v)} />
-            <RuleRow label="1 ～ 99 則" value={rules.google_reviews["1-99"]} onChange={(v) => setReviews("1-99", v)} />
-            <RuleRow label="0 則（無評論）" value={rules.google_reviews["0"]} onChange={(v) => setReviews("0", v)} />
+          <SectionCard title="Google 評分（理論 20 分・實務 max ~17）" icon="⭐">
+            <p style={{ fontSize: 12, color: "#64748B", marginBottom: 12, fontWeight: 600 }}>星等（max 13 分）</p>
+            <RuleRow label="★ 4.9 以上" value={13} onChange={() => {}} />
+            <RuleRow label="★ 4.7 ～ 4.8" value={11} onChange={() => {}} />
+            <RuleRow label="★ 4.5 ～ 4.6" value={9} onChange={() => {}} />
+            <RuleRow label="★ 4.0 ～ 4.4" value={6} onChange={() => {}} />
+            <RuleRow label="★ 3.5 ～ 3.9" value={3} onChange={() => {}} />
+            <RuleRow label="★ 低於 3.5" value={0} onChange={() => {}} />
+            <p style={{ fontSize: 12, color: "#64748B", margin: "16px 0 12px", fontWeight: 600 }}>評論數量（max 5 分）</p>
+            <RuleRow label="≥ 5,000 則" value={5} onChange={() => {}} />
+            <RuleRow label="≥ 2,000 則" value={4} onChange={() => {}} />
+            <RuleRow label="≥ 1,000 則" value={3} onChange={() => {}} />
+            <RuleRow label="≥ 500 則" value={2} onChange={() => {}} />
+            <RuleRow label="≥ 100 則" value={1} onChange={() => {}} />
+            <RuleRow label="< 100 則" value={0} onChange={() => {}} />
+            <p style={{ fontSize: 11, color: "#94A3B8", marginTop: 10, lineHeight: 1.6 }}>
+              ※ 嚴格公式：醫美 ★4.5+ 是業界平均，不該等於滿分。理論滿 20 需 ★4.9+ 且 ≥5000 評論，目前無診所達標。實務 max ~17（★4.9+ 且 ≥2000 評論）。
+            </p>
           </SectionCard>
 
           {/* 維度三：司法糾紛 */}
