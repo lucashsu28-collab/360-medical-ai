@@ -81,10 +81,12 @@ class MentionCrawler(ABC):
                     continue
 
                 clinic_id, score = await match_clinic_with_score(session, clinic_name)
-                if not clinic_id:
+                # 提取出的診所名通常是「璞真醫美診所」這種完整名稱，可能跟 DB「璞真整形外科診所」差幾個字
+                # 降 threshold 到 75（rapidfuzz WRatio）能 cover 更多匹配
+                if not clinic_id or score < 60:
                     stats["skipped"] += 1
                     continue
-                if score < 85:
+                if score < 75:
                     stats["low_confidence"] += 1
                     record_status = "pending"
                 else:

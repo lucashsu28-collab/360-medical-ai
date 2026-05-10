@@ -45,7 +45,7 @@ const STATUS_LABEL: Record<string, string> = { active: "已上架", pending: "�
 export default function MentionsPage() {
   const [items, setItems] = useState<Mention[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [statusFilter, setStatusFilter] = useState("active");
+  const [statusFilter, setStatusFilter] = useState("");  // 預設全部，避免空白誤會
   const [sentimentFilter, setSentimentFilter] = useState("");
   const [adFilter, setAdFilter] = useState("");  // "" / "true" / "false"
   const [running, setRunning] = useState(false);
