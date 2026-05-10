@@ -105,7 +105,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 精選快訊（六格卡片，自動聚合） ── */}
+      {/* ── 精選快訊（八格卡片，4 欄，自動聚合） ── */}
       <FeaturedNews />
 
       {/* ── About + Score ── */}
@@ -113,7 +113,7 @@ export default function Home() {
         <div style={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 12, padding: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1A202C", marginBottom: 12 }}>關於我們</h2>
           <p style={{ fontSize: 14, color: "#4A5568", lineHeight: 1.8, marginBottom: 20 }}>
-            360醫療AI大調查是台灣首個以 AI 五維度系統性評鑑醫美診所的平台。我們整合司法院裁判書、衛福部官方資料、Google Maps 評論及社群媒體輿情，為消費者提供客觀透明的參考依據。
+            360醫療AI大調查是台灣首個以 AI 五維度系統性評鑑醫美診所的平台。我們整合司法院裁判書、衛福部官方資料、Google Maps 評論、政府稽查違規公告與主流媒體口碑，為消費者提供客觀透明的參考依據。
           </p>
           <Link href="/about" style={{ fontSize: 13, color: "#2B6CB0", textDecoration: "none", fontWeight: 600 }}>了解更多 →</Link>
         </div>

@@ -30,7 +30,7 @@ const CATEGORY_BADGE: Record<string, { color: string; bg: string; label: string 
   core: { color: "#2B6CB0", bg: "#EBF8FF", label: "核心" },
   p3a: { color: "#C53030", bg: "#FFF5F5", label: "P3-A 稽查" },
   p3b: { color: "#3182CE", bg: "#EBF8FF", label: "P3-B 媒體" },
-  p3c: { color: "#7C3AED", bg: "#F5F3FF", label: "P3-C 社群" },
+  p3c: { color: "#A0AEC0", bg: "#F1F5F9", label: "P3-C 社群（已下線）" },
 };
 
 // 常用 cron 預設選項
@@ -76,7 +76,7 @@ export default function AdminSchedulerPage() {
   useEffect(() => { load(); }, [load]);
 
   async function runNow(id: string) {
-    if (!confirm(`確認立即執行「${id}」？\n（媒體 / 社群 爬蟲會花費 Gemini 額度）`)) return;
+    if (!confirm(`確認立即執行「${id}」？\n（稽查 / 媒體口碑 爬蟲會花費 Gemini 額度）`)) return;
     setRunning(id);
     try {
       const r = await fetch(`${API}/api/admin/schedulers/${id}/run`, { method: "POST", headers });

@@ -6,7 +6,7 @@ import Link from "next/link";
 const CARD_COLORS = ["#BEE3F8", "#C6F6D5", "#FED7AA", "#E9D8FD", "#FEEBC8", "#B2F5EA", "#FEB2B2", "#FEFCBF", "#BEE3F8"];
 
 const ALL_POSTS = [
-  { slug: "how-to-choose-aesthetic-clinic", title: "如何選擇值得信賴的醫美診所？六大評估標準", category: "選診所指南", date: "2026-03-15", excerpt: "選擇醫美診所不只看價格，執照合法性、司法記錄、行政處分都是關鍵指標，本文帶您逐項分析。" },
+  { slug: "how-to-choose-aesthetic-clinic", title: "如何選擇值得信賴的醫美診所？五大評估標準", category: "選診所指南", date: "2026-03-15", excerpt: "選擇醫美診所不只看價格，合法登記、司法糾紛、稽查違規、媒體口碑都是關鍵指標，本文帶您逐項分析。" },
   { slug: "botox-vs-filler", title: "肉毒桿菌 vs 玻尿酸：差異、效果、風險完整比較", category: "療程知識", date: "2026-03-10", excerpt: "肉毒桿菌和玻尿酸是最常見的微整形項目，兩者用途不同，選擇前必須了解各自的適應症與風險。" },
   { slug: "medical-dispute-prevention", title: "醫美糾紛如何預防？術前必做的五件事", category: "安全指南", date: "2026-03-05", excerpt: "醫美糾紛時有所聞，術前充分溝通、確認醫師資格、了解風險是保護自己的關鍵步驟。" },
   { slug: "laser-skin-guide", title: "雷射美容完整指南：適合膚質、術後照護、注意事項", category: "療程知識", date: "2026-02-28", excerpt: "雷射美容種類繁多，從淨膚雷射到皮秒雷射各有適用情況，本文帶您全面了解選擇方向。" },

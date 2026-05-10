@@ -66,7 +66,7 @@ export default function MentionsSection({ clinicId, sourceType = "news", title }
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
 
-  const sectionTitle = title || (sourceType === "news" ? "網路媒體口碑" : "社群口碑");
+  const sectionTitle = title || (sourceType === "news" ? "媒體口碑" : "社群口碑");
 
   useEffect(() => {
     setLoading(true);

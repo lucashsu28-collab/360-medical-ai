@@ -195,7 +195,7 @@ export default function ClinicsPage() {
       {/* Header */}
       <div style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "32px 24px 24px", textAlign: "center" }}>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: "#1A202C", margin: "0 0 8px" }}>全台診所資料館</h1>
-        <p style={{ fontSize: 13, color: "#718096", margin: "0 0 20px" }}>選地區・選療程・看六維度評鑑分數</p>
+        <p style={{ fontSize: 13, color: "#718096", margin: "0 0 20px" }}>選地區・選療程・看五維度評鑑分數</p>
         <div style={{ maxWidth: 480, margin: "0 auto", position: "relative" }}>
           <input
             value={q}
