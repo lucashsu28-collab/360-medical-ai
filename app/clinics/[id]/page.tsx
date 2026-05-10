@@ -105,7 +105,7 @@ function FakeFogContent({ clinicName }: { clinicName: string }) {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const res = await fetch(`${apiUrl}/api/clinics/${id}`, { next: { revalidate: 3600 } });
+  const res = await fetch(`${apiUrl}/api/clinics/${id}`, { next: { revalidate: 60 } });
   if (!res.ok) return { title: "診所不存在" };
   const clinic = (await res.json()) as ApiClinic;
   return {
@@ -124,7 +124,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function ClinicDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const res = await fetch(`${apiUrl}/api/clinics/${id}`, { next: { revalidate: 3600 } });
+  const res = await fetch(`${apiUrl}/api/clinics/${id}`, { next: { revalidate: 60 } });
   if (!res.ok) notFound();
   const clinic = (await res.json()) as ApiClinic;
   if (!clinic?.id) notFound();

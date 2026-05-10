@@ -47,7 +47,7 @@ export default async function CityPage({
   const { type, sort } = await searchParams;
   const cityName = decodeURIComponent(city);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const res = await fetch(`${apiUrl}/api/clinics?city=${encodeURIComponent(cityName)}&limit=9999`, { next: { revalidate: 3600 } });
+  const res = await fetch(`${apiUrl}/api/clinics?city=${encodeURIComponent(cityName)}&limit=9999`, { next: { revalidate: 60 } });
   const data = await res.json();
   let clinics: ApiClinic[] = data.clinics ?? [];
 
