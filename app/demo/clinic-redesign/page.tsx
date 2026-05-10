@@ -39,6 +39,7 @@ const MOCK = {
       desc: "適合斑點、痘疤、毛孔粗大、暗沉膚質，無修復期、效果立現",
       price: "原價 $12,000 · 限時 $8,800",
       badge: "🔥 招牌",
+      image: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=1200&q=80",
     },
     {
       title: "玻尿酸塑形",
@@ -46,6 +47,7 @@ const MOCK = {
       desc: "蘋果肌、淚溝、法令紋、唇形、鼻樑，恢復飽滿年輕的自己",
       price: "$8,000 / cc 起",
       badge: "✨ 熱門",
+      image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=1200&q=80",
     },
   ],
   testimonials: [
@@ -115,18 +117,17 @@ function PartnerView() {
     <div style={{ background: "#fff" }}>
       {/* ════════ 1. Hero 大圖區（500px，主視覺） ════════ */}
       <div style={{ position: "relative", height: 520, overflow: "hidden" }}>
-        {/* 主視覺照片佔位（後台讓診所上傳） */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(135deg, #FBBF24 0%, #F59E0B 35%, #D97706 65%, #B45309 100%)",
-        }}>
-          <div style={{ position: "absolute", top: -200, right: -150, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,.3) 0%, transparent 65%)" }} />
-          <div style={{ position: "absolute", bottom: -100, left: -50, width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,.18) 0%, transparent 65%)" }} />
-          <div style={{ position: "absolute", top: "20%", left: "55%", fontSize: 96, opacity: 0.12 }}>✨</div>
-        </div>
+        {/* 真實主視覺照片 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1800&q=80"
+          alt="診所主視覺"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
 
-        {/* 遮罩 */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 50%, rgba(0,0,0,.35) 100%)" }} />
+        {/* 暖色調遮罩，配品牌色 */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(180,83,9,.55) 0%, rgba(217,119,6,.4) 50%, rgba(0,0,0,.55) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 50%, rgba(0,0,0,.5) 100%)" }} />
 
         {/* 上方診所名 + 認證 */}
         <div style={{ position: "absolute", top: 32, left: 0, right: 0, padding: "0 24px" }}>
@@ -169,10 +170,6 @@ function PartnerView() {
           </div>
         </div>
 
-        {/* mockup 提示 */}
-        <div style={{ position: "absolute", top: 20, right: 20, padding: "4px 10px", background: "rgba(0,0,0,.4)", color: "#fff", borderRadius: 4, fontSize: 10, backdropFilter: "blur(8px)" }}>
-          ↑ 此處放診所主視覺照片（後台 hero_image 欄位）
-        </div>
       </div>
 
       {/* ════════ 2. 360 評鑑（黑底，緊接 Hero） ════════ */}
@@ -234,13 +231,13 @@ function PartnerView() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
             {MOCK.signatureTreatments.map((t, i) => (
-              <div key={i} style={{ position: "relative", borderRadius: 18, overflow: "hidden", aspectRatio: "16/10", background: i === 0
-                ? "linear-gradient(135deg, #FED7AA 0%, #FBBF24 50%, #D97706 100%)"
-                : "linear-gradient(135deg, #FECACA 0%, #F87171 50%, #DC2626 100%)" }}>
-                <div style={{ position: "absolute", top: 16, right: 16, padding: "5px 14px", background: "rgba(255,255,255,.95)", color: i === 0 ? "#B45309" : "#991B1B", borderRadius: 99, fontSize: 11, fontWeight: 700 }}>
+              <div key={i} style={{ position: "relative", borderRadius: 18, overflow: "hidden", aspectRatio: "16/10", background: "#1A202C" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={t.image} alt={t.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                <div style={{ position: "absolute", top: 16, right: 16, padding: "5px 14px", background: "rgba(255,255,255,.95)", color: i === 0 ? "#B45309" : "#991B1B", borderRadius: 99, fontSize: 11, fontWeight: 700, zIndex: 2 }}>
                   {t.badge}
                 </div>
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 30%, rgba(0,0,0,.55) 100%)" }} />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 20%, rgba(0,0,0,.7) 100%)" }} />
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 28, color: "#fff" }}>
                   <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 6, letterSpacing: "0.1em" }}>{t.tagline}</div>
                   <h3 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 10px", textShadow: "0 2px 8px rgba(0,0,0,.3)" }}>{t.title}</h3>
@@ -262,9 +259,14 @@ function PartnerView() {
       <div style={{ padding: "60px 24px", background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "320px 1fr", gap: 48, alignItems: "center" }}>
           {/* 院長照片 */}
-          <div style={{ aspectRatio: "1", borderRadius: 20, background: "linear-gradient(135deg, #FBBF24, #D97706)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 100, color: "#fff", boxShadow: "0 12px 40px rgba(245,158,11,.3)", position: "relative" }}>
-            👨‍⚕️
-            <div style={{ position: "absolute", bottom: -12, left: "50%", transform: "translateX(-50%)", padding: "6px 16px", background: "#1A202C", color: "#FBBF24", borderRadius: 99, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+          <div style={{ aspectRatio: "1", borderRadius: 20, overflow: "hidden", boxShadow: "0 12px 40px rgba(245,158,11,.3)", position: "relative" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=800&q=80"
+              alt={MOCK.director.name}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+            <div style={{ position: "absolute", bottom: -12, left: "50%", transform: "translateX(-50%)", padding: "6px 16px", background: "#1A202C", color: "#FBBF24", borderRadius: 99, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(0,0,0,.2)" }}>
               {MOCK.director.years} 年資歷
             </div>
           </div>
@@ -362,9 +364,23 @@ function PartnerView() {
           )}
           {tab === "gallery" && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-              {[1,2,3,4,5,6,7,8].map((i) => (
-                <div key={i} style={{ aspectRatio: "1", background: `linear-gradient(135deg, hsl(${30+i*15},80%,75%), hsl(${20+i*15},80%,55%))`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 28 }}>
-                  📸
+              {[
+                "photo-1606811971618-4486d14f3f99",  // clinic interior
+                "photo-1571019614242-c5c5dee9f50b",  // skincare procedure
+                "photo-1559757148-5c350d0d3c56",      // cosmetic
+                "photo-1556228720-195a672e8a03",      // cosmetics
+                "photo-1571772996211-2f02c9727629",   // beauty
+                "photo-1559839734-2b71ea197ec2",      // doctor
+                "photo-1576091160550-2173dba999ef",   // facial
+                "photo-1581595220892-b0739db3ba8c",   // laser
+              ].map((id, i) => (
+                <div key={i} style={{ aspectRatio: "1", borderRadius: 10, overflow: "hidden", background: "#FED7AA" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://images.unsplash.com/${id}?w=600&q=80`}
+                    alt={`診所環境 ${i + 1}`}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
                 </div>
               ))}
             </div>
