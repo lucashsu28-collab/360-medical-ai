@@ -34,6 +34,7 @@ from routers.admin_mentions import router as admin_mentions_router
 from routers.clinic_mentions import router as clinic_mentions_router
 from routers.clinic_trend import router as clinic_trend_router
 from routers.admin_schedulers import router as admin_schedulers_router
+from routers.portal_brand import router as portal_brand_router
 
 app = FastAPI(
     title="360 醫療 AI 大調查 — LINE 後端",
@@ -56,6 +57,7 @@ app.include_router(admin_mentions_router)  # /api/admin/mentions
 app.include_router(clinic_mentions_router)  # 公開 /api/clinics/{id}/mentions
 app.include_router(clinic_trend_router)  # 公開 /api/clinics/{id}/reputation/trend
 app.include_router(admin_schedulers_router)  # /api/admin/schedulers
+app.include_router(portal_brand_router, prefix="/api")  # /api/portal/{id}/brand
 
 from config import DATABASE_URL
 _db_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace("postgresql://", "postgresql+asyncpg://")
@@ -231,6 +233,32 @@ async def get_clinic(clinic_id: str):
                      "expires_at": str(row[4]) if row[4] else None}
                     for row in promo_rows.fetchall()
                 ]
+                # 品牌頁資料（合作診所自訂的 Hero/亮點/療程/院長/Before-After 等）
+                brand_page = None
+                if r.is_partner:
+                    from models.clinic_brand_page import ClinicBrandPage
+                    bp_result = await session.execute(
+                        sa_text("SELECT id FROM clinic_brand_pages WHERE clinic_id = :cid LIMIT 1"),
+                        {"cid": clinic_id},
+                    )
+                    if bp_result.first():
+                        bp = (await session.execute(
+                            select(ClinicBrandPage).where(ClinicBrandPage.clinic_id == clinic_id)
+                        )).scalar_one_or_none()
+                        if bp:
+                            brand_page = {
+                                "hero_image_url": bp.hero_image_url,
+                                "slogan": bp.slogan,
+                                "subtitle": bp.subtitle,
+                                "features": bp.features or [],
+                                "signature_treatments": bp.signature_treatments or [],
+                                "director": bp.director,
+                                "before_after": bp.before_after or [],
+                                "doctor_picks": bp.doctor_picks or [],
+                                "treatments_full": bp.treatments_full or [],
+                                "testimonials": bp.testimonials or [],
+                                "media_reports": bp.media_reports or [],
+                            }
                 return {
                     "id": r.id, "name": r.name, "address": r.address,
                     "phone": r.phone, "specialty": r.specialty,
@@ -252,6 +280,7 @@ async def get_clinic(clinic_id: str):
                     "doctors": r.doctors or [],
                     "promotions": r.promotions or [],
                     "gallery": r.gallery or [],
+                    "brand_page": brand_page,
                     "portal_treatments": portal_treatments,
                     "portal_promotions": portal_promotions,
                 }

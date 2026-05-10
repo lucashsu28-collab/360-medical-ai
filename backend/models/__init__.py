@@ -16,6 +16,7 @@ from models.reputation_score import ReputationScore
 from models.monitor_keyword import MonitorKeyword
 from models.media_authority import MediaAuthority
 from models.mention_appeal import MentionAppeal
+from models.clinic_brand_page import ClinicBrandPage
 
 __all__ = [
     "Base",
@@ -33,4 +34,5 @@ __all__ = [
     "MonitorKeyword",
     "MediaAuthority",
     "MentionAppeal",
+    "ClinicBrandPage",
 ]
