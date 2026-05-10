@@ -12,6 +12,7 @@ interface ApiClinic {
   score?: number | null;
   google_rating?: number | null;
   google_review_count?: number | null;
+  google_photo_url?: string | null;
   is_partner?: boolean;
   isPartner?: boolean;
   [key: string]: unknown;
@@ -67,16 +68,23 @@ function ClinicRow({ clinic }: { clinic: ApiClinic }) {
         transition: "box-shadow 0.15s",
       }}
     >
-      {/* Avatar */}
+      {/* Avatar / Google photo */}
       <div style={{
-        width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+        width: 56, height: 56, borderRadius: 10, flexShrink: 0,
+        overflow: "hidden",
         background: isPartner ? "#FFFBEB" : "#EBF8FF",
         border: isPartner ? "1px solid #F6AD55" : "1px solid #BEE3F8",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 14, fontWeight: 700,
         color: isPartner ? "#D69E2E" : "#2B6CB0",
       }}>
-        {initials}
+        {clinic.google_photo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={clinic.google_photo_url} alt={clinic.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" />
+        ) : (
+          initials
+        )}
       </div>
 
       {/* Info */}

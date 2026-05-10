@@ -388,6 +388,15 @@ async def send_test(request: Request):
     return {"ok": True}
 
 
+@router.post("/clinics/sync-google-photos")
+async def sync_google_photos(batch_size: int = 30):
+    """同步診所的 Google Places 店面照片（一次處理 N 筆，~60s）"""
+    from crawlers.places_photos import sync_clinic_photos
+    stats = await sync_clinic_photos(batch_size=min(batch_size, 50))
+    return {"ok": True, "stats": stats,
+            "message": f"處理 {stats['processed']} 筆 → 抓到 {stats['got_photo']} 張照片"}
+
+
 @router.post("/trigger-crawl")
 async def trigger_crawl(request: Request, background_tasks: BackgroundTasks):
     body = await request.json()
