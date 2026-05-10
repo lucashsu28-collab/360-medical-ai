@@ -172,15 +172,15 @@ function PartnerView() {
 
       </div>
 
-      {/* ════════ 2. 360 評鑑（黑底，緊接 Hero） ════════ */}
-      <div style={{ padding: "40px 24px", background: "#0F172A", color: "#fff" }}>
+      {/* ════════ 2. 360 評鑑（白底，緊接 Hero） ════════ */}
+      <div style={{ padding: "44px 24px", background: "#fff", borderBottom: "1px solid #F1F5F9" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
             <div>
-              <div style={{ fontSize: 11, color: "#94A3B8", marginBottom: 4, letterSpacing: "0.15em" }}>VERIFIED BY 360 AI</div>
-              <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>360 醫美 AI 第三方評鑑</h3>
+              <div style={{ fontSize: 11, color: "#D97706", marginBottom: 4, letterSpacing: "0.15em", fontWeight: 600 }}>VERIFIED BY 360 AI</div>
+              <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "#1A202C" }}>360 醫美 AI 第三方評鑑</h3>
             </div>
-            <Link href="/rules/reputation" style={{ fontSize: 12, color: "#FBBF24", textDecoration: "none" }}>查看評分規則 →</Link>
+            <Link href="/rules/reputation" style={{ fontSize: 12, color: "#B45309", textDecoration: "none", fontWeight: 600 }}>查看評分規則 →</Link>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
             {[
@@ -190,11 +190,11 @@ function PartnerView() {
               { k: "penalty", label: "稽查違規", v: MOCK.scores.penalty, icon: "⚠️" },
               { k: "media", label: "媒體口碑", v: MOCK.scores.media, icon: "📰" },
             ].map((d) => (
-              <div key={d.k} style={{ textAlign: "center", padding: 16, background: "#1E293B", borderRadius: 10, border: "1px solid #334155" }}>
+              <div key={d.k} style={{ textAlign: "center", padding: 16, background: "#FFFBEB", borderRadius: 10, border: "1px solid #FED7AA" }}>
                 <div style={{ fontSize: 20, marginBottom: 6 }}>{d.icon}</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#FBBF24", lineHeight: 1 }}>{d.v}</div>
-                <div style={{ fontSize: 9, color: "#64748B", marginTop: 4 }}>/ 20 分</div>
-                <div style={{ fontSize: 11, color: "#CBD5E1", marginTop: 8, fontWeight: 600 }}>{d.label}</div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: "#B45309", lineHeight: 1 }}>{d.v}</div>
+                <div style={{ fontSize: 9, color: "#A0AEC0", marginTop: 4 }}>/ 20 分</div>
+                <div style={{ fontSize: 11, color: "#1A202C", marginTop: 8, fontWeight: 600 }}>{d.label}</div>
               </div>
             ))}
           </div>
