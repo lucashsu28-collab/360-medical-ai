@@ -24,10 +24,13 @@ const MOCK = {
     years: 14,
     desc: "畢業於國防醫學院，前長庚醫院醫師。專注於微整與抗老化領域 14 年，主治玻尿酸、童顏針、肉毒桿菌等微整療程，累計治療超過 12,000 位顧客。",
   },
+  // 5 個亮點小卡（標題 / 內容由後台輸入，icon 統一星星 ✨）
   features: [
-    { icon: "✦", title: "360 AI 認證", desc: "通過司法、衛福部、媒體口碑五維度評鑑，9 折以上分數" },
-    { icon: "👨‍⚕️", title: "專業醫師團隊", desc: "5 位主治醫師，平均 12 年以上醫美專業經驗" },
-    { icon: "💬", title: "LINE 24h 客服", desc: "加入 LINE 立即諮詢，營業時間外仍有真人回覆" },
+    { title: "360 AI 認證", desc: "五維度評鑑 9 分以上" },
+    { title: "14 年信賴", desc: "信義區深耕 14 年" },
+    { title: "專業團隊", desc: "5 位主治醫師駐診" },
+    { title: "LINE 24h 客服", desc: "營業外時段真人回覆" },
+    { title: "自有療程", desc: "客製化專屬療程方案" },
   ],
   signatureTreatments: [
     {
@@ -172,18 +175,53 @@ function PartnerView() {
         </div>
       </div>
 
-      {/* ════════ 2. 三大特色亮點 ════════ */}
-      <div style={{ background: "#FFFBEB", padding: "44px 24px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
-          {MOCK.features.map((f, i) => (
-            <div key={i} style={{ background: "#fff", padding: 28, borderRadius: 14, border: "1px solid #FED7AA", boxShadow: "0 2px 8px rgba(245,158,11,.08)" }}>
-              <div style={{ width: 52, height: 52, borderRadius: 12, background: "linear-gradient(135deg, #FBBF24, #D97706)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, marginBottom: 14, color: "#fff" }}>
-                {f.icon}
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: "#1A202C", marginBottom: 8 }}>{f.title}</div>
-              <div style={{ fontSize: 13, color: "#64748B", lineHeight: 1.7 }}>{f.desc}</div>
+      {/* ════════ 2. 360 評鑑（黑底，緊接 Hero） ════════ */}
+      <div style={{ padding: "40px 24px", background: "#0F172A", color: "#fff" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#94A3B8", marginBottom: 4, letterSpacing: "0.15em" }}>VERIFIED BY 360 AI</div>
+              <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>360 醫美 AI 第三方評鑑</h3>
             </div>
-          ))}
+            <Link href="/rules/reputation" style={{ fontSize: 12, color: "#FBBF24", textDecoration: "none" }}>查看評分規則 →</Link>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
+            {[
+              { k: "judicial", label: "司法糾紛", v: MOCK.scores.judicial, icon: "⚖️" },
+              { k: "google", label: "Google 評分", v: MOCK.scores.google, icon: "📍" },
+              { k: "legal", label: "合法登記", v: MOCK.scores.legal, icon: "🏛️" },
+              { k: "penalty", label: "稽查違規", v: MOCK.scores.penalty, icon: "⚠️" },
+              { k: "media", label: "媒體口碑", v: MOCK.scores.media, icon: "📰" },
+            ].map((d) => (
+              <div key={d.k} style={{ textAlign: "center", padding: 16, background: "#1E293B", borderRadius: 10, border: "1px solid #334155" }}>
+                <div style={{ fontSize: 20, marginBottom: 6 }}>{d.icon}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#FBBF24", lineHeight: 1 }}>{d.v}</div>
+                <div style={{ fontSize: 9, color: "#64748B", marginTop: 4 }}>/ 20 分</div>
+                <div style={{ fontSize: 11, color: "#CBD5E1", marginTop: 8, fontWeight: 600 }}>{d.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ════════ 3. 五大亮點小卡（icon 統一星星 ✨） ════════ */}
+      <div style={{ background: "linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%)", padding: "44px 24px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <div style={{ fontSize: 12, color: "#D97706", letterSpacing: "0.2em", marginBottom: 6, fontWeight: 600 }}>WHY US</div>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: "#1A202C", margin: 0 }}>本院特色</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14 }}>
+            {MOCK.features.map((f, i) => (
+              <div key={i} style={{ background: "#fff", padding: "22px 16px", borderRadius: 12, border: "1px solid #FED7AA", boxShadow: "0 2px 8px rgba(245,158,11,.06)", textAlign: "center" }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, margin: "0 auto 12px", background: "linear-gradient(135deg, #FBBF24, #D97706)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: "#fff" }}>
+                  ✨
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1A202C", marginBottom: 6 }}>{f.title}</div>
+                <div style={{ fontSize: 12, color: "#64748B", lineHeight: 1.6 }}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -331,35 +369,6 @@ function PartnerView() {
               ))}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* ════════ 7. 360 評鑑（次級資訊） ════════ */}
-      <div style={{ padding: "40px 24px", background: "#0F172A", color: "#fff" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 11, color: "#94A3B8", marginBottom: 4, letterSpacing: "0.15em" }}>VERIFIED BY 360 AI</div>
-              <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>360 醫美 AI 第三方評鑑</h3>
-            </div>
-            <Link href="/rules/reputation" style={{ fontSize: 12, color: "#FBBF24", textDecoration: "none" }}>查看評分規則 →</Link>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
-            {[
-              { k: "judicial", label: "司法糾紛", v: MOCK.scores.judicial, icon: "⚖️" },
-              { k: "google", label: "Google 評分", v: MOCK.scores.google, icon: "📍" },
-              { k: "legal", label: "合法登記", v: MOCK.scores.legal, icon: "🏛️" },
-              { k: "penalty", label: "稽查違規", v: MOCK.scores.penalty, icon: "⚠️" },
-              { k: "media", label: "媒體口碑", v: MOCK.scores.media, icon: "📰" },
-            ].map((d) => (
-              <div key={d.k} style={{ textAlign: "center", padding: 16, background: "#1E293B", borderRadius: 10, border: "1px solid #334155" }}>
-                <div style={{ fontSize: 20, marginBottom: 6 }}>{d.icon}</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#FBBF24", lineHeight: 1 }}>{d.v}</div>
-                <div style={{ fontSize: 9, color: "#64748B", marginTop: 4 }}>/ 20 分</div>
-                <div style={{ fontSize: 11, color: "#CBD5E1", marginTop: 8, fontWeight: 600 }}>{d.label}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
