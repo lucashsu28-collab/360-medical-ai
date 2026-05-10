@@ -77,7 +77,7 @@ export default function NewsPage() {
               key={c.k}
               onClick={() => setCategory(c.k)}
               style={{
-                padding: "9px 18px", border: 0, borderRadius: 99, fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+                padding: "9px 18px", borderRadius: 99, fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
                 background: category === c.k ? c.color : "#fff",
                 color: category === c.k ? "#fff" : "#475569",
                 boxShadow: category === c.k ? `0 2px 8px ${c.color}40` : "0 1px 2px rgba(0,0,0,.05)",
